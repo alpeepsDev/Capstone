@@ -87,7 +87,7 @@ const TaskCard = ({
       data-sorting={isSorting}
       {...(task.status === "COMPLETED" ? {} : attributes)}
       {...(task.status === "COMPLETED" ? {} : listeners)}
-      className={`task-card dndkit-sortable-item ${isDragging ? "dragging" : ""} ${isSorting ? "sorting" : ""} ${isDark ? "bg-gray-700 border-gray-600" : "bg-white border-gray-200"} rounded-lg border shadow-sm p-4 mb-3 transition-all duration-250 ease-out ${!isDragging ? "shadow-sm hover:shadow-md" : ""} relative group ${task.status === "COMPLETED" ? "opacity-90" : "cursor-grab active:cursor-grabbing"}`}
+      className={`task-card dndkit-sortable-item ${isDragging ? "dragging" : ""} ${isSorting ? "sorting" : ""} ${isDark ? "bg-gray-700 border-gray-600" : "bg-white border-gray-200"} rounded-md border shadow-sm p-3 mb-2.5 transition-all duration-200 ease-out ${!isDragging ? "shadow-sm hover:shadow-md" : ""} relative group ${task.status === "COMPLETED" ? "opacity-90" : "cursor-grab active:cursor-grabbing"}`}
     >
       {/* Drag Handle - Visual indicator only */}
       <div
@@ -114,9 +114,9 @@ const TaskCard = ({
         )}
       </div>
 
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between mb-2">
         <h4
-          className={`font-semibold ${isDark ? "text-white" : "text-gray-900"} text-sm sm:text-base flex-1 mr-2 pointer-events-auto cursor-pointer`}
+          className={`font-semibold ${isDark ? "text-white" : "text-gray-900"} text-xs sm:text-sm flex-1 mr-2 pointer-events-auto cursor-pointer leading-snug`}
           onClick={(e) => {
             e.stopPropagation();
             onTaskClick && onTaskClick(task);
@@ -128,21 +128,21 @@ const TaskCard = ({
 
       {task.description && (
         <p
-          className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"} mb-3`}
+          className={`text-xs ${isDark ? "text-gray-300" : "text-gray-600"} mb-2 leading-relaxed`}
         >
           {task.description}
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-2 mb-3">
+      <div className="flex flex-wrap items-center gap-1.5 mb-2">
         {task.priority && (
-          <Badge variant={priorityColors[task.priority]} size="sm">
+          <Badge variant={priorityColors[task.priority]} size="xs">
             {task.priority}
           </Badge>
         )}
 
         {/* Always show status badge, fallback to 'info' if missing */}
-        <Badge variant={statusColors[task.status] || "info"} size="sm">
+        <Badge variant={statusColors[task.status] || "info"} size="xs">
           {task.status === "COMPLETED"
             ? "✅ COMPLETED"
             : task.status
@@ -152,14 +152,14 @@ const TaskCard = ({
       </div>
 
       {task.assignee && (
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-1.5 mb-2">
           <div
-            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${isDark ? "bg-blue-600 text-white" : "bg-blue-500 text-white"}`}
+            className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${isDark ? "bg-blue-600 text-white" : "bg-blue-500 text-white"}`}
           >
             {task.assignee.username?.charAt(0).toUpperCase() || "U"}
           </div>
           <span
-            className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+            className={`text-xs ${isDark ? "text-gray-300" : "text-gray-600"}`}
           >
             {task.assignee.username}
           </span>
@@ -167,8 +167,12 @@ const TaskCard = ({
       )}
 
       {task.project && (
-        <div className="mb-3">
-          <Badge variant="info" size="sm" className="w-full text-center py-1">
+        <div className="mb-2">
+          <Badge
+            variant="info"
+            size="xs"
+            className="w-full text-center py-1 text-[11px]"
+          >
             📁 {task.project.name}
           </Badge>
         </div>

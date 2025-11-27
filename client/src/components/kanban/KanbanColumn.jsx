@@ -26,7 +26,7 @@ const KanbanColumn = ({
   const { isDark } = useTheme();
 
   const getColumnStyles = () => {
-    const baseStyles = `kanban-column ${color} rounded-lg p-4 sm:p-5 h-[600px] w-full border border-gray-300 ${isDark ? "border-gray-600" : "border-gray-300"} transition-all duration-200 flex flex-col`;
+    const baseStyles = `kanban-column ${color || ""} rounded-md p-3 sm:p-4 h-[560px] w-full border ${isDark ? "border-gray-600" : "border-gray-300"} transition-all duration-150 flex flex-col`;
     return isOver ? `${baseStyles} drop-zone-active` : baseStyles;
   };
 
@@ -40,17 +40,16 @@ const KanbanColumn = ({
   return (
     <div className={getColumnStyles()}>
       {/* Column Header */}
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className="flex items-center gap-2">
-          <span className="text-xl">{icon}</span>
           <div>
             <h3
-              className={`font-bold ${isDark ? "text-white" : "text-gray-900"} text-base sm:text-lg`}
+              className={`font-semibold ${isDark ? "text-white" : "text-gray-900"} text-sm sm:text-base`}
             >
               {title}
             </h3>
             <span
-              className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"} font-medium`}
+              className={`text-[11px] sm:text-xs ${isDark ? "text-gray-400" : "text-gray-600"} font-medium`}
             >
               {getTaskCount()} {getTaskCount() === 1 ? "task" : "tasks"}
             </span>
@@ -60,7 +59,7 @@ const KanbanColumn = ({
         {canAddTask() && (
           <button
             onClick={() => onAddTask(id)}
-            className={`p-2 rounded-lg ${
+            className={`p-1.5 rounded-md ${
               isDark
                 ? "bg-blue-600 hover:bg-blue-500 text-white"
                 : "bg-blue-500 hover:bg-blue-600 text-white"
@@ -92,30 +91,32 @@ const KanbanColumn = ({
       >
         <div
           ref={setNodeRef}
-          className={`kanban-task-list sortable-context space-y-3 sm:space-y-4 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent 
-            ${isOver ? `ring-2 ring-blue-400 ${isDark ? "ring-blue-300" : "ring-blue-500"} bg-opacity-10 ${isDark ? "bg-blue-900" : "bg-blue-50"}` : ""} 
-            transition-all duration-200 rounded-lg`}
+          className={`kanban-task-list sortable-context space-y-2 sm:space-y-2.5 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent 
+            ${isOver ? `ring ring-blue-400 ${isDark ? "ring-blue-300" : "ring-blue-500"} bg-opacity-10 ${isDark ? "bg-blue-900" : "bg-blue-50"}` : ""} 
+            transition-all duration-150 rounded-md`}
           data-over={isOver}
           data-column-id={id}
           style={{
-            maxHeight: "calc(100% - 80px)", // Use remaining space after header
+            maxHeight: "calc(100% - 68px)",
             overflowX: "hidden",
             scrollbarWidth: "thin",
-            paddingRight: "8px", // More space for custom scrollbar
-            paddingLeft: "4px",
-            paddingTop: "8px",
-            paddingBottom: "16px", // Extra padding for better drop detection
-            minHeight: "200px", // Larger minimum height for easier dropping
+            paddingRight: "6px",
+            paddingLeft: "2px",
+            paddingTop: "6px",
+            paddingBottom: "12px",
+            minHeight: "160px",
           }}
         >
           {tasks.length === 0 ? (
             <div
-              className={`text-center py-8 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+              className={`text-center py-6 ${isDark ? "text-gray-500" : "text-gray-400"}`}
             >
-              <div className="text-3xl mb-3">📋</div>
-              <p className="text-sm font-medium">No tasks in this column</p>
+              <div className="text-2xl mb-2">📋</div>
+              <p className="text-xs font-medium">No tasks in this column</p>
               {canAddTask() && (
-                <p className="text-xs mt-2 opacity-75">Click + to add a task</p>
+                <p className="text-[11px] mt-1 opacity-75">
+                  Click + to add a task
+                </p>
               )}
             </div>
           ) : (

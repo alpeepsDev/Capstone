@@ -3,13 +3,32 @@ import { useTheme } from "../../context";
 import { Header, Sidebar } from "../navigation";
 import { ThemeToggle } from "../ui";
 
-const Layout = ({ user, children, onLogout }) => {
-  const [activeView, setActiveView] = useState("dashboard");
+const Layout = ({
+  user,
+  children,
+  onLogout,
+  // Props for Sidebar
+  projects,
+  selectedProjectId,
+  onProjectSelect,
+  activeView: propActiveView,
+  onViewChange,
+}) => {
+  // Local state for when activeView is not controlled by parent
+  const [localActiveView, setLocalActiveView] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { isDark } = useTheme();
 
+  // Determine which activeView to use
+  const currentActiveView =
+    propActiveView !== undefined ? propActiveView : localActiveView;
+
   const handleViewChange = (viewId) => {
-    setActiveView(viewId);
+    if (onViewChange) {
+      onViewChange(viewId);
+    } else {
+      setLocalActiveView(viewId);
+    }
     console.log("Navigating to:", viewId);
   };
 
@@ -30,7 +49,7 @@ const Layout = ({ user, children, onLogout }) => {
   };
 
   const renderContent = () => {
-    switch (activeView) {
+    switch (currentActiveView) {
       case "dashboard":
         return children; // Show the role-based dashboard
       case "my-tasks":
@@ -349,9 +368,9 @@ const Layout = ({ user, children, onLogout }) => {
 
   return (
     <div
-      className={`min-h-screen ${
+      className={`h-screen ${
         isDark ? "bg-gray-900" : "bg-gray-100"
-      } transition-colors duration-200 overflow-x-hidden pt-16`}
+      } transition-colors duration-200 overflow-hidden pt-16`}
     >
       {/* Header */}
       <Header
@@ -360,22 +379,28 @@ const Layout = ({ user, children, onLogout }) => {
         onNavigateToSettings={() => handleViewChange("settings")}
       />
 
-      <div className="flex">
+      <div className="flex h-full">
         {/* Sidebar */}
         {sidebarOpen && (
           <Sidebar
             user={user}
-            activeView={activeView}
+            activeView={currentActiveView}
             onViewChange={handleViewChange}
+            // New props
+            projects={projects}
+            selectedProjectId={selectedProjectId}
+            onProjectSelect={onProjectSelect}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
           />
         )}
 
         {/* Main Content */}
         <main
-          className={`flex-1 ${sidebarOpen ? "ml-64" : "ml-0"} transition-all duration-200 min-h-screen`}
+          className={`flex-1 ${sidebarOpen ? "ml-64" : "ml-0"} transition-all duration-200 h-full overflow-hidden`}
         >
           {/* Page Content - Only show extra content for non-dashboard views */}
-          {activeView === "dashboard" ? (
+          {currentActiveView === "dashboard" ? (
             renderContent()
           ) : (
             <div className="p-4">

@@ -371,20 +371,15 @@ export const moveTask = asyncHandler(async (req, res) => {
 
   // Check move permissions based on role and task ownership
   const canMove = () => {
-    switch (req.user.role) {
-      case "ADMIN":
-        return true;
-      case "MANAGER":
-        return task.project.managerId === req.user.id;
-      case "USER":
-        // Users can move their own assigned tasks between any valid statuses
-        return (
-          task.assigneeId === req.user.id &&
-          ["PENDING", "IN_PROGRESS", "DONE", "COMPLETED"].includes(status)
-        );
-      default:
-        return false;
+    // If the task is currently COMPLETED, only managers can move it back
+    if (task.status === "COMPLETED") {
+      return (
+        task.project.managerId === req.user.id || req.user.role === "ADMIN"
+      );
     }
+
+    // All other tasks can be moved freely by anyone with project access
+    return true;
   };
 
   if (!canMove()) {

@@ -5,6 +5,7 @@ import { registerSchema } from "../utils/validation.js";
 import { useAuth } from "../context/useAuth.js";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context";
+import logo from "../assets/logo.svg";
 
 const Register = () => {
   const [loading, setLoading] = useState(false);
@@ -46,11 +47,18 @@ const Register = () => {
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h1
-            className={`text-4xl font-bold ${isDark ? "text-white" : "text-gray-900"} mb-2`}
-          >
-            TaskForge
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <img
+              src={logo}
+              alt="TaskForge Logo"
+              className="w-10 h-10 rounded-lg"
+            />
+            <h1
+              className={`text-4xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+            >
+              TaskForge
+            </h1>
+          </div>
           <p
             className={`text-lg ${isDark ? "text-gray-300" : "text-gray-600"} mb-8`}
           >

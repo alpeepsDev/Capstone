@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useLogin } from "../hooks";
 import { useTheme } from "../context";
+import logo from "../assets/logo.svg";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -30,11 +31,18 @@ const Login = () => {
           className={`${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} shadow-lg rounded-lg border p-8`}
         >
           <div className="text-center">
-            <h1
-              className={`text-4xl font-bold ${isDark ? "text-white" : "text-gray-900"} mb-2`}
-            >
-              TaskForge
-            </h1>
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <img
+                src={logo}
+                alt="TaskForge Logo"
+                className="w-10 h-10 rounded-lg"
+              />
+              <h1
+                className={`text-4xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+              >
+                TaskForge
+              </h1>
+            </div>
             <p
               className={`text-lg ${isDark ? "text-gray-300" : "text-gray-600"} mb-8`}
             >

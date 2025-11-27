@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../context";
 import { NotificationBell } from "../notifications";
+import logo from "../../assets/logo.svg";
 
 const Header = ({ user, onLogout, onNavigateToSettings }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -76,9 +77,11 @@ const Header = ({ user, onLogout, onNavigateToSettings }) => {
         <div className="flex items-center gap-8">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">T</span>
-            </div>
+            <img
+              src={logo}
+              alt="TaskForge Logo"
+              className="w-8 h-8 rounded-lg object-cover"
+            />
             <span
               className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
             >

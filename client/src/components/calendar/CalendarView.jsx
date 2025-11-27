@@ -1,15 +1,12 @@
 import React, { useState } from "react";
 import { useTheme } from "../../context";
 import { Card } from "../ui";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Calendar as CalendarIcon,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 const CalendarView = ({ tasks, onTaskClick }) => {
   const { isDark } = useTheme();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(null);
 
   // Get all days in the current month view
   const getCalendarDays = () => {
@@ -99,187 +96,272 @@ const CalendarView = ({ tasks, onTaskClick }) => {
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <Card className="overflow-hidden">
-      {/* Header */}
-      <div
-        className={`border-b p-3 ${
-          isDark ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"
-        }`}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CalendarIcon
-              className={`w-5 h-5 ${isDark ? "text-blue-400" : "text-blue-600"}`}
-            />
-            <h2
-              className={`text-lg font-semibold ${
-                isDark ? "text-white" : "text-gray-900"
-              }`}
-            >
-              Calendar View
-            </h2>
+    <Card className="overflow-hidden h-full relative" padding="none">
+      <div className="flex h-full flex-col">
+        {/* Header */}
+        <div
+          className={`border-b px-3 py-2 ${
+            isDark ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => navigateMonth(-1)}
+                className={`p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 ${
+                  isDark ? "text-gray-300" : "text-gray-600"
+                }`}
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <span
+                className={`text-xs font-medium min-w-[140px] text-center ${
+                  isDark ? "text-gray-200" : "text-gray-700"
+                }`}
+              >
+                {currentMonth.toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </span>
+              <button
+                onClick={() => navigateMonth(1)}
+                className={`p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 ${
+                  isDark ? "text-gray-300" : "text-gray-600"
+                }`}
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setCurrentMonth(new Date())}
+                className="ml-2 px-2 py-1 text-[11px] bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Today
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigateMonth(-1)}
-              className={`p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 ${
-                isDark ? "text-gray-300" : "text-gray-600"
-              }`}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span
-              className={`text-sm font-medium min-w-[160px] text-center ${
-                isDark ? "text-gray-200" : "text-gray-700"
-              }`}
-            >
-              {currentMonth.toLocaleDateString("en-US", {
-                month: "long",
-                year: "numeric",
-              })}
-            </span>
-            <button
-              onClick={() => navigateMonth(1)}
-              className={`p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 ${
-                isDark ? "text-gray-300" : "text-gray-600"
-              }`}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setCurrentMonth(new Date())}
-              className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Today
-            </button>
+        </div>
+
+        {/* Calendar Grid */}
+        <div className="flex-1 overflow-hidden p-2">
+          {/* Week Day Headers */}
+          <div className="grid grid-cols-7 gap-1 mb-1.5">
+            {weekDays.map((day) => (
+              <div
+                key={day}
+                className={`text-center text-[11px] font-semibold py-1 ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Days */}
+          <div className="grid grid-cols-7 gap-[3px]">
+            {calendarDays.map((dayObj, idx) => {
+              const { date, isCurrentMonth } = dayObj;
+              const dayTasks = getTasksForDate(date);
+              const today = isToday(date);
+
+              return (
+                <div
+                  key={idx}
+                  className={`min-h-[60px] p-1.5 rounded border transition-all cursor-pointer flex flex-col ${
+                    isDark
+                      ? today
+                        ? "bg-blue-900/20 border-blue-500"
+                        : isCurrentMonth
+                          ? "bg-gray-800 border-gray-700 hover:bg-gray-700"
+                          : "bg-gray-900/50 border-gray-800"
+                      : today
+                        ? "bg-blue-50 border-blue-500"
+                        : isCurrentMonth
+                          ? "bg-white border-gray-200 hover:bg-gray-50"
+                          : "bg-gray-50 border-gray-200"
+                  }`}
+                  onClick={() => {
+                    setSelectedDate(date);
+                  }}
+                >
+                  {/* Date Number */}
+                  <div
+                    className={`text-[11px] font-medium mb-0.5 ${
+                      today
+                        ? "text-blue-600 dark:text-blue-400 font-semibold"
+                        : isCurrentMonth
+                          ? isDark
+                            ? "text-gray-200"
+                            : "text-gray-900"
+                          : isDark
+                            ? "text-gray-600"
+                            : "text-gray-400"
+                    }`}
+                  >
+                    {date.getDate()}
+                  </div>
+
+                  {/* Tasks */}
+                  <div className="space-y-[3px]">
+                    {dayTasks.slice(0, 2).map((task) => (
+                      <div
+                        key={task.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onTaskClick && onTaskClick(task);
+                        }}
+                        className={`${getTaskColor(
+                          task
+                        )} text-white text-[10px] px-1 py-0.5 rounded truncate hover:opacity-80 transition-opacity`}
+                        title={task.title}
+                      >
+                        {task.title}
+                      </div>
+                    ))}
+                    {dayTasks.length > 2 && (
+                      <div
+                        className={`text-[10px] px-1 ${
+                          isDark ? "text-gray-400" : "text-gray-600"
+                        }`}
+                      >
+                        +{dayTasks.length - 2} more
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div
+          className={`border-t px-2 py-1.5 flex items-center gap-2 text-[10px] flex-wrap ${
+            isDark
+              ? "border-gray-700 bg-gray-800 text-gray-400"
+              : "border-gray-200 bg-gray-50 text-gray-600"
+          }`}
+        >
+          <span className="font-medium text-xs">Priority:</span>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded bg-red-500"></div>
+            <span>Urgent</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded bg-orange-500"></div>
+            <span>High</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded bg-blue-500"></div>
+            <span>Medium</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded bg-purple-500"></div>
+            <span>Low</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded bg-green-500"></div>
+            <span>Completed</span>
           </div>
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="p-3">
-        {/* Week Day Headers */}
-        <div className="grid grid-cols-7 gap-1 mb-1">
-          {weekDays.map((day) => (
+      {/* Date Details Modal */}
+      {selectedDate && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setSelectedDate(null)}
+          />
+          <div
+            className={`relative w-full max-w-sm rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[80%] ${
+              isDark
+                ? "bg-gray-800 border border-gray-700"
+                : "bg-white border border-gray-200"
+            }`}
+          >
             <div
-              key={day}
-              className={`text-center text-xs font-semibold py-1 ${
-                isDark ? "text-gray-400" : "text-gray-600"
+              className={`flex items-center justify-between p-3 border-b ${
+                isDark ? "border-gray-700" : "border-gray-200"
               }`}
             >
-              {day}
-            </div>
-          ))}
-        </div>
-
-        {/* Calendar Days */}
-        <div className="grid grid-cols-7 gap-1">
-          {calendarDays.map((dayObj, idx) => {
-            const { date, isCurrentMonth } = dayObj;
-            const dayTasks = getTasksForDate(date);
-            const today = isToday(date);
-
-            return (
-              <div
-                key={idx}
-                className={`min-h-[80px] p-1.5 rounded border transition-all cursor-pointer ${
-                  isDark
-                    ? today
-                      ? "bg-blue-900/20 border-blue-500"
-                      : isCurrentMonth
-                        ? "bg-gray-800 border-gray-700 hover:bg-gray-700"
-                        : "bg-gray-900/50 border-gray-800"
-                    : today
-                      ? "bg-blue-50 border-blue-500"
-                      : isCurrentMonth
-                        ? "bg-white border-gray-200 hover:bg-gray-50"
-                        : "bg-gray-50 border-gray-200"
-                }`}
-                onClick={() => {
-                  // Future: Could open a modal or detail view for this date
-                  console.log("Selected date:", date);
-                }}
+              <h3
+                className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                {/* Date Number */}
-                <div
-                  className={`text-xs font-medium mb-0.5 ${
-                    today
-                      ? "text-blue-600 dark:text-blue-400 font-bold"
-                      : isCurrentMonth
-                        ? isDark
-                          ? "text-gray-200"
-                          : "text-gray-900"
-                        : isDark
-                          ? "text-gray-600"
-                          : "text-gray-400"
-                  }`}
-                >
-                  {date.getDate()}
-                </div>
+                {selectedDate.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </h3>
+              <button
+                onClick={() => setSelectedDate(null)}
+                className={`p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 ${
+                  isDark ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-                {/* Tasks */}
-                <div className="space-y-0.5">
-                  {dayTasks.slice(0, 2).map((task) => (
+            <div className="p-3 overflow-y-auto">
+              {getTasksForDate(selectedDate).length > 0 ? (
+                <div className="space-y-2">
+                  {getTasksForDate(selectedDate).map((task) => (
                     <div
                       key={task.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      onClick={() => {
                         onTaskClick && onTaskClick(task);
+                        setSelectedDate(null);
                       }}
-                      className={`${getTaskColor(
-                        task
-                      )} text-white text-[10px] px-1 py-0.5 rounded truncate hover:opacity-80 transition-opacity`}
-                      title={task.title}
-                    >
-                      {task.title}
-                    </div>
-                  ))}
-                  {dayTasks.length > 2 && (
-                    <div
-                      className={`text-[10px] px-1 ${
-                        isDark ? "text-gray-400" : "text-gray-600"
+                      className={`p-2 rounded border cursor-pointer transition-colors ${
+                        isDark
+                          ? "bg-gray-700/50 border-gray-600 hover:bg-gray-700"
+                          : "bg-gray-50 border-gray-200 hover:bg-gray-100"
                       }`}
                     >
-                      +{dayTasks.length - 2} more
+                      <div className="flex items-start justify-between gap-2">
+                        <span
+                          className={`text-sm font-medium ${isDark ? "text-gray-200" : "text-gray-900"}`}
+                        >
+                          {task.title}
+                        </span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                            task.priority === "URGENT"
+                              ? "bg-red-100 text-red-700"
+                              : task.priority === "HIGH"
+                                ? "bg-orange-100 text-orange-700"
+                                : task.priority === "MEDIUM"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {task.priority}
+                        </span>
+                      </div>
+                      {task.description && (
+                        <p
+                          className={`text-xs mt-1 line-clamp-2 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                        >
+                          {task.description}
+                        </p>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
-              </div>
-            );
-          })}
+              ) : (
+                <div
+                  className={`text-center py-8 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                >
+                  <p>No tasks for this date</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Legend */}
-      <div
-        className={`border-t p-2 flex items-center gap-3 text-[10px] flex-wrap ${
-          isDark
-            ? "border-gray-700 bg-gray-800 text-gray-400"
-            : "border-gray-200 bg-gray-50 text-gray-600"
-        }`}
-      >
-        <span className="font-medium text-xs">Priority:</span>
-        <div className="flex items-center gap-1">
-          <div className="w-2.5 h-2.5 rounded bg-red-500"></div>
-          <span>Urgent</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2.5 h-2.5 rounded bg-orange-500"></div>
-          <span>High</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2.5 h-2.5 rounded bg-blue-500"></div>
-          <span>Medium</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2.5 h-2.5 rounded bg-purple-500"></div>
-          <span>Low</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2.5 h-2.5 rounded bg-green-500"></div>
-          <span>Completed</span>
-        </div>
-      </div>
+      )}
     </Card>
   );
 };

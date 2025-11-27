@@ -387,141 +387,6 @@ header[class*="sticky"] {
   /* 64px header height */
 }
 
-/* Smooth scrolling for the app */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Fix for iOS Safari sticky header */
-@supports (-webkit-touch-callout: none) {
-  header[class*="sticky"] {
-    position: -webkit-sticky !important;
-    position: sticky !important;
-  }
-}
-
-/* Enhanced Kanban Column Scrollbar */
-.kanban-column .overflow-y-auto {
-  scrollbar-width: thin;
-  scrollbar-color: #9ca3af #f3f4f6;
-}
-
-.kanban-column .overflow-y-auto::-webkit-scrollbar {
-  width: 8px;
-}
-
-.kanban-column .overflow-y-auto::-webkit-scrollbar-track {
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-  border-radius: 8px;
-  margin: 8px 0;
-  border: 1px solid #e2e8f0;
-}
-
-.kanban-column .overflow-y-auto::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #64748b 0%, #475569 100%);
-  border-radius: 8px;
-  border: 2px solid #f8fafc;
-  transition: all 0.3s ease;
-}
-
-.kanban-column .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #475569 0%, #334155 100%);
-  border-color: #e2e8f0;
-  transform: scale(1.1);
-}
-
-/* Dark mode scrollbar */
-.dark .kanban-column .overflow-y-auto {
-  scrollbar-color: #6b7280 #374151;
-}
-
-.dark .kanban-column .overflow-y-auto::-webkit-scrollbar-track {
-  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
-  border: 1px solid #374151;
-}
-
-.dark .kanban-column .overflow-y-auto::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #4b5563 0%, #374151 100%);
-  border: 2px solid #1f2937;
-}
-
-.dark .kanban-column .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #6b7280 0%, #4b5563 100%);
-  border-color: #374151;
-}
-
-/* Enhanced Task Card Drag Effects */
-.task-card {
-  transform-origin: center;
-  will-change: transform;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.task-card.dragging {
-  transform: rotate(8deg) !important;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
-  z-index: 1000 !important;
-  opacity: 0.9 !important;
-  /* No scaling - keep original size like Monday.com */
-}
-
-/* Smooth transitions for other tasks when repositioning */
-.task-card:not(.dragging) {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    margin 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.2s ease-in-out,
-    opacity 0.2s ease-in-out;
-}
-
-/* Enhanced slide animations */
-.task-card-slide-up {
-  transform: translateY(-8px);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.task-card-slide-down {
-  transform: translateY(8px);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Drop zone indicator - like Monday.com dashed outline */
-.drop-zone-active {
-  border: 2px dashed #3b82f6 !important;
-  background-color: rgba(59, 130, 246, 0.05) !important;
-  transition: all 0.2s ease-in-out;
-}
-
-/* Kanban column improvements */
-.kanban-column {
-  position: relative;
-}
-
-/* Sortable context improvements for smooth reordering */
-.sortable-context {
-  min-height: 100px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Better animation for tasks during reordering */
-[data-rbd-droppable-context-id] {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* DND Kit specific animations */
-.dndkit-sortable-item {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Enhanced sorting animations - tasks slide smoothly when making space */
-.task-card[data-sorting="true"] {
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-/* Ensure proper stacking and transitions */
-.kanban-task-list {
-  position: relative;
-}
-
 .kanban-task-list .task-card {
   position: relative;
   transform-origin: center;
@@ -605,4 +470,37 @@ html {
   height: 120px;
   /* Approximate task card height */
   margin-bottom: 12px;
+}
+
+/* Kanban Task List Scrollbar Styling */
+.kanban-task-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.kanban-task-list::-webkit-scrollbar-track {
+  background: rgba(55, 65, 81, 0.3);
+  border-radius: 10px;
+  margin: 8px 0;
+}
+
+.kanban-task-list::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.8);
+  border-radius: 10px;
+}
+
+.kanban-task-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 1);
+}
+
+/* Dark mode Kanban scrollbar */
+.dark .kanban-task-list::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.5);
+}
+
+.dark .kanban-task-list::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.8);
+}
+
+.dark .kanban-task-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 1);
 }

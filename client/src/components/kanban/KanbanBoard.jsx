@@ -141,30 +141,18 @@ const KanbanBoard = ({
     {
       id: "PENDING",
       title: "To Do",
-      icon: "📋",
-      color: isDark ? "bg-gray-800" : "bg-gray-50",
-      accentColor: "border-l-gray-400",
     },
     {
       id: "IN_PROGRESS",
       title: "In Progress",
-      icon: "⚡",
-      color: isDark ? "bg-gray-800" : "bg-gray-50",
-      accentColor: "border-l-gray-400",
     },
     {
       id: "DONE",
       title: "Done",
-      icon: "✅",
-      color: isDark ? "bg-gray-800" : "bg-gray-50",
-      accentColor: "border-l-gray-400",
     },
     {
       id: "COMPLETED",
       title: "Completed",
-      icon: "🎉",
-      color: isDark ? "bg-gray-800" : "bg-gray-50",
-      accentColor: "border-l-gray-400",
     },
   ];
 
@@ -324,32 +312,15 @@ const KanbanBoard = ({
   };
 
   const handleStatusChange = (task, newStatus) => {
-    // Role-based permissions for moving tasks
+    // Only restrict moving COMPLETED tasks
     const canMoveTask = () => {
-      switch (userRole) {
-        case "USER":
-          // Users can move their own tasks through the workflow: PENDING -> IN_PROGRESS -> DONE
-          return (
-            task.assigneeId === currentUserId &&
-            ((task.status === "PENDING" &&
-              (newStatus === "IN_PROGRESS" || newStatus === "DONE")) ||
-              (task.status === "IN_PROGRESS" &&
-                (newStatus === "PENDING" || newStatus === "DONE")) ||
-              (task.status === "DONE" &&
-                (newStatus === "IN_PROGRESS" || newStatus === "PENDING")))
-          );
-        case "MANAGER":
-          // Managers can move any task and approve DONE -> COMPLETED
-          return true;
-        case "MODERATOR":
-          // Moderators can't move tasks, only monitor
-          return false;
-        case "ADMIN":
-          // Admins don't participate in projects
-          return false;
-        default:
-          return false;
+      // If the task is COMPLETED, only managers can move it
+      if (task.status === "COMPLETED") {
+        return userRole === "MANAGER";
       }
+
+      // All other tasks can be moved freely
+      return true;
     };
 
     if (canMoveTask()) {
@@ -401,29 +372,10 @@ const KanbanBoard = ({
   return (
     <>
       <Toaster position="bottom-right" reverseOrder={false} />
-      <div
-        className={`${hideHeader ? "p-2" : "p-4 sm:p-6"} min-h-[600px] overflow-auto`}
-      >
-        {/* Board Header - conditionally rendered */}
-        {!hideHeader && (
-          <div className="mb-6 sm:mb-8">
-            <h2
-              className={`text-2xl sm:text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"} mb-3`}
-            >
-              🎯 Project Board
-            </h2>
-            <p
-              className={`${isDark ? "text-gray-300" : "text-gray-600"} text-base sm:text-lg`}
-            >
-              {userRole === "USER" && "Manage your assigned tasks"}
-              {userRole === "MANAGER" &&
-                "Oversee project progress and approve tasks"}
-              {userRole === "MODERATOR" && "Monitor project activities"}
-              {userRole === "ADMIN" && "System overview"}
-            </p>
-          </div>
-        )}
 
+      <div
+        className={`${hideHeader ? "p-0" : "p-3 sm:p-4"} h-full flex flex-col overflow-hidden`}
+      >
         {/* Kanban Board */}
         <DndContext
           sensors={sensors}
@@ -453,9 +405,9 @@ const KanbanBoard = ({
         >
           {/* Mobile: Scrollable columns */}
           <div className="block lg:hidden">
-            <div className="flex gap-4 overflow-x-auto pb-6 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
+            <div className="flex gap-3 overflow-x-auto pb-5 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
               {columns.map((column) => (
-                <div key={column.id} className="flex-shrink-0 w-80 snap-start">
+                <div key={column.id} className="flex-shrink-0 w-72 snap-start">
                   <KanbanColumn
                     id={column.id}
                     title={column.title}
@@ -477,10 +429,10 @@ const KanbanBoard = ({
           </div>
 
           {/* Desktop: Enhanced grid layout */}
-          <div className="hidden lg:block">
-            <div className="grid grid-cols-4 gap-4 xl:gap-6">
+          <div className="hidden lg:block flex-1 h-full overflow-hidden">
+            <div className="grid grid-cols-4 gap-2.5 xl:gap-3 h-full">
               {columns.map((column) => (
-                <div key={column.id} className="min-w-0">
+                <div key={column.id} className="min-w-0 h-full">
                   <KanbanColumn
                     id={column.id}
                     title={column.title}
