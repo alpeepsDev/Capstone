@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../config/database.js";
 import os from "os";
-
-const prisma = new PrismaClient();
 
 class AdminService {
   // ==================== API MONITORING ====================
