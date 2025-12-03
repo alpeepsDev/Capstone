@@ -2,6 +2,13 @@ import pkg from "@prisma/client";
 const { PrismaClient } = pkg;
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { createNotification } from "./notification.controller.js";
+import {
+  emitTaskCreated,
+  emitTaskUpdated,
+  emitTaskMoved,
+  emitTaskDeleted,
+  emitCommentAdded,
+} from "../services/websocket.service.js";
 
 const prisma = new PrismaClient();
 
@@ -221,6 +228,10 @@ export const createTask = asyncHandler(async (req, res) => {
     message: "Task created successfully",
     data: task,
   });
+
+  // Emit real-time event
+  const io = req.app.get("io");
+  emitTaskCreated(io, projectId, task);
 });
 
 // Update task
@@ -344,6 +355,9 @@ export const updateTask = asyncHandler(async (req, res) => {
     message: "Task updated successfully",
     data: updatedTask,
   });
+
+  // Emit real-time event for task update
+  emitTaskUpdated(io, updatedTask.projectId, updatedTask);
 });
 
 // Move task (for Kanban board)
@@ -371,10 +385,12 @@ export const moveTask = asyncHandler(async (req, res) => {
 
   // Check move permissions based on role and task ownership
   const canMove = () => {
-    // If the task is currently COMPLETED, only managers can move it back
+    // If the task is currently COMPLETED, only managers, admins, OR the assignee can move it back
     if (task.status === "COMPLETED") {
       return (
-        task.project.managerId === req.user.id || req.user.role === "ADMIN"
+        task.project.managerId === req.user.id ||
+        req.user.role === "ADMIN" ||
+        task.assigneeId === req.user.id
       );
     }
 
@@ -433,6 +449,10 @@ export const moveTask = asyncHandler(async (req, res) => {
     message: "Task moved successfully",
     data: updatedTask,
   });
+
+  // Emit real-time event for task move
+  const io = req.app.get("io");
+  emitTaskMoved(io, updatedTask.projectId, updatedTask);
 });
 
 // Assign task to user
@@ -545,6 +565,10 @@ export const deleteTask = asyncHandler(async (req, res) => {
     success: true,
     message: "Task deleted successfully",
   });
+
+  // Emit real-time event for task deletion
+  const io = req.app.get("io");
+  emitTaskDeleted(io, task.projectId, id);
 });
 
 // Get task comments
@@ -576,6 +600,18 @@ export const addTaskComment = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { content } = req.body;
 
+  const task = await prisma.task.findUnique({
+    where: { id },
+    select: { projectId: true, title: true },
+  });
+
+  if (!task) {
+    return res.status(404).json({
+      success: false,
+      message: "Task not found",
+    });
+  }
+
   if (!content || content.trim().length === 0) {
     return res.status(400).json({
       success: false,
@@ -605,6 +641,44 @@ export const addTaskComment = asyncHandler(async (req, res) => {
     message: "Comment added successfully",
     data: comment,
   });
+
+  // Emit real-time event for new comment
+  const io = req.app.get("io");
+  emitCommentAdded(io, task.projectId, {
+    ...comment,
+    taskId: id,
+    projectId: task.projectId, // We need to fetch task to get projectId
+  });
+
+  // Handle mentions
+  const mentionRegex = /@(\w+)/g;
+  const mentions = [...content.matchAll(mentionRegex)];
+
+  if (mentions.length > 0) {
+    const usernames = mentions.map((match) => match[1]);
+
+    // Find users by username
+    const mentionedUsers = await prisma.user.findMany({
+      where: {
+        username: { in: usernames },
+      },
+    });
+
+    // Create notifications for mentioned users
+    for (const user of mentionedUsers) {
+      if (user.id !== req.user.id) {
+        await createNotification({
+          userId: user.id,
+          type: "MENTION",
+          title: "You were mentioned",
+          message: `${req.user.username} mentioned you in a comment on task "${task.title}"`,
+          taskId: id,
+          projectId: task.projectId,
+          io,
+        });
+      }
+    }
+  }
 });
 
 // Get tasks awaiting approval (status = DONE) for manager

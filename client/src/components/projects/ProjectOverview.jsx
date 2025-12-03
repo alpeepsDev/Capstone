@@ -41,7 +41,7 @@ const ProjectOverview = ({
   const getProjectProgress = (project) => {
     const projectTasks = tasks.filter((task) => task.projectId === project.id);
     const completedTasks = projectTasks.filter(
-      (task) => task.status === "COMPLETED",
+      (task) => task.status === "COMPLETED"
     );
     return projectTasks.length > 0
       ? Math.round((completedTasks.length / projectTasks.length) * 100)
@@ -126,7 +126,7 @@ const ProjectOverview = ({
                   <div className="text-2xl font-bold text-green-600">
                     {projects.reduce(
                       (sum, p) => sum + (p.members?.length || 0),
-                      0,
+                      0
                     )}
                   </div>
                   <div className="text-sm text-gray-600">Team Members</div>
@@ -146,8 +146,8 @@ const ProjectOverview = ({
                     {Math.round(
                       projects.reduce(
                         (sum, p) => sum + getProjectProgress(p),
-                        0,
-                      ) / (projects.length || 1),
+                        0
+                      ) / (projects.length || 1)
                     )}
                     %
                   </div>
@@ -181,10 +181,10 @@ const ProjectOverview = ({
                     const progress = getProjectProgress(project);
                     const projectTasks = getProjectTasks(project.id);
                     const pendingTasks = projectTasks.filter(
-                      (t) => t.status === "PENDING",
+                      (t) => t.status === "PENDING"
                     ).length;
                     const completedTasks = projectTasks.filter(
-                      (t) => t.status === "COMPLETED",
+                      (t) => t.status === "COMPLETED"
                     ).length;
 
                     return (
@@ -254,6 +254,7 @@ const ProjectOverview = ({
             onTaskDelete={onTaskDelete}
             onTaskClick={onTaskClick}
             onAddTask={onAddTask}
+            projectId={selectedProject.id}
           />
         )}
 

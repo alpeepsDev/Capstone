@@ -5,6 +5,20 @@ class WebSocketService {
     this.socket = null;
     this.isConnected = false;
     this.currentToken = null;
+    this.currentProjectId = null;
+    this.listeners = new Set();
+  }
+
+  addConnectionListener(callback) {
+    this.listeners.add(callback);
+    // Immediately call with current status
+    callback(this.isConnected);
+    return () => this.listeners.delete(callback);
+  }
+
+  emitConnectionChange(isConnected) {
+    this.isConnected = isConnected;
+    this.listeners.forEach((listener) => listener(isConnected));
   }
 
   connect(token) {
@@ -35,25 +49,29 @@ class WebSocketService {
             token: token,
           },
           autoConnect: true,
-          reconnection: true,
-          reconnectionDelay: 1000,
           reconnectionAttempts: 5,
         }
       );
 
       this.socket.on("connect", () => {
         console.log("✅ Connected to WebSocket server");
-        this.isConnected = true;
+        this.emitConnectionChange(true);
+
+        // Rejoin project room if one was selected
+        if (this.currentProjectId) {
+          console.log(`🔄 Rejoining project room: ${this.currentProjectId}`);
+          this.socket.emit("join-project", this.currentProjectId);
+        }
       });
 
       this.socket.on("disconnect", (reason) => {
         console.log("❌ Disconnected from WebSocket server:", reason);
-        this.isConnected = false;
+        this.emitConnectionChange(false);
       });
 
       this.socket.on("connect_error", (error) => {
         console.error("❌ WebSocket connection error:", error.message);
-        this.isConnected = false;
+        this.emitConnectionChange(false);
 
         // If authentication error, handle token refresh
         if (
@@ -81,11 +99,11 @@ class WebSocketService {
       this.socket.on("notification", (notification) => {
         console.log("📢 Real-time notification received:", notification);
         // Emit custom event for notification components to listen to
-        window.dispatchEvent(
-          new CustomEvent("realtimeNotification", {
-            detail: notification,
-          })
-        );
+        const event = new CustomEvent("realtimeNotification", {
+          detail: notification,
+        });
+        window.dispatchEvent(event);
+        console.log("📢 Dispatched realtimeNotification event");
       });
 
       return this.socket;
@@ -99,22 +117,31 @@ class WebSocketService {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
-      this.isConnected = false;
+      this.emitConnectionChange(false);
       this.currentToken = null;
+      // Don't clear currentProjectId here, so we can rejoin if reconnected
       console.log("🔌 WebSocket disconnected");
     }
   }
-
-  // Join project room (for managers)
   joinProject(projectId) {
+    this.currentProjectId = projectId;
+
     if (this.socket?.connected) {
       this.socket.emit("join-project", projectId);
       console.log(`🏠 Joined project room: ${projectId}`);
+    } else {
+      console.log(
+        `⏳ Socket not connected, queued join for project: ${projectId}`
+      );
     }
   }
 
   // Leave project room
   leaveProject(projectId) {
+    if (this.currentProjectId === projectId) {
+      this.currentProjectId = null;
+    }
+
     if (this.socket?.connected) {
       this.socket.emit("leave-project", projectId);
       console.log(`🚪 Left project room: ${projectId}`);
@@ -132,6 +159,37 @@ class WebSocketService {
   offNotification(callback) {
     if (this.socket) {
       this.socket.off("notification", callback);
+    }
+  }
+
+  // Task events
+  onTaskCreated(callback) {
+    if (this.socket) this.socket.on("task-created", callback);
+  }
+
+  onTaskUpdated(callback) {
+    if (this.socket) this.socket.on("task-updated", callback);
+  }
+
+  onTaskMoved(callback) {
+    if (this.socket) this.socket.on("task-moved", callback);
+  }
+
+  onTaskDeleted(callback) {
+    if (this.socket) this.socket.on("task-deleted", callback);
+  }
+
+  onCommentAdded(callback) {
+    if (this.socket) this.socket.on("comment-added", callback);
+  }
+
+  offTaskEvents() {
+    if (this.socket) {
+      this.socket.off("task-created");
+      this.socket.off("task-updated");
+      this.socket.off("task-moved");
+      this.socket.off("task-deleted");
+      this.socket.off("comment-added");
     }
   }
 

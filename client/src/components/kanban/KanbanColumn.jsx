@@ -27,7 +27,7 @@ const KanbanColumn = ({
 
   const getColumnStyles = () => {
     const baseStyles = `kanban-column ${color || ""} rounded-md p-3 sm:p-4 h-[560px] w-full border ${isDark ? "border-gray-600" : "border-gray-300"} transition-all duration-150 flex flex-col`;
-    return isOver ? `${baseStyles} drop-zone-active` : baseStyles;
+    return isOver ? `${baseStyles} ring-2 ring-blue-400` : baseStyles;
   };
 
   const getTaskCount = () => tasks.length;
@@ -38,7 +38,7 @@ const KanbanColumn = ({
   };
 
   return (
-    <div className={getColumnStyles()}>
+    <div ref={setNodeRef} className={getColumnStyles()}>
       {/* Column Header */}
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className="flex items-center gap-2">
@@ -90,11 +90,9 @@ const KanbanColumn = ({
         disabled={false}
       >
         <div
-          ref={setNodeRef}
-          className={`kanban-task-list sortable-context space-y-2 sm:space-y-2.5 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent 
-            ${isOver ? `ring ring-blue-400 ${isDark ? "ring-blue-300" : "ring-blue-500"} bg-opacity-10 ${isDark ? "bg-blue-900" : "bg-blue-50"}` : ""} 
+          className={`kanban-task-list space-y-2 sm:space-y-2.5 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent 
+            ${isOver ? `bg-opacity-10 ${isDark ? "bg-blue-900" : "bg-blue-50"}` : ""} 
             transition-all duration-150 rounded-md`}
-          data-over={isOver}
           data-column-id={id}
           style={{
             maxHeight: "calc(100% - 68px)",

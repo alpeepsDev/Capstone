@@ -3,9 +3,7 @@ import { toast, Toaster } from "react-hot-toast";
 import {
   DndContext,
   DragOverlay,
-  closestCenter,
   pointerWithin,
-  rectIntersection,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -20,6 +18,7 @@ import {
 import { useTheme } from "../../context";
 import KanbanColumn from "./KanbanColumn";
 import TaskCard from "./TaskCard";
+import webSocketService from "../../services/websocket.service";
 
 const KanbanBoard = ({
   tasks,
@@ -32,98 +31,24 @@ const KanbanBoard = ({
   onAddTask,
   onRequestExchange,
   hideHeader = false, // New prop to hide the header
+  projectId, // Add projectId prop
 }) => {
   const [activeTask, setActiveTask] = useState(null);
   const { isDark } = useTheme();
+  // Removed localTasks duplicate state - using tasks prop directly
+  const [isConnected, setIsConnected] = useState(webSocketService.isConnected);
 
-  // Ensure tasks is always an array
+  // Subscribe to connection status changes
+  React.useEffect(() => {
+    const unsubscribe = webSocketService.addConnectionListener((connected) => {
+      setIsConnected(connected);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Real-time updates handled by useTasks hook now
+  // Use tasks prop directly without duplication
   const safeTasks = Array.isArray(tasks) ? tasks : [];
-
-  // Enhanced collision detection for better task-to-task and column interactions
-  const customCollisionDetection = (args) => {
-    const { active, pointerCoordinates } = args;
-
-    if (!active || !pointerCoordinates) return [];
-
-    // Get all droppables
-    const { droppableRects, droppableContainers } = args;
-
-    // First, check for direct pointer collisions with tasks
-    const pointerCollisions = pointerWithin(args);
-    const columns = ["PENDING", "IN_PROGRESS", "DONE", "COMPLETED"];
-
-    // Filter out column collisions to only get task collisions
-    const taskCollisions = pointerCollisions.filter(
-      (collision) => !columns.includes(collision.id)
-    );
-
-    // If we have task collisions, return the closest one
-    if (taskCollisions.length > 0) {
-      // Sort by distance to pointer and return the closest
-      const sortedTaskCollisions = taskCollisions.sort((a, b) => {
-        const rectA = droppableRects.get(a.id);
-        const rectB = droppableRects.get(b.id);
-        if (!rectA || !rectB) return 0;
-
-        const distanceA = Math.sqrt(
-          Math.pow(pointerCoordinates.x - (rectA.left + rectA.width / 2), 2) +
-            Math.pow(pointerCoordinates.y - (rectA.top + rectA.height / 2), 2)
-        );
-        const distanceB = Math.sqrt(
-          Math.pow(pointerCoordinates.x - (rectB.left + rectB.width / 2), 2) +
-            Math.pow(pointerCoordinates.y - (rectB.top + rectB.height / 2), 2)
-        );
-
-        return distanceA - distanceB;
-      });
-
-      return [sortedTaskCollisions[0]];
-    }
-
-    // If no task collisions, try rectangle intersection for broader detection
-    const rectCollisions = rectIntersection(args);
-    const rectTaskCollisions = rectCollisions.filter(
-      (collision) => !columns.includes(collision.id)
-    );
-
-    if (rectTaskCollisions.length > 0) {
-      return [rectTaskCollisions[0]];
-    }
-
-    // For column detection, use a more forgiving approach with expanded zones
-    const columnCollisions = [];
-
-    // Check if pointer is over any column with expanded detection area
-    for (const columnId of columns) {
-      const columnRect = droppableRects.get(columnId);
-      if (columnRect) {
-        // Expand the detection area by 20px on all sides for easier dropping
-        const expandedRect = {
-          left: columnRect.left - 20,
-          right: columnRect.right + 20,
-          top: columnRect.top - 20,
-          bottom: columnRect.bottom + 20,
-        };
-
-        const isOverColumn =
-          pointerCoordinates.x >= expandedRect.left &&
-          pointerCoordinates.x <= expandedRect.right &&
-          pointerCoordinates.y >= expandedRect.top &&
-          pointerCoordinates.y <= expandedRect.bottom;
-
-        if (isOverColumn) {
-          columnCollisions.push({ id: columnId });
-        }
-      }
-    }
-
-    if (columnCollisions.length > 0) {
-      return columnCollisions;
-    }
-
-    // Last resort: closest center
-    return closestCenter(args);
-  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -376,10 +301,17 @@ const KanbanBoard = ({
       <div
         className={`${hideHeader ? "p-0" : "p-3 sm:p-4"} h-full flex flex-col overflow-hidden`}
       >
+        {/* Connection Status Indicator (Debug) */}
+        <div className="absolute top-2 right-2 z-50 pointer-events-none opacity-50">
+          <span
+            className={`inline-block w-2 h-2 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`}
+            title={isConnected ? "Connected" : "Disconnected"}
+          ></span>
+        </div>
         {/* Kanban Board */}
         <DndContext
           sensors={sensors}
-          collisionDetection={customCollisionDetection}
+          collisionDetection={pointerWithin}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
@@ -463,6 +395,7 @@ const KanbanBoard = ({
                 onDelete={() => {}}
                 onTaskClick={() => {}}
                 onRequestExchange={() => {}}
+                isOverlay
               />
             ) : null}
           </DragOverlay>

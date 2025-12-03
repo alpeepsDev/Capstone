@@ -1,14 +1,20 @@
-import React, { useState } from "react";
-import { toast } from "react-hot-toast";
+import React, { useState, useEffect, Suspense } from "react";
+import { toast, Toaster } from "react-hot-toast";
 import { Card } from "../ui";
-import KanbanBoard from "../kanban/KanbanBoard";
-import { ModernGanttChart } from "../gantt";
-import { CalendarView } from "../calendar";
+// Lazy load heavy view components for better performance
+const KanbanBoard = React.lazy(() => import("../kanban/KanbanBoard"));
+const ModernGanttChart = React.lazy(() =>
+  import("../gantt").then((module) => ({ default: module.ModernGanttChart }))
+);
+const CalendarView = React.lazy(() =>
+  import("../calendar").then((module) => ({ default: module.CalendarView }))
+);
 import TaskDetailModal from "../modals/TaskDetailModal";
 import TaskExchangeModal from "../modals/TaskExchangeModal";
 import { UserAnalytics } from "../analytics";
 import { useTasks, useTaskExchanges } from "../../hooks";
 import { useTheme } from "../../context";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Grid3X3,
   List,
@@ -20,7 +26,16 @@ import {
   CheckCircle,
   AlertCircle,
   Plus,
-} from "lucide-react";
+} from "../ui/icons";
+
+import { useSearchParams } from "react-router-dom"; // Add import
+
+// Loading component for lazy-loaded views
+const ViewLoadingSpinner = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+);
 
 const UserDashboard = ({
   user,
@@ -33,6 +48,7 @@ const UserDashboard = ({
   setActiveView,
 }) => {
   const { isDark } = useTheme();
+  const [searchParams, setSearchParams] = useSearchParams(); // Add searchParams
   // Removed local state for sidebar, projects, activeView, selectedProjectId
   const [taskDetailModal, setTaskDetailModal] = useState({
     isOpen: false,
@@ -60,6 +76,38 @@ const UserDashboard = ({
     rejectExchange,
     requestExchange,
   } = useTaskExchanges();
+
+  // Handle URL params for direct task access (notifications)
+  useEffect(() => {
+    const projectIdParam = searchParams.get("projectId");
+    const taskIdParam = searchParams.get("taskId");
+
+    if (projectIdParam && taskIdParam && projects) {
+      // 1. Switch project if needed
+      if (selectedProjectId !== projectIdParam) {
+        setSelectedProjectId(projectIdParam);
+      }
+    }
+  }, [searchParams, projects, selectedProjectId, setSelectedProjectId]);
+
+  // Separate effect to open modal once tasks are loaded
+  useEffect(() => {
+    const taskIdParam = searchParams.get("taskId");
+    const projectIdParam = searchParams.get("projectId");
+
+    if (
+      taskIdParam &&
+      projectIdParam &&
+      selectedProjectId === projectIdParam &&
+      tasks &&
+      tasks.length > 0
+    ) {
+      const taskToOpen = tasks.find((t) => t.id === taskIdParam);
+      if (taskToOpen) {
+        setTaskDetailModal({ isOpen: true, task: taskToOpen });
+      }
+    }
+  }, [tasks, searchParams, selectedProjectId]);
 
   // Loading state for user
   if (!user) {
@@ -234,6 +282,7 @@ const UserDashboard = ({
 
   return (
     <div className={`flex h-full ${isDark ? "bg-gray-900" : "bg-gray-50"}`}>
+      <Toaster position="bottom-right" reverseOrder={false} />
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Content Area */}
@@ -256,10 +305,27 @@ const UserDashboard = ({
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <motion.div
+                  variants={{
+                    hidden: { opacity: 0 },
+                    show: {
+                      opacity: 1,
+                      transition: {
+                        staggerChildren: 0.03, // Optimized from 0.1 for faster perceived load
+                      },
+                    },
+                  }}
+                  initial="hidden"
+                  animate="show"
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                >
                   {projects?.map((project) => (
-                    <div
+                    <motion.div
                       key={project.id}
+                      variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        show: { opacity: 1, y: 0 },
+                      }}
                       onClick={() => setSelectedProjectId(project.id)}
                       className={`group relative rounded-xl border p-6 cursor-pointer transition-all duration-300 hover:shadow-lg ${
                         isDark
@@ -332,11 +398,15 @@ const UserDashboard = ({
                           {new Date(project.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
 
                   {/* Create New Project Card (Optional placeholder) */}
-                  <div
+                  <motion.div
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      show: { opacity: 1, y: 0 },
+                    }}
                     className={`rounded-xl border-2 border-dashed flex flex-col items-center justify-center p-6 text-center transition-colors ${
                       isDark
                         ? "border-gray-700 hover:border-gray-600 hover:bg-gray-800/50"
@@ -360,8 +430,8 @@ const UserDashboard = ({
                     >
                       Contact your admin to create a new project
                     </p>
-                  </div>
-                </div>
+                  </motion.div>
+                </motion.div>
               </div>
             </div>
           ) : (
@@ -379,16 +449,27 @@ const UserDashboard = ({
                   <button
                     key={id}
                     onClick={() => handleViewChange(id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors z-10 ${
                       activeView === id
                         ? isDark
-                          ? "bg-blue-600 text-white shadow-lg"
-                          : "bg-blue-600 text-white shadow-lg"
+                          ? "text-white"
+                          : "text-white"
                         : isDark
                           ? "text-gray-400 hover:text-white"
                           : "text-gray-600 hover:text-gray-900"
                     }`}
                   >
+                    {activeView === id && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className="absolute inset-0 bg-blue-600 rounded-md -z-10"
+                        transition={{
+                          type: "spring",
+                          stiffness: 500,
+                          damping: 30,
+                        }}
+                      />
+                    )}
                     <Icon className="w-3.5 h-3.5" />
                     {label}
                   </button>
@@ -396,57 +477,75 @@ const UserDashboard = ({
               </div>
 
               {/* Views */}
-              {activeView === "table" && (
-                <TableView
-                  tasks={allProjectTasks}
-                  user={user}
-                  isDark={isDark}
-                  onTaskClick={handleTaskClick}
-                  onStatusChange={handleTaskMove}
-                />
-              )}
-
-              {activeView === "gantt" && (
-                <div
-                  className={`flex-1 rounded-lg border ${
-                    isDark
-                      ? "bg-gray-800 border-gray-700"
-                      : "bg-white border-gray-200"
-                  } overflow-hidden`}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeView}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 overflow-hidden min-h-0 flex flex-col"
                 >
-                  <ModernGanttChart
-                    tasks={allProjectTasks}
-                    onTaskClick={handleTaskClick}
-                  />
-                </div>
-              )}
+                  {activeView === "table" && (
+                    <TableView
+                      tasks={allProjectTasks}
+                      user={user}
+                      isDark={isDark}
+                      onTaskClick={handleTaskClick}
+                      onStatusChange={handleTaskMove}
+                    />
+                  )}
 
-              {activeView === "kanban" && (
-                <div className="flex-1 overflow-hidden min-h-0">
-                  <KanbanBoard
-                    tasks={allProjectTasks}
-                    onTaskMove={handleTaskMove}
-                    onTaskClick={handleTaskClick}
-                    onTaskDelete={handleTaskDelete}
-                    hideHeader={true}
-                  />
-                </div>
-              )}
+                  {activeView === "gantt" && (
+                    <Suspense fallback={<ViewLoadingSpinner />}>
+                      <div
+                        className={`flex-1 rounded-lg border ${
+                          isDark
+                            ? "bg-gray-800 border-gray-700"
+                            : "bg-white border-gray-200"
+                        } overflow-hidden`}
+                      >
+                        <ModernGanttChart
+                          tasks={allProjectTasks}
+                          onTaskClick={handleTaskClick}
+                        />
+                      </div>
+                    </Suspense>
+                  )}
 
-              {activeView === "calendar" && (
-                <div
-                  className={`flex-1 overflow-hidden rounded-lg border ${
-                    isDark
-                      ? "bg-gray-800 border-gray-700"
-                      : "bg-white border-gray-200"
-                  }`}
-                >
-                  <CalendarView
-                    tasks={allProjectTasks}
-                    onTaskClick={handleTaskClick}
-                  />
-                </div>
-              )}
+                  {activeView === "kanban" && (
+                    <Suspense fallback={<ViewLoadingSpinner />}>
+                      <div className="flex-1 overflow-hidden min-h-0">
+                        <KanbanBoard
+                          tasks={allProjectTasks}
+                          onTaskMove={handleTaskMove}
+                          onTaskClick={handleTaskClick}
+                          onTaskDelete={handleTaskDelete}
+                          hideHeader={true}
+                          projectId={selectedProjectId}
+                        />
+                      </div>
+                    </Suspense>
+                  )}
+
+                  {activeView === "calendar" && (
+                    <Suspense fallback={<ViewLoadingSpinner />}>
+                      <div
+                        className={`flex-1 overflow-hidden rounded-lg border ${
+                          isDark
+                            ? "bg-gray-800 border-gray-700"
+                            : "bg-white border-gray-200"
+                        }`}
+                      >
+                        <CalendarView
+                          tasks={allProjectTasks}
+                          onTaskClick={handleTaskClick}
+                        />
+                      </div>
+                    </Suspense>
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
           )}
         </div>
@@ -483,7 +582,7 @@ const TableView = ({ tasks, user, isDark, onTaskClick, onStatusChange }) => {
       case "IN_PROGRESS":
         return "bg-blue-100 text-blue-800";
       case "DONE":
-        return "bg-orange-100 text-orange-800";
+        return "bg-green-100 text-green-800";
       case "COMPLETED":
         return "bg-green-100 text-green-800";
       default:
@@ -580,6 +679,7 @@ const TableView = ({ tasks, user, isDark, onTaskClick, onStatusChange }) => {
                   <td className="px-4 py-3">
                     <select
                       value={task.status}
+                      onClick={(e) => e.stopPropagation()}
                       onChange={(e) => {
                         e.stopPropagation();
                         onStatusChange(task.id, e.target.value);

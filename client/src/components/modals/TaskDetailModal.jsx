@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Button, Badge } from "../ui";
+import MentionInput from "../ui/MentionInput";
 import { toast } from "react-hot-toast";
 import { tasksApi } from "../../api/tasks";
+import { projectsApi } from "../../api/projects";
 import { useTheme } from "../../context";
+import webSocketService from "../../services/websocket.service";
 
 const TaskDetailModal = ({ task, isOpen, onClose }) => {
   const { isDark } = useTheme();
@@ -10,6 +13,10 @@ const TaskDetailModal = ({ task, isOpen, onClose }) => {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
+  const [projectMembers, setProjectMembers] = useState([]);
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [cursorPosition, setCursorPosition] = useState(0);
 
   // Handle ESC key press
   useEffect(() => {
@@ -28,27 +35,106 @@ const TaskDetailModal = ({ task, isOpen, onClose }) => {
     };
   }, [isOpen, onClose]);
 
-  // Load comments when task changes
-  const loadComments = useCallback(async () => {
+  // Load comments and project members when task changes
+  const loadData = useCallback(async () => {
     if (!task?.id) return;
 
     try {
       setCommentsLoading(true);
-      const response = await tasksApi.getComments(task.id);
-      setComments(response.data || []);
+      const [commentsResponse, projectResponse] = await Promise.all([
+        tasksApi.getComments(task.id),
+        task.projectId
+          ? projectsApi.getProject(task.projectId)
+          : Promise.resolve({ data: { members: [] } }),
+      ]);
+
+      setComments(commentsResponse.data || []);
+      if (projectResponse.data?.members) {
+        // Handle both flat (mock) and nested (Prisma) structures
+        const members = projectResponse.data.members.map((m) => m.user || m);
+        setProjectMembers(members);
+      }
     } catch (error) {
-      console.error("Error loading comments:", error);
-      toast.error("Failed to load comments");
+      console.error("Error loading data:", error);
+      toast.error("Failed to load task details");
     } finally {
       setCommentsLoading(false);
     }
-  }, [task?.id]);
+  }, [task?.id, task?.projectId]);
 
   useEffect(() => {
     if (task?.id) {
-      loadComments();
+      loadData();
     }
-  }, [task?.id, loadComments]);
+  }, [task?.id, loadData]);
+
+  // Real-time comment updates
+  useEffect(() => {
+    const handleCommentAdded = (newComment) => {
+      if (newComment.taskId === task?.id) {
+        setComments((prev) => {
+          // Check if comment already exists
+          const exists = prev.some((c) => c.id === newComment.id);
+          if (exists) {
+            return prev;
+          }
+          return [newComment, ...prev];
+        });
+      }
+    };
+
+    webSocketService.onCommentAdded(handleCommentAdded);
+
+    return () => {
+      // We need a way to remove the specific listener.
+      // Since webSocketService.onCommentAdded just calls socket.on,
+      // we should use socket.off if the service doesn't expose an off method for this specific event.
+      // But looking at previous code, it seems we might need to implement offCommentAdded or use socket directly.
+      if (webSocketService.socket) {
+        webSocketService.socket.off("comment-added", handleCommentAdded);
+      }
+    };
+  }, [task?.id]);
+
+  const handleCommentChange = (e) => {
+    const value = e.target.value;
+    const position = e.target.selectionStart;
+    setNewComment(value);
+    setCursorPosition(position);
+
+    // Check for mention trigger
+    const lastAtPos = value.lastIndexOf("@", position - 1);
+    if (lastAtPos !== -1) {
+      const textAfterAt = value.substring(lastAtPos + 1, position);
+      if (!textAfterAt.includes(" ") && !textAfterAt.includes("\n")) {
+        setShowMentions(true);
+        setMentionQuery(textAfterAt);
+        return;
+      }
+    }
+    setShowMentions(false);
+  };
+
+  const insertMention = (username) => {
+    const lastAtPos = newComment.lastIndexOf("@", cursorPosition - 1);
+    if (lastAtPos !== -1) {
+      const newValue =
+        newComment.substring(0, lastAtPos) +
+        `@${username} ` +
+        newComment.substring(cursorPosition);
+      setNewComment(newValue);
+      setShowMentions(false);
+      // Focus back to textarea would be ideal here
+    }
+  };
+
+  const filteredMembers = projectMembers.filter(
+    (member) =>
+      (member.username?.toLowerCase() || "").includes(
+        mentionQuery.toLowerCase()
+      ) ||
+      (member.name?.toLowerCase() || "").includes(mentionQuery.toLowerCase())
+  );
 
   const handleAddComment = async (e) => {
     if (e) e.preventDefault();
@@ -62,7 +148,12 @@ const TaskDetailModal = ({ task, isOpen, onClose }) => {
       });
 
       if (response.data) {
-        setComments((prev) => [...prev, response.data]);
+        // Comment is already added via socket event, but just in case or for immediate feedback if socket is slow
+        // We check if it's already there to avoid duplicates
+        setComments((prev) => {
+          if (prev.some((c) => c.id === response.data.id)) return prev;
+          return [response.data, ...prev];
+        });
         setNewComment("");
         toast.success("Comment added successfully");
       }
@@ -115,18 +206,13 @@ const TaskDetailModal = ({ task, isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Glassmorphism Backdrop */}
-      <div
-        className="absolute inset-0 backdrop-blur-md bg-black/30"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      {/* Modal with Glassmorphism Effect - Fixed height with no scroll */}
+      {/* Modal - Solid Background */}
       <div
         className={`relative ${
-          isDark
-            ? "bg-gray-900/90 border-gray-700/50"
-            : "bg-white/90 border-gray-200/50"
-        } backdrop-blur-xl border rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden`}
+          isDark ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
+        } border rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden`}
       >
         <div className="p-6 flex-shrink-0">
           {/* Header */}
@@ -246,7 +332,7 @@ const TaskDetailModal = ({ task, isOpen, onClose }) => {
         </div>
 
         {/* Comments Section - Scrollable */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0">
           <div className="px-6 py-2 border-t border-gray-200/50 flex-shrink-0">
             <h3
               className={`font-semibold ${isDark ? "text-white" : "text-gray-900"} mb-4`}
@@ -256,25 +342,23 @@ const TaskDetailModal = ({ task, isOpen, onClose }) => {
 
             {/* Add Comment Form */}
             <form onSubmit={handleAddComment} className="mb-4">
-              <div className="flex gap-3">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyPress={handleCommentKeyPress}
-                  placeholder="Add a comment... (Press Enter to submit, Shift+Enter for new line)"
-                  rows={2}
-                  className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
-                    isDark
-                      ? "border-gray-600 bg-gray-800 text-white placeholder-gray-400"
-                      : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
-                  }`}
-                  style={{ userSelect: "text", WebkitUserSelect: "text" }}
-                />
+              <div className="flex gap-3 items-start">
+                <div className="flex-1">
+                  <MentionInput
+                    value={newComment}
+                    onChange={setNewComment}
+                    onSubmit={handleAddComment}
+                    placeholder="Add a comment... (@ to mention)"
+                    users={projectMembers}
+                    disabled={loading}
+                  />
+                </div>
                 <Button
                   type="submit"
                   variant="primary"
                   disabled={loading || !newComment.trim()}
                   size="sm"
+                  className="mt-0.5"
                 >
                   {loading ? "Adding..." : "Add"}
                 </Button>

@@ -22,6 +22,7 @@ const TaskCard = ({
   onTaskClick,
   onRequestExchange,
   userRole,
+  isOverlay,
 }) => {
   const {
     attributes,
@@ -30,39 +31,25 @@ const TaskCard = ({
     transform,
     transition,
     isDragging,
-    isSorting,
   } = useSortable({
     id: task.id,
-    disabled: task.status === "COMPLETED", // Disable dragging for completed tasks
-    animateLayoutChanges: ({ isSorting, wasDragging }) => {
-      // Always animate layout changes for smooth sliding
-      return isSorting || wasDragging ? true : true;
-    },
-    transition: {
-      duration: 250, // Slightly faster for snappier feel
-      easing: "cubic-bezier(0.25, 0.46, 0.45, 0.94)", // Smooth ease-out
-    },
+    disabled: task.status === "COMPLETED",
   });
 
   const { isDark } = useTheme();
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition: isDragging
-      ? "none"
-      : transition || "transform 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-    opacity: isDragging ? 0.8 : task.status === "COMPLETED" ? 0.9 : 1,
-    cursor:
-      task.status === "COMPLETED"
-        ? "default"
-        : isDragging
-          ? "grabbing"
-          : "grab",
-    zIndex: isDragging ? 1000 : isSorting ? 10 : 1,
-    scale: isDragging ? 1.05 : 1,
-    boxShadow: isDragging
-      ? "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
-      : undefined,
+    transition,
+    opacity: isDragging ? 0.4 : task.status === "COMPLETED" ? 0.9 : 1,
+    touchAction: "none",
+    ...(isOverlay && {
+      transform: "rotate(3deg) scale(1.05)",
+      boxShadow:
+        "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+      cursor: "grabbing",
+      opacity: 1,
+    }),
   };
 
   const priorityColors = {
@@ -84,10 +71,9 @@ const TaskCard = ({
       style={style}
       data-id={task.id}
       data-status={task.status}
-      data-sorting={isSorting}
       {...(task.status === "COMPLETED" ? {} : attributes)}
       {...(task.status === "COMPLETED" ? {} : listeners)}
-      className={`task-card dndkit-sortable-item ${isDragging ? "dragging" : ""} ${isSorting ? "sorting" : ""} ${isDark ? "bg-gray-700 border-gray-600" : "bg-white border-gray-200"} rounded-md border shadow-sm p-3 mb-2.5 transition-all duration-200 ease-out ${!isDragging ? "shadow-sm hover:shadow-md" : ""} relative group ${task.status === "COMPLETED" ? "opacity-90" : "cursor-grab active:cursor-grabbing"}`}
+      className={`task-card ${isDark ? "bg-gray-700 border-gray-600" : "bg-white border-gray-200"} rounded-md border shadow-sm p-3 mb-2.5 ${!isDragging ? "hover:shadow-md" : ""} relative group ${task.status === "COMPLETED" ? "opacity-90" : "cursor-grab active:cursor-grabbing"}`}
     >
       {/* Drag Handle - Visual indicator only */}
       <div

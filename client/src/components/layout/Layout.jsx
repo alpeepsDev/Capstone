@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toast } from "react-hot-toast";
 import { useTheme } from "../../context";
 import { Header, Sidebar } from "../navigation";
 import { ThemeToggle } from "../ui";
@@ -47,6 +48,65 @@ const Layout = ({
     };
     return descriptions[view] || "Current Section";
   };
+
+  // Global notification listener
+  React.useEffect(() => {
+    const handleRealtimeNotification = (event) => {
+      const notification = event.detail;
+
+      // Show toast based on notification type
+      if (notification.type === "MENTION") {
+        toast(
+          (t) => (
+            <div
+              className="flex items-start gap-3"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              <div className="flex-1">
+                <p className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                  {notification.title}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {notification.message}
+                </p>
+              </div>
+            </div>
+          ),
+          {
+            duration: 5000,
+            position: "top-right",
+            icon: "👋",
+            style: {
+              background: isDark ? "#1f2937" : "#ffffff",
+              color: isDark ? "#ffffff" : "#111827",
+              border: isDark ? "1px solid #374151" : "1px solid #e5e7eb",
+            },
+          }
+        );
+      } else if (notification.type === "TASK_CHANGES_REQUESTED") {
+        toast.error(notification.message, {
+          duration: 5000,
+          position: "top-right",
+        });
+      } else {
+        // Default notification toast
+        toast(notification.message, {
+          duration: 4000,
+          position: "top-right",
+          icon: "📢",
+        });
+      }
+    };
+
+    window.addEventListener("realtimeNotification", handleRealtimeNotification);
+
+    return () => {
+      window.removeEventListener(
+        "realtimeNotification",
+        handleRealtimeNotification
+      );
+    };
+  }, [isDark]);
 
   const renderContent = () => {
     switch (currentActiveView) {

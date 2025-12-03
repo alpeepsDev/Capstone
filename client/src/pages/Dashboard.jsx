@@ -23,6 +23,8 @@ const Dashboard = () => {
   const initialSelectionMade = React.useRef(false);
 
   useEffect(() => {
+    // Auto-selection disabled to show project selection screen with animation
+    /*
     if (
       user?.role === "USER" &&
       projects &&
@@ -33,6 +35,7 @@ const Dashboard = () => {
       setSelectedProjectId(projects[0].id);
       initialSelectionMade.current = true;
     }
+    */
   }, [projects, selectedProjectId, user]);
 
   const renderRoleDashboard = () => {

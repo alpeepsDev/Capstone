@@ -1,0 +1,33 @@
+// Centralized icon exports for better tree-shaking
+// Import only the icons used in the application to reduce bundle size
+export { Grid3x3 as Grid3X3 } from "lucide-react";
+export { List } from "lucide-react";
+export { BarChart3 } from "lucide-react";
+export { Calendar } from "lucide-react";
+export { Zap } from "lucide-react";
+export { ArrowRight } from "lucide-react";
+export { Clock } from "lucide-react";
+export { CheckCircle } from "lucide-react";
+export { AlertCircle } from "lucide-react";
+export { Plus } from "lucide-react";
+export { Search } from "lucide-react";
+export { Bell } from "lucide-react";
+export { User } from "lucide-react";
+export { Settings } from "lucide-react";
+export { LogOut } from "lucide-react";
+export { Edit } from "lucide-react";
+export { Trash2 } from "lucide-react";
+export { MoreVertical } from "lucide-react";
+export { X } from "lucide-react";
+export { ChevronDown } from "lucide-react";
+export { ChevronRight } from "lucide-react";
+export { Menu } from "lucide-react";
+export { Moon } from "lucide-react";
+export { Sun } from "lucide-react";
+export { Filter } from "lucide-react";
+export { Download } from "lucide-react";
+export { Upload } from "lucide-react";
+export { Send } from "lucide-react";
+export { Pencil } from "lucide-react";
+export { Eye } from "lucide-react";
+export { EyeOff } from "lucide-react";

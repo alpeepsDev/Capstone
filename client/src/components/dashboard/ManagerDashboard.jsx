@@ -16,7 +16,10 @@ import { projectsApi } from "../../api/projects";
 import { tasksApi } from "../../api/tasks";
 import { exchangesApi } from "../../api/exchanges";
 
+import { useSearchParams } from "react-router-dom"; // Add import
+
 const ManagerDashboard = ({ user }) => {
+  const [searchParams, setSearchParams] = useSearchParams(); // Add searchParams
   const [activeView, setActiveView] = useState("projects"); // Ensure it starts with projects
   const [selectedProject, setSelectedProject] = useState(null); // Ensure no project is selected initially
   const [allUsers, setAllUsers] = useState([]);
@@ -62,6 +65,41 @@ const ManagerDashboard = ({ user }) => {
     getProjectTasks,
   } = useManagerDashboard();
 
+  // Handle URL params for direct task access
+  useEffect(() => {
+    const projectIdParam = searchParams.get("projectId");
+    const taskIdParam = searchParams.get("taskId");
+
+    if (projectIdParam && taskIdParam && projects) {
+      // 1. Select project if not selected
+      if (selectedProject?.id !== projectIdParam) {
+        const projectToSelect = projects.find((p) => p.id === projectIdParam);
+        if (projectToSelect) {
+          setSelectedProject(projectToSelect);
+          setActiveView("kanban");
+        }
+      }
+    }
+  }, [searchParams, projects, selectedProject]);
+
+  // Open modal when task is available
+  useEffect(() => {
+    const taskIdParam = searchParams.get("taskId");
+    const projectIdParam = searchParams.get("projectId");
+
+    if (
+      taskIdParam &&
+      projectIdParam &&
+      selectedProject?.id === projectIdParam
+    ) {
+      // Try to find in selectedProjectTasks first (if loaded)
+      // But we don't have direct access to them here easily without the hook result
+      // However, we have allTasks from useManagerDashboard which might contain it?
+      // Actually, useTasks hook below fetches tasks for selected project.
+      // Let's rely on that.
+    }
+  }, [searchParams, selectedProject]);
+
   // Use tasks hook for the selected project's kanban board
   const {
     tasks: selectedProjectTasks,
@@ -72,6 +110,24 @@ const ManagerDashboard = ({ user }) => {
     deleteTask,
     fetchTasks,
   } = useTasks(selectedProject?.id);
+
+  // Open modal once tasks are loaded
+  useEffect(() => {
+    const taskIdParam = searchParams.get("taskId");
+    const projectIdParam = searchParams.get("projectId");
+
+    if (
+      taskIdParam &&
+      projectIdParam &&
+      selectedProject?.id === projectIdParam &&
+      selectedProjectTasks?.length > 0
+    ) {
+      const taskToOpen = selectedProjectTasks.find((t) => t.id === taskIdParam);
+      if (taskToOpen) {
+        setTaskDetailModal({ isOpen: true, task: taskToOpen });
+      }
+    }
+  }, [selectedProjectTasks, searchParams, selectedProject]);
 
   // Fetch all users for project creation and fallback
   useEffect(() => {
@@ -627,6 +683,7 @@ const ManagerDashboard = ({ user }) => {
                       loading={tasksLoading}
                       error={tasksError}
                       hideHeader={true}
+                      projectId={selectedProject?.id}
                     />
                   </div>
                 </div>

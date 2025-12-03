@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTheme, useNotifications } from "../../context";
 import {
   markNotificationAsRead,
@@ -8,6 +9,7 @@ import {
 import { toast } from "react-hot-toast";
 
 const NotificationBell = () => {
+  const navigate = useNavigate();
   const { isDark } = useTheme();
   const {
     notifications,
@@ -61,6 +63,24 @@ const NotificationBell = () => {
       toast.success("Notification deleted");
     } catch (error) {
       toast.error("Failed to delete notification");
+    }
+  };
+
+  // Handle notification click
+  const handleNotificationClick = async (notification) => {
+    // Mark as read if unread
+    if (!notification.isRead) {
+      handleMarkAsRead(notification.id);
+    }
+
+    // Close dropdown
+    setIsOpen(false);
+
+    // Navigate to task if applicable
+    if (notification.taskId && notification.projectId) {
+      navigate(
+        `/dashboard?projectId=${notification.projectId}&taskId=${notification.taskId}`
+      );
     }
   };
 
@@ -170,7 +190,8 @@ const NotificationBell = () => {
               notifications.slice(0, 10).map((notification) => (
                 <div
                   key={notification.id}
-                  className={`px-4 py-3 border-b last:border-b-0 transition-colors ${
+                  onClick={() => handleNotificationClick(notification)}
+                  className={`px-4 py-3 border-b last:border-b-0 transition-colors cursor-pointer ${
                     isDark ? "border-gray-700" : "border-gray-100"
                   } ${
                     !notification.isRead
@@ -203,7 +224,10 @@ const NotificationBell = () => {
                             {formatTimeAgo(notification.createdAt)}
                           </p>
                         </div>
-                        <div className="flex items-center space-x-1 ml-2">
+                        <div
+                          className="flex items-center space-x-1 ml-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {!notification.isRead && (
                             <button
                               onClick={() => handleMarkAsRead(notification.id)}

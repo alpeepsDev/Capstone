@@ -48,7 +48,7 @@ const Sidebar = ({
               handleViewClick("dashboard");
               if (onProjectSelect) onProjectSelect(null);
             }}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all outline-none focus:outline-none ${
               activeView === "dashboard"
                 ? isDark
                   ? "bg-blue-900 text-blue-100"
@@ -63,7 +63,7 @@ const Sidebar = ({
           </button>
           <button
             onClick={() => handleViewClick("favorites")}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all outline-none focus:outline-none ${
               activeView === "favorites"
                 ? isDark
                   ? "bg-blue-900 text-blue-100"
@@ -91,7 +91,7 @@ const Sidebar = ({
             {/* Workspace Selector */}
             <div
               onClick={() => setExpandedWorkspace(!expandedWorkspace)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all outline-none focus:outline-none ${
                 isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"
               }`}
             >
@@ -115,7 +115,7 @@ const Sidebar = ({
                   <button
                     key={project.id}
                     onClick={() => handleProjectClick(project.id)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2 outline-none focus:outline-none ${
                       selectedProjectId === project.id
                         ? isDark
                           ? "bg-blue-600 text-white"

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { tasksApi } from "../api/tasks.js";
+import webSocketService from "../services/websocket.service.js";
 
 export const useTasks = (projectId = null) => {
   const [tasks, setTasks] = useState([]);
@@ -45,7 +46,7 @@ export const useTasks = (projectId = null) => {
     // Optimistic update - update UI immediately
     const originalTasks = Array.isArray(tasks) ? tasks : [];
     const optimisticTasks = originalTasks.map((task) =>
-      task.id === taskId ? { ...task, ...taskData } : task,
+      task.id === taskId ? { ...task, ...taskData } : task
     );
     setTasks(optimisticTasks);
 
@@ -57,8 +58,8 @@ export const useTasks = (projectId = null) => {
       // Update with actual server response
       setTasks((prev) =>
         (Array.isArray(prev) ? prev : []).map((task) =>
-          task.id === taskId ? updatedTask : task,
-        ),
+          task.id === taskId ? updatedTask : task
+        )
       );
       return updatedTask;
     } catch (err) {
@@ -76,7 +77,7 @@ export const useTasks = (projectId = null) => {
     try {
       await tasksApi.deleteTask(taskId);
       setTasks((prev) =>
-        (Array.isArray(prev) ? prev : []).filter((task) => task.id !== taskId),
+        (Array.isArray(prev) ? prev : []).filter((task) => task.id !== taskId)
       );
     } catch (err) {
       setError(err.response?.data?.message || err.message);
@@ -92,7 +93,7 @@ export const useTasks = (projectId = null) => {
     const optimisticTasks = originalTasks.map((task) =>
       task.id === taskId
         ? { ...task, status: newStatus, position: position || task.position }
-        : task,
+        : task
     );
     setTasks(optimisticTasks);
 
@@ -107,8 +108,8 @@ export const useTasks = (projectId = null) => {
       // Update with actual server response
       setTasks((prev) =>
         (Array.isArray(prev) ? prev : []).map((task) =>
-          task.id === taskId ? updatedTask : task,
-        ),
+          task.id === taskId ? updatedTask : task
+        )
       );
       return updatedTask;
     } catch (err) {
@@ -125,8 +126,8 @@ export const useTasks = (projectId = null) => {
       const updatedTask = response.data || response; // Handle both response formats
       setTasks((prev) =>
         (Array.isArray(prev) ? prev : []).map((task) =>
-          task.id === taskId ? updatedTask : task,
-        ),
+          task.id === taskId ? updatedTask : task
+        )
       );
       return updatedTask;
     } catch (err) {
@@ -154,6 +155,51 @@ export const useTasks = (projectId = null) => {
   useEffect(() => {
     if (projectId) {
       fetchTasks();
+
+      // Join project room
+      webSocketService.joinProject(projectId);
+
+      // Socket event handlers
+      const handleTaskCreated = (newTask) => {
+        setTasks((prev) => {
+          const tasks = Array.isArray(prev) ? prev : [];
+          if (tasks.some((t) => t.id === newTask.id)) return tasks;
+          return [...tasks, newTask];
+        });
+      };
+
+      const handleTaskUpdated = (updatedTask) => {
+        setTasks((prev) => {
+          const tasks = Array.isArray(prev) ? prev : [];
+          return tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t));
+        });
+      };
+
+      const handleTaskMoved = (movedTask) => {
+        setTasks((prev) => {
+          const tasks = Array.isArray(prev) ? prev : [];
+          return tasks.map((t) => (t.id === movedTask.id ? movedTask : t));
+        });
+      };
+
+      const handleTaskDeleted = ({ taskId }) => {
+        setTasks((prev) => {
+          const tasks = Array.isArray(prev) ? prev : [];
+          return tasks.filter((t) => t.id !== taskId);
+        });
+      };
+
+      // Subscribe to events
+      webSocketService.onTaskCreated(handleTaskCreated);
+      webSocketService.onTaskUpdated(handleTaskUpdated);
+      webSocketService.onTaskMoved(handleTaskMoved);
+      webSocketService.onTaskDeleted(handleTaskDeleted);
+
+      return () => {
+        // Cleanup
+        webSocketService.leaveProject(projectId);
+        webSocketService.offTaskEvents(); // Note: This might remove listeners for other components if any
+      };
     }
   }, [projectId, fetchTasks]);
 

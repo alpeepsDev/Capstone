@@ -170,6 +170,7 @@ enum NotificationType {
   TASK_EXCHANGE_ACCEPTED
   TASK_EXCHANGE_REJECTED
   PROJECT_ASSIGNED
+  MENTION
 }
 
 model Notification {

@@ -13,71 +13,9 @@ html.dark {
     color 0.2s ease-in-out;
 }
 
-/* Custom Kanban Board Animations */
-@keyframes kanban-slide-in {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes task-slide-up {
-  from {
-    transform: translateY(10px);
-    opacity: 0.8;
-  }
-
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes task-slide-down {
-  from {
-    transform: translateY(-10px);
-    opacity: 0.8;
-  }
-
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes task-card-hover {
-  0% {
-    transform: scale(1) rotate(0deg);
-  }
-
-  50% {
-    transform: scale(1.02) rotate(0.5deg);
-  }
-
-  100% {
-    transform: scale(1.02) rotate(0deg);
-  }
-}
-
-@keyframes pulse-glow {
-
-  0%,
-  100% {
-    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
-  }
-
-  50% {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), 0 0 30px rgba(59, 130, 246, 0.4);
-  }
-}
+/* Custom Kanban Board Animations - REMOVED for native dnd-kit behavior */
 
 .kanban-column {
-  animation: kanban-slide-in 0.5s ease-out;
   overflow-x: hidden !important;
   max-width: 100%;
 }
@@ -86,58 +24,18 @@ html.dark {
   max-width: 100%;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  transition: transform 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    opacity 200ms ease-out,
-    box-shadow 200ms ease-out;
+  /* Basic transition for hover effects only, not drag */
+  transition: box-shadow 200ms ease-out;
 }
 
-/* Enhanced sortable animations */
-.task-card.sorting {
-  transition: transform 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+/* Ensure proper stacking */
+.kanban-task-list {
+  position: relative;
 }
 
-.task-card.dragging {
-  transition: none !important;
-  z-index: 1000;
-  transform: rotate(2deg) scale(1.05);
-}
-
-/* Smooth slide animations for tasks making space */
-.dndkit-sortable-item {
-  transition: transform 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-/* Visual feedback during drag operations */
-.sortable-context[data-over="true"] .task-card:not(.dragging) {
-  animation: task-slide-up 200ms ease-out;
-}
-
-/* Enhance the "making space" animation */
-.task-card:not(.dragging):not(.sorting) {
-  transition: all 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-/* Add subtle bounce when task settles into new position */
-@keyframes task-settle {
-  0% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.02);
-  }
-
-  100% {
-    transform: scale(1);
-  }
-}
-
-.task-card.sorting:not(.dragging) {
-  animation: task-settle 300ms ease-out;
-}
-
-.drag-overlay {
-  animation: pulse-glow 1s ease-in-out infinite;
+.kanban-task-list .task-card {
+  position: relative;
+  transform-origin: center;
 }
 
 /* Custom Scrollbar Styles */
@@ -291,16 +189,14 @@ html.dark {
 
   /* Improved focus styles for accessibility */
   *:focus {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
+    outline: none;
   }
 
   button:focus,
   input:focus,
   select:focus,
   textarea:focus {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
+    outline: none;
   }
 }
 
@@ -385,122 +281,4 @@ header[class*="sticky"] {
 .layout-content {
   padding-top: 4rem;
   /* 64px header height */
-}
-
-.kanban-task-list .task-card {
-  position: relative;
-  transform-origin: center;
-}
-
-/* Better drop area detection - larger hit areas between tasks */
-.task-card::before {
-  content: '';
-  position: absolute;
-  top: -8px;
-  left: 0;
-  right: 0;
-  height: 16px;
-  background: transparent;
-  z-index: 5;
-}
-
-.task-card::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 0;
-  right: 0;
-  height: 16px;
-  background: transparent;
-  z-index: 5;
-}
-
-/* Enhanced animations for layout changes */
-.dndkit-sortable-item[data-index] {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Smooth animations when items are being sorted */
-.sortable-context .dndkit-sortable-item {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.2s ease-in-out;
-}
-
-/* Animation for items moving up */
-.dndkit-sortable-item.moving-up {
-  transform: translateY(-8px);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Animation for items moving down */
-.dndkit-sortable-item.moving-down {
-  transform: translateY(8px);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Enhanced sorting state */
-.dndkit-sortable-item.sorting {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  z-index: 1;
-}
-
-/* Ensure proper stacking and transitions */
-.kanban-task-list {
-  position: relative;
-}
-
-.kanban-task-list .task-card {
-  position: relative;
-  transform-origin: center;
-}
-
-/* Animation for when tasks are reordering */
-.kanban-task-list[data-over] .task-card:not(.dragging) {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Improved space creation animations */
-.task-card-spacer {
-  height: 0;
-  overflow: hidden;
-  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.task-card-spacer.active {
-  height: 120px;
-  /* Approximate task card height */
-  margin-bottom: 12px;
-}
-
-/* Kanban Task List Scrollbar Styling */
-.kanban-task-list::-webkit-scrollbar {
-  width: 8px;
-}
-
-.kanban-task-list::-webkit-scrollbar-track {
-  background: rgba(55, 65, 81, 0.3);
-  border-radius: 10px;
-  margin: 8px 0;
-}
-
-.kanban-task-list::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.8);
-  border-radius: 10px;
-}
-
-.kanban-task-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 114, 128, 1);
-}
-
-/* Dark mode Kanban scrollbar */
-.dark .kanban-task-list::-webkit-scrollbar-track {
-  background: rgba(31, 41, 55, 0.5);
-}
-
-.dark .kanban-task-list::-webkit-scrollbar-thumb {
-  background: rgba(75, 85, 99, 0.8);
-}
-
-.dark .kanban-task-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 114, 128, 1);
 }

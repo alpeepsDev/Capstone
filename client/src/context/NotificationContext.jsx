@@ -75,7 +75,6 @@ export const NotificationProvider = ({ children }) => {
   // Handle real-time notifications - move before useEffect to fix dependency
   const handleRealtimeNotification = useCallback((notification) => {
     console.log("📢 Real-time notification received:", notification);
-    console.log("🔍 Call stack trace:", new Error().stack);
 
     setNotifications((prev) => {
       // Check if notification already exists (exact duplicate)

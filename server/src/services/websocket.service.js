@@ -46,14 +46,17 @@ export const initializeWebSocket = (io) => {
     // Handle user joining their notification room
     socket.join(`user:${socket.userId}`);
 
-    // Handle user joining project-specific rooms if they're a manager
+    // Handle user joining project-specific rooms
     socket.on("join-project", (projectId) => {
-      if (socket.userRole === "MANAGER" || socket.userRole === "ADMIN") {
-        socket.join(`project:${projectId}`);
-        console.log(
-          `👤 Manager ${socket.userId} joined project room: ${projectId}`
-        );
-      }
+      // Ideally we should verify if user is member of project here, but for now we allow joining
+      socket.join(`project:${projectId}`);
+      console.log(
+        `👤 User ${socket.userId} joined project room: project:${projectId}`
+      );
+
+      // Verify room membership
+      const rooms = Array.from(socket.rooms);
+      console.log(`🏠 User ${socket.userId} is now in rooms:`, rooms);
     });
 
     // Handle user leaving project rooms
@@ -94,4 +97,30 @@ export const emitNotificationToAll = (io, notification) => {
 // Get connected users (for debugging)
 export const getConnectedUsers = () => {
   return Array.from(connectedUsers.keys());
+};
+
+// Task related events
+export const emitTaskCreated = (io, projectId, task) => {
+  io.to(`project:${projectId}`).emit("task-created", task);
+  console.log(`📢 Task created event sent to project ${projectId}`);
+};
+
+export const emitTaskUpdated = (io, projectId, task) => {
+  io.to(`project:${projectId}`).emit("task-updated", task);
+  console.log(`📢 Task updated event sent to project ${projectId}`);
+};
+
+export const emitTaskMoved = (io, projectId, task) => {
+  io.to(`project:${projectId}`).emit("task-moved", task);
+  console.log(`📢 Task moved event sent to project ${projectId}`);
+};
+
+export const emitTaskDeleted = (io, projectId, taskId) => {
+  io.to(`project:${projectId}`).emit("task-deleted", { taskId, projectId });
+  console.log(`📢 Task deleted event sent to project ${projectId}`);
+};
+
+export const emitCommentAdded = (io, projectId, comment) => {
+  io.to(`project:${projectId}`).emit("comment-added", comment);
+  console.log(`📢 Comment added event sent to project ${projectId}`);
 };
