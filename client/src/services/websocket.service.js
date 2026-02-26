@@ -36,22 +36,19 @@ class WebSocketService {
 
     console.log(
       "🔌 Connecting to WebSocket with token:",
-      token ? "Token provided" : "No token"
+      token ? "Token provided" : "No token",
     );
 
     this.currentToken = token;
 
     try {
-      this.socket = io(
-        import.meta.env.VITE_API_BASE_URL || "http://localhost:3001",
-        {
-          auth: {
-            token: token,
-          },
-          autoConnect: true,
-          reconnectionAttempts: 5,
-        }
-      );
+      this.socket = io(import.meta.env.VITE_API_BASE_URL || undefined, {
+        auth: {
+          token: token,
+        },
+        autoConnect: true,
+        reconnectionAttempts: 5,
+      });
 
       this.socket.on("connect", () => {
         console.log("✅ Connected to WebSocket server");
@@ -96,15 +93,10 @@ class WebSocketService {
         }
       });
 
-      this.socket.on("notification", (notification) => {
-        console.log("📢 Real-time notification received:", notification);
-        // Emit custom event for notification components to listen to
-        const event = new CustomEvent("realtimeNotification", {
-          detail: notification,
-        });
-        window.dispatchEvent(event);
-        console.log("📢 Dispatched realtimeNotification event");
-      });
+      // NOTE: Do NOT add a socket.on("notification") handler here!
+      // Notification handling is done via onNotification() to allow proper
+      // callback registration and cleanup. Adding one here would cause
+      // duplicate notifications.
 
       return this.socket;
     } catch (error) {
@@ -131,7 +123,7 @@ class WebSocketService {
       console.log(`🏠 Joined project room: ${projectId}`);
     } else {
       console.log(
-        `⏳ Socket not connected, queued join for project: ${projectId}`
+        `⏳ Socket not connected, queued join for project: ${projectId}`,
       );
     }
   }
@@ -149,9 +141,14 @@ class WebSocketService {
   }
 
   // Subscribe to real-time notifications
+  // IMPORTANT: We remove any existing listener first to prevent duplicate
+  // registrations which can happen with React StrictMode double-mounting
   onNotification(callback) {
     if (this.socket) {
+      // First remove any existing listener for this callback to prevent duplicates
+      this.socket.off("notification", callback);
       this.socket.on("notification", callback);
+      console.log("🔔 Registered notification handler (duplicates prevented)");
     }
   }
 
@@ -159,6 +156,21 @@ class WebSocketService {
   offNotification(callback) {
     if (this.socket) {
       this.socket.off("notification", callback);
+    }
+  }
+
+  // Admin events
+  onAdminUpdate(callback) {
+    if (this.socket) {
+      this.socket.off("admin-update", callback);
+      this.socket.on("admin-update", callback);
+      console.log("🛡️ Registered admin update handler");
+    }
+  }
+
+  offAdminUpdate(callback) {
+    if (this.socket) {
+      this.socket.off("admin-update", callback);
     }
   }
 

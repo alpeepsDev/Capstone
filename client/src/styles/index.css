@@ -93,7 +93,6 @@ html.dark {
 
 /* Custom responsive utilities */
 @layer utilities {
-
   /* Line clamping for text truncation */
   .line-clamp-1 {
     overflow: hidden;
@@ -141,7 +140,6 @@ html.dark {
 
 /* Custom scrollbar styles */
 @layer base {
-
   /* Webkit scrollbar styling */
   ::-webkit-scrollbar {
     width: 6px;
@@ -202,7 +200,6 @@ html.dark {
 
 /* Mobile-specific optimizations */
 @media (max-width: 640px) {
-
   /* Prevent zoom on input focus */
   input[type="text"],
   input[type="email"],

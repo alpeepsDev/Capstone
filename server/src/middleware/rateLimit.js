@@ -1,17 +1,94 @@
 import prisma from "../config/database.js";
 
 /**
+ * In-memory store for IP-based rate limiting
+ * Maps IP addresses to { count, resetTime }
+ */
+const ipRateLimitStore = new Map();
+
+/**
+ * IP-based rate limit configuration
+ */
+const IP_RATE_LIMIT = parseInt(process.env.IP_RATE_LIMIT) || 100;
+const IP_RATE_WINDOW_HOURS = parseInt(process.env.IP_RATE_WINDOW_HOURS) || 1;
+const IP_RATE_WINDOW_MS = IP_RATE_WINDOW_HOURS * 60 * 60 * 1000;
+
+/**
+ * Handle IP-based rate limiting for unauthenticated requests
+ */
+const handleIpBasedRateLimit = (req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+
+  // Get or initialize IP data
+  if (!ipRateLimitStore.has(ip)) {
+    ipRateLimitStore.set(ip, { count: 1, resetTime: now + IP_RATE_WINDOW_MS });
+
+    // Set rate limit headers
+    res.setHeader("X-RateLimit-Limit", IP_RATE_LIMIT);
+    res.setHeader("X-RateLimit-Remaining", IP_RATE_LIMIT - 1);
+    res.setHeader(
+      "X-RateLimit-Reset",
+      new Date(now + IP_RATE_WINDOW_MS).toISOString(),
+    );
+    res.setHeader("X-RateLimit-Type", "ip");
+
+    return next();
+  }
+
+  const data = ipRateLimitStore.get(ip);
+
+  // Reset window if expired
+  if (now > data.resetTime) {
+    data.count = 1;
+    data.resetTime = now + IP_RATE_WINDOW_MS;
+
+    res.setHeader("X-RateLimit-Limit", IP_RATE_LIMIT);
+    res.setHeader("X-RateLimit-Remaining", IP_RATE_LIMIT - 1);
+    res.setHeader("X-RateLimit-Reset", new Date(data.resetTime).toISOString());
+    res.setHeader("X-RateLimit-Type", "ip");
+
+    return next();
+  }
+
+  // Increment count
+  data.count++;
+
+  // Set headers
+  res.setHeader("X-RateLimit-Limit", IP_RATE_LIMIT);
+  res.setHeader(
+    "X-RateLimit-Remaining",
+    Math.max(0, IP_RATE_LIMIT - data.count),
+  );
+  res.setHeader("X-RateLimit-Reset", new Date(data.resetTime).toISOString());
+  res.setHeader("X-RateLimit-Type", "ip");
+
+  // Check limit
+  if (data.count > IP_RATE_LIMIT) {
+    return res.status(429).json({
+      success: false,
+      message: "Rate limit exceeded. Please try again later.",
+      retryAfter: Math.ceil((data.resetTime - now) / 1000),
+      limitType: "ip",
+    });
+  }
+
+  next();
+};
+
+/**
  * Rate Limiter Middleware
  * Implements multi-level rate limiting:
- * 1. Endpoint-specific limits (highest priority)
- * 2. User-specific limits
- * 3. Role-based limits (fallback)
+ * 1. IP-based limits for unauthenticated users
+ * 2. Endpoint-specific limits (highest priority for authenticated)
+ * 3. User-specific limits
+ * 4. Role-based limits (fallback)
  */
 const rateLimit = async (req, res, next) => {
   try {
-    // Skip rate limiting for non-authenticated requests (they'll fail at auth middleware)
+    // Apply IP-based rate limiting for unauthenticated requests
     if (!req.user) {
-      return next();
+      return handleIpBasedRateLimit(req, res, next);
     }
 
     const userId = req.user.id;
@@ -56,7 +133,7 @@ const rateLimit = async (req, res, next) => {
       res.setHeader("X-RateLimit-Remaining", Math.max(0, limit - requestCount));
       res.setHeader(
         "X-RateLimit-Reset",
-        new Date(Date.now() + windowMs).toISOString()
+        new Date(Date.now() + windowMs).toISOString(),
       );
       res.setHeader("X-RateLimit-Type", "endpoint");
 
@@ -108,7 +185,7 @@ const rateLimit = async (req, res, next) => {
     res.setHeader("X-RateLimit-Remaining", Math.max(0, limit - requestCount));
     res.setHeader(
       "X-RateLimit-Reset",
-      new Date(Date.now() + windowMs).toISOString()
+      new Date(Date.now() + windowMs).toISOString(),
     );
     res.setHeader("X-RateLimit-Type", userLimit ? "user" : "role");
 
@@ -164,7 +241,7 @@ const endpointRateLimit = (maxRequests, windowMinutes = 1) => {
     res.setHeader("X-RateLimit-Limit", maxRequests);
     res.setHeader(
       "X-RateLimit-Remaining",
-      Math.max(0, maxRequests - data.count)
+      Math.max(0, maxRequests - data.count),
     );
     res.setHeader("X-RateLimit-Reset", new Date(data.resetTime).toISOString());
 
@@ -181,18 +258,22 @@ const endpointRateLimit = (maxRequests, windowMinutes = 1) => {
   };
 };
 
-// Cleanup old entries periodically
-setInterval(
-  () => {
-    const now = Date.now();
-    const requestMap = new Map();
-    for (const [key, data] of requestMap.entries()) {
-      if (now > data.resetTime) {
-        requestMap.delete(key);
+// Cleanup old entries periodically to prevent memory leaks
+// Cleanup old entries periodically to prevent memory leaks
+if (process.env.NODE_ENV !== "test") {
+  setInterval(
+    () => {
+      const now = Date.now();
+
+      // Clean up IP rate limit store
+      for (const [ip, data] of ipRateLimitStore.entries()) {
+        if (now > data.resetTime) {
+          ipRateLimitStore.delete(ip);
+        }
       }
-    }
-  },
-  5 * 60 * 1000
-); // Every 5 minutes
+    },
+    5 * 60 * 1000,
+  ); // Every 5 minutes
+}
 
 export { rateLimit, endpointRateLimit };

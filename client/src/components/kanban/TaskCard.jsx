@@ -3,24 +3,15 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useTheme } from "../../context";
 import { Badge } from "../ui";
-
-// Drag handle icon component
-const DragHandle = ({ className = "" }) => (
-  <svg
-    className={`w-4 h-4 ${className}`}
-    fill="currentColor"
-    viewBox="0 0 20 20"
-  >
-    <path d="M7 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
-  </svg>
-);
+import { Lock } from "../ui/icons";
+import TaskTypeIcon from "./TaskTypeIcon";
+import LabelBadge from "../labels/LabelBadge";
 
 const TaskCard = ({
   task,
   onEdit,
   onDelete,
   onTaskClick,
-  onRequestExchange,
   userRole,
   isOverlay,
 }) => {
@@ -61,7 +52,7 @@ const TaskCard = ({
   const statusColors = {
     PENDING: "warning",
     IN_PROGRESS: "info",
-    DONE: "success",
+    IN_REVIEW: "success",
     COMPLETED: "success",
   };
 
@@ -75,41 +66,24 @@ const TaskCard = ({
       {...(task.status === "COMPLETED" ? {} : listeners)}
       className={`task-card ${isDark ? "bg-gray-700 border-gray-600" : "bg-white border-gray-200"} rounded-md border shadow-sm p-3 mb-2.5 ${!isDragging ? "hover:shadow-md" : ""} relative group ${task.status === "COMPLETED" ? "opacity-90" : "cursor-grab active:cursor-grabbing"}`}
     >
-      {/* Drag Handle - Visual indicator only */}
-      <div
-        className={`absolute top-2 right-2 p-1 rounded pointer-events-none
-          ${isDark ? "text-gray-400" : "text-gray-400"}
-          opacity-60 group-hover:opacity-100 transition-opacity duration-200`}
-        title={
-          task.status === "COMPLETED"
-            ? "Task completed - cannot be moved"
-            : "Drag to move task"
-        }
-      >
-        {task.status === "COMPLETED" ? (
-          // Lock icon for completed tasks
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-              clipRule="evenodd"
-            />
-          </svg>
-        ) : (
-          <DragHandle />
-        )}
-      </div>
-
       <div className="flex items-start justify-between mb-2">
-        <h4
-          className={`font-semibold ${isDark ? "text-white" : "text-gray-900"} text-xs sm:text-sm flex-1 mr-2 pointer-events-auto cursor-pointer leading-snug`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onTaskClick && onTaskClick(task);
-          }}
-        >
-          {task.title}
-        </h4>
+        <div className="flex items-center gap-2 flex-1">
+          {task.taskType && (
+            <TaskTypeIcon
+              type={task.taskType}
+              className="w-4 h-4 flex-shrink-0"
+            />
+          )}
+          <h4
+            className={`font-semibold ${isDark ? "text-white" : "text-gray-900"} text-xs sm:text-sm flex-1 pointer-events-auto cursor-pointer leading-snug`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTaskClick && onTaskClick(task);
+            }}
+          >
+            {task.title}
+          </h4>
+        </div>
       </div>
 
       {task.description && (
@@ -128,14 +102,45 @@ const TaskCard = ({
         )}
 
         {/* Always show status badge, fallback to 'info' if missing */}
-        <Badge variant={statusColors[task.status] || "info"} size="xs">
-          {task.status === "COMPLETED"
-            ? "✅ COMPLETED"
-            : task.status
-              ? task.status.replace("_", " ")
-              : "IN PROGRESS"}
+        <Badge
+          variant={statusColors[task.status] || "info"}
+          size="xs"
+          className={
+            task.status === "COMPLETED" ? "flex items-center gap-1" : ""
+          }
+        >
+          {task.status === "COMPLETED" ? (
+            <>
+              <Lock className="w-3 h-3" /> COMPLETED
+            </>
+          ) : task.status === "IN_REVIEW" ? (
+            "IN REVIEW"
+          ) : task.status ? (
+            task.status.replace("_", " ")
+          ) : (
+            "IN PROGRESS"
+          )}
         </Badge>
       </div>
+
+      {/* Labels */}
+      {task.labels && task.labels.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {task.labels.slice(0, 3).map((taskLabel) => (
+            <LabelBadge
+              key={taskLabel.labelId || taskLabel.label?.id}
+              label={taskLabel.label || taskLabel}
+            />
+          ))}
+          {task.labels.length > 3 && (
+            <span
+              className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
+            >
+              +{task.labels.length - 3}
+            </span>
+          )}
+        </div>
+      )}
 
       {task.assignee && (
         <div className="flex items-center gap-1.5 mb-2">
@@ -161,6 +166,47 @@ const TaskCard = ({
           >
             📁 {task.project.name}
           </Badge>
+        </div>
+      )}
+
+      {/* AI Prediction Display */}
+      {task.predictions && task.predictions.length > 0 && (
+        <div
+          className={`mt-2 pt-2 border-t ${isDark ? "border-gray-600" : "border-gray-200"}`}
+        >
+          <div className="flex items-center gap-1.5">
+            <svg
+              className={`w-3 h-3 ${isDark ? "text-blue-400" : "text-blue-600"}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+              />
+            </svg>
+            <span
+              className={`text-[10px] font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}
+            >
+              AI Predicts:
+            </span>
+            <span
+              className={`text-[10px] ${isDark ? "text-blue-400" : "text-blue-600"} font-semibold`}
+            >
+              {new Date(
+                task.predictions[0].predictedCompletionAt,
+              ).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+            <Badge variant="default" size="xs" className="text-[9px] px-1 py-0">
+              {Math.round(task.predictions[0].confidence * 100)}%
+            </Badge>
+          </div>
         </div>
       )}
     </div>

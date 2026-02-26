@@ -31,3 +31,6 @@ export { Send } from "lucide-react";
 export { Pencil } from "lucide-react";
 export { Eye } from "lucide-react";
 export { EyeOff } from "lucide-react";
+export { DollarSign } from "lucide-react";
+export { Tag } from "lucide-react";
+export { Lock } from "lucide-react";

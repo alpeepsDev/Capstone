@@ -7,6 +7,25 @@ import viteCompression from "vite-plugin-compression";
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+        secure: false,
+        onProxyRes: function (proxyRes, req, res) {
+          if (req.url.includes("/assistant/query")) {
+            proxyRes.headers["Cache-Control"] = "no-cache, no-transform";
+            proxyRes.headers["X-Accel-Buffering"] = "no";
+          }
+        },
+      },
+      "/socket.io": {
+        target: "ws://localhost:3001",
+        ws: true,
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),

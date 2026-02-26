@@ -1,6 +1,20 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Card } from "../ui";
 import { useTheme } from "../../context";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import { Lightbulb, BarChart3 } from "lucide-react";
 
 const ManagerAnalytics = ({
   tasks = [],
@@ -16,52 +30,79 @@ const ManagerAnalytics = ({
   const completedTasks = tasks.filter((task) => task.status === "COMPLETED");
   const inProgressTasks = tasks.filter((task) => task.status === "IN_PROGRESS");
   const pendingTasks = tasks.filter((task) => task.status === "PENDING");
-  const doneTasks = tasks.filter((task) => task.status === "DONE");
 
   // Calculate overall completion rate
   const overallCompletionRate =
     totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
 
-  // Project completion rates
-  const projectStats = projects.map((project) => {
-    const projectTasks = tasks.filter((task) => task.projectId === project.id);
-    const projectCompleted = projectTasks.filter(
-      (task) => task.status === "COMPLETED"
-    );
-    const completionRate =
-      projectTasks.length > 0
-        ? Math.round((projectCompleted.length / projectTasks.length) * 100)
-        : 0;
+  // Project completion rates for Bar Chart
+  const projectStats = useMemo(() => {
+    return projects
+      .map((project) => {
+        const projectTasks = tasks.filter(
+          (task) => task.projectId === project.id,
+        );
+        const projectCompleted = projectTasks.filter(
+          (task) => task.status === "COMPLETED",
+        );
+        const completionRate =
+          projectTasks.length > 0
+            ? Math.round((projectCompleted.length / projectTasks.length) * 100)
+            : 0;
 
-    return {
-      ...project,
-      totalTasks: projectTasks.length,
-      completedTasks: projectCompleted.length,
-      completionRate,
-    };
-  });
+        return {
+          name: project.name,
+          completionRate,
+          totalTasks: projectTasks.length,
+          completedTasks: projectCompleted.length,
+        };
+      })
+      .sort((a, b) => b.completionRate - a.completionRate); // Sort by completion rate
+  }, [projects, tasks]);
 
-  // Team member performance
-  const teamStats = teamMembers.map((member) => {
-    const memberTasks = tasks.filter((task) => task.assigneeId === member.id);
-    const memberCompleted = memberTasks.filter(
-      (task) => task.status === "COMPLETED"
-    );
-    const memberInProgress = memberTasks.filter(
-      (task) => task.status === "IN_PROGRESS"
-    );
+  // Team member performance for Bar Chart
+  const teamStats = useMemo(() => {
+    return teamMembers
+      .map((member) => {
+        const memberTasks = tasks.filter(
+          (task) => task.assigneeId === member.id,
+        );
+        const memberCompleted = memberTasks.filter(
+          (task) => task.status === "COMPLETED",
+        );
 
-    return {
-      ...member,
-      totalTasks: memberTasks.length,
-      completedTasks: memberCompleted.length,
-      inProgressTasks: memberInProgress.length,
-      completionRate:
-        memberTasks.length > 0
-          ? Math.round((memberCompleted.length / memberTasks.length) * 100)
-          : 0,
-    };
-  });
+        return {
+          name: member.name,
+          completed: memberCompleted.length,
+          assigned: memberTasks.length,
+          completionRate:
+            memberTasks.length > 0
+              ? Math.round((memberCompleted.length / memberTasks.length) * 100)
+              : 0,
+        };
+      })
+      .sort((a, b) => b.completionRate - a.completionRate);
+  }, [teamMembers, tasks]);
+
+  // Task Status Distribution for Donut Chart
+  const statusData = useMemo(
+    () =>
+      [
+        { name: "Completed", value: completedTasks.length, color: "#10B981" },
+        {
+          name: "In Progress",
+          value: inProgressTasks.length,
+          color: "#F59E0B",
+        },
+        { name: "Pending", value: pendingTasks.length, color: "#EF4444" },
+        {
+          name: "Done (Needs Review)",
+          value: tasks.filter((t) => t.status === "IN_REVIEW").length,
+          color: "#8B5CF6",
+        },
+      ].filter((item) => item.value > 0),
+    [completedTasks, inProgressTasks, pendingTasks, tasks],
+  );
 
   // This week's activity
   const thisWeek = new Date();
@@ -71,398 +112,285 @@ const ManagerAnalytics = ({
     (task) =>
       task.status === "COMPLETED" &&
       task.updatedAt &&
-      new Date(task.updatedAt) >= thisWeek
+      new Date(task.updatedAt) >= thisWeek,
   ).length;
 
   const thisWeekExchanges = exchangeLogs.filter(
     (exchange) =>
-      exchange.requestedAt && new Date(exchange.requestedAt) >= thisWeek
+      exchange.requestedAt && new Date(exchange.requestedAt) >= thisWeek,
   ).length;
 
   // Approval metrics
   const approvalsPending = tasksAwaitingApproval.length;
   const avgApprovalTime = "1.5 days"; // Mock data
 
-  // Workload distribution
-  const workloadBalance =
-    teamMembers.length > 0
-      ? {
-          overloaded: teamStats.filter((member) => member.totalTasks > 8)
-            .length,
-          balanced: teamStats.filter(
-            (member) => member.totalTasks >= 3 && member.totalTasks <= 8
-          ).length,
-          underutilized: teamStats.filter((member) => member.totalTasks < 3)
-            .length,
-        }
-      : { overloaded: 0, balanced: 0, underutilized: 0 };
-
-  // Recent trends
-  const exchangeAcceptanceRate =
-    exchangeLogs.length > 0
-      ? Math.round(
-          (exchangeLogs.filter((ex) => ex.status === "ACCEPTED").length /
-            exchangeLogs.length) *
-            100
-        )
-      : 0;
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div
+          className={`p-3 rounded-lg shadow-lg border ${isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-200 text-gray-900"}`}
+        >
+          <p className="font-semibold mb-1">{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color || entry.fill }}>
+              {entry.name}: {entry.value}
+              {entry.unit ? entry.unit : ""}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="space-y-6">
-      {/* Management Overview */}
+      {/* Management Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card padding="sm">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-blue-600">
-              {overallCompletionRate}%
+        {[
+          {
+            title: "Team Completion Rate",
+            value: `${overallCompletionRate}%`,
+            color: "text-blue-600",
+            borderColor: "border-blue-200 dark:border-blue-900",
+          },
+          {
+            title: "Completed This Week",
+            value: thisWeekCompleted,
+            color: "text-green-600",
+            borderColor: "border-green-200 dark:border-green-900",
+          },
+          {
+            title: "Pending Approvals",
+            value: approvalsPending,
+            color: "text-orange-600",
+            borderColor: "border-orange-200 dark:border-orange-900",
+          },
+          {
+            title: "Task Exchanges",
+            value: thisWeekExchanges,
+            color: "text-purple-600",
+            borderColor: "border-purple-200 dark:border-purple-900",
+          },
+        ].map((card, idx) => (
+          <Card
+            key={idx}
+            className={`p-4 border ${card.borderColor} ${isDark ? "bg-gray-800/50" : "bg-white"}`}
+          >
+            <div className="text-center">
+              <div className={`text-3xl font-bold ${card.color}`}>
+                {card.value}
+              </div>
+              <div
+                className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+              >
+                {card.title}
+              </div>
             </div>
-            <div
-              className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-            >
-              Team Completion Rate
-            </div>
-          </div>
-        </Card>
-
-        <Card padding="sm">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-green-600">
-              {thisWeekCompleted}
-            </div>
-            <div
-              className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-            >
-              Completed This Week
-            </div>
-          </div>
-        </Card>
-
-        <Card padding="sm">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-orange-600">
-              {approvalsPending}
-            </div>
-            <div
-              className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-            >
-              Pending Approvals
-            </div>
-          </div>
-        </Card>
-
-        <Card padding="sm">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-purple-600">
-              {thisWeekExchanges}
-            </div>
-            <div
-              className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-            >
-              Task Exchanges
-            </div>
-          </div>
-        </Card>
+          </Card>
+        ))}
       </div>
 
-      {/* Team Performance and Project Status */}
+      {/* Main Charts - Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Team Performance - Horizontal Bar Chart */}
         <Card
           title="Team Performance"
-          subtitle="Individual team member metrics"
+          subtitle="Task completion rate by member"
+          className={`${isDark ? "bg-gray-800/50" : "bg-white"} backdrop-blur`}
         >
-          <div className="space-y-4">
-            {teamStats.length === 0 ? (
-              <div
-                className={`text-center py-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+          <div className="h-80 w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={teamStats}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >
-                <p>No team members data available</p>
-              </div>
-            ) : (
-              teamStats.slice(0, 5).map((member) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-8 h-8 ${isDark ? "bg-blue-600" : "bg-blue-500"} rounded-full flex items-center justify-center text-white text-sm font-medium`}
-                    >
-                      {member.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div
-                        className={`font-medium ${isDark ? "text-white" : "text-gray-900"}`}
-                      >
-                        {member.name}
-                      </div>
-                      <div
-                        className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
-                      >
-                        {member.totalTasks} tasks • {member.completionRate}%
-                        complete
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`w-16 h-2 ${isDark ? "bg-gray-700" : "bg-gray-200"} rounded-full overflow-hidden`}
-                    >
-                      <div
-                        className="h-full bg-blue-500"
-                        style={{ width: `${member.completionRate}%` }}
-                      ></div>
-                    </div>
-                    <span
-                      className={`text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
-                    >
-                      {member.completionRate}%
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  horizontal={true}
+                  vertical={false}
+                  stroke={isDark ? "#374151" : "#E5E7EB"}
+                />
+                <XAxis
+                  type="number"
+                  domain={[0, 100]}
+                  stroke={isDark ? "#9CA3AF" : "#4B5563"}
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  stroke={isDark ? "#9CA3AF" : "#4B5563"}
+                  width={80}
+                />
+                <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{ fill: isDark ? "#374151" : "#F3F4F6" }}
+                />
+                <Legend />
+                <Bar
+                  dataKey="completionRate"
+                  name="Completion Rate (%)"
+                  fill="#3B82F6"
+                  radius={[0, 4, 4, 0]}
+                  barSize={20}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </Card>
 
-        <Card title="Project Status" subtitle="Project completion overview">
-          <div className="space-y-4">
-            {projectStats.length === 0 ? (
-              <div
-                className={`text-center py-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+        {/* Project Status - Horizontal Bar Chart */}
+        <Card
+          title="Project Status"
+          subtitle="Task completion rate by project"
+          className={`${isDark ? "bg-gray-800/50" : "bg-white"} backdrop-blur`}
+        >
+          <div className="h-80 w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={projectStats}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >
-                <p>No projects data available</p>
-              </div>
-            ) : (
-              projectStats.map((project) => (
-                <div
-                  key={project.id}
-                  className="flex items-center justify-between"
-                >
-                  <div>
-                    <div
-                      className={`font-medium ${isDark ? "text-white" : "text-gray-900"}`}
-                    >
-                      {project.name}
-                    </div>
-                    <div
-                      className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
-                    >
-                      {project.completedTasks}/{project.totalTasks} tasks
-                      completed
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`w-20 h-2 ${isDark ? "bg-gray-700" : "bg-gray-200"} rounded-full overflow-hidden`}
-                    >
-                      <div
-                        className="h-full bg-green-500"
-                        style={{ width: `${project.completionRate}%` }}
-                      ></div>
-                    </div>
-                    <span
-                      className={`text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
-                    >
-                      {project.completionRate}%
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  horizontal={true}
+                  vertical={false}
+                  stroke={isDark ? "#374151" : "#E5E7EB"}
+                />
+                <XAxis
+                  type="number"
+                  domain={[0, 100]}
+                  stroke={isDark ? "#9CA3AF" : "#4B5563"}
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  stroke={isDark ? "#9CA3AF" : "#4B5563"}
+                  width={80}
+                />
+                <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{ fill: isDark ? "#374151" : "#F3F4F6" }}
+                />
+                <Legend />
+                <Bar
+                  dataKey="completionRate"
+                  name="Completion Rate (%)"
+                  fill="#10B981"
+                  radius={[0, 4, 4, 0]}
+                  barSize={20}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </Card>
       </div>
 
-      {/* Workload and Task Distribution */}
+      {/* Main Charts - Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card title="Workload Distribution" subtitle="Team resource allocation">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-4 h-4 bg-red-500 rounded"></div>
-                <span className={isDark ? "text-gray-300" : "text-gray-700"}>
-                  Overloaded (8+ tasks)
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`font-medium ${isDark ? "text-white" : "text-gray-900"}`}
+        {/* Task Distribution - Donut Chart */}
+        <Card
+          title="Task Status Distribution"
+          subtitle=""
+          className={`${isDark ? "bg-gray-800/50" : "bg-white"} backdrop-blur`}
+        >
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={statusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
                 >
-                  {workloadBalance.overloaded} members
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-4 h-4 bg-green-500 rounded"></div>
-                <span className={isDark ? "text-gray-300" : "text-gray-700"}>
-                  Balanced (3-8 tasks)
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`font-medium ${isDark ? "text-white" : "text-gray-900"}`}
-                >
-                  {workloadBalance.balanced} members
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                <span className={isDark ? "text-gray-300" : "text-gray-700"}>
-                  Underutilized (&lt;3 tasks)
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`font-medium ${isDark ? "text-white" : "text-gray-900"}`}
-                >
-                  {workloadBalance.underutilized} members
-                </span>
-              </div>
-            </div>
+                  {statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend verticalAlign="bottom" height={36} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         </Card>
 
-        <Card title="Task Flow Metrics" subtitle="Task progression analytics">
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {pendingTasks.length}
+        {/* Management Insights - Text based */}
+        <Card
+          title="Management Insights"
+          subtitle="Key metrics and recommendations"
+          className={`${isDark ? "bg-gray-800/50" : "bg-white"} backdrop-blur`}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+            <div>
+              <h4
+                className={`font-medium mb-3 ${isDark ? "text-white" : "text-gray-900"}`}
+              >
+                <BarChart3 className="w-4 h-4 inline mr-2" /> Key Metrics
+              </h4>
+              <div className="space-y-2">
+                <div
+                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  • Average approval time: {avgApprovalTime}
                 </div>
                 <div
-                  className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
                 >
-                  Pending
+                  • Active projects: {projects.length}
+                </div>
+                <div
+                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  • Total team members: {teamMembers.length}
                 </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {inProgressTasks.length}
-                </div>
-                <div
-                  className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
-                >
-                  In Progress
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">
-                  {doneTasks.length}
-                </div>
-                <div
-                  className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
-                >
-                  Awaiting Review
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {completedTasks.length}
-                </div>
-                <div
-                  className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
-                >
-                  Completed
-                </div>
+            </div>
+
+            <div>
+              <h4
+                className={`font-medium mb-3 ${isDark ? "text-white" : "text-gray-900"}`}
+              >
+                <Lightbulb className="w-4 h-4 inline mr-2" /> Recommendations
+              </h4>
+              <div className="space-y-2">
+                {approvalsPending > 5 && (
+                  <div
+                    className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                  >
+                    • Review pending approvals to maintain team momentum
+                  </div>
+                )}
+                {overallCompletionRate < 70 && (
+                  <div
+                    className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                  >
+                    • Focus on improving team completion rates
+                  </div>
+                )}
+                {projects.length === 0 && (
+                  <div
+                    className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                  >
+                    • Create a new project to get started
+                  </div>
+                )}
+                {overallCompletionRate >= 90 && (
+                  <div
+                    className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                  >
+                    • Excellent team performance! Consider taking on more tasks.
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </Card>
       </div>
-
-      {/* Management Insights */}
-      <Card
-        title="Management Insights"
-        subtitle="Key metrics and recommendations"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4
-              className={`font-medium mb-3 ${isDark ? "text-white" : "text-gray-900"}`}
-            >
-              📊 Key Metrics
-            </h4>
-            <div className="space-y-2">
-              <div
-                className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-              >
-                • Average approval time: {avgApprovalTime}
-              </div>
-              <div
-                className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-              >
-                • Task exchange acceptance rate: {exchangeAcceptanceRate}%
-              </div>
-              <div
-                className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-              >
-                • Team utilization:{" "}
-                {Math.round(
-                  ((workloadBalance.balanced + workloadBalance.overloaded) /
-                    (teamMembers.length || 1)) *
-                    100
-                )}
-                %
-              </div>
-              <div
-                className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-              >
-                • Active projects: {projects.length}
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h4
-              className={`font-medium mb-3 ${isDark ? "text-white" : "text-gray-900"}`}
-            >
-              💡 Recommendations
-            </h4>
-            <div className="space-y-2">
-              {workloadBalance.overloaded > 0 && (
-                <div
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-                >
-                  • Redistribute tasks from overloaded team members
-                </div>
-              )}
-              {workloadBalance.underutilized > 0 && (
-                <div
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-                >
-                  • Assign more tasks to underutilized team members
-                </div>
-              )}
-              {approvalsPending > 5 && (
-                <div
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-                >
-                  • Review pending approvals to maintain team momentum
-                </div>
-              )}
-              {overallCompletionRate < 70 && (
-                <div
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-                >
-                  • Focus on improving team completion rates
-                </div>
-              )}
-              {exchangeAcceptanceRate < 60 && (
-                <div
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-                >
-                  • Review task exchange policies and communication
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
     </div>
   );
 };

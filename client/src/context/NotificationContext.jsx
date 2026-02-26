@@ -15,7 +15,7 @@ export const useNotifications = () => {
   const context = useContext(NotificationContext);
   if (!context) {
     throw new Error(
-      "useNotifications must be used within a NotificationProvider"
+      "useNotifications must be used within a NotificationProvider",
     );
   }
   return context;
@@ -32,7 +32,7 @@ export const NotificationProvider = ({ children }) => {
     async (params = {}) => {
       if (!user || authLoading) {
         console.log(
-          "NotificationContext: No user found or auth still loading, skipping notification fetch"
+          "NotificationContext: No user found or auth still loading, skipping notification fetch",
         );
         return;
       }
@@ -40,14 +40,49 @@ export const NotificationProvider = ({ children }) => {
       setLoading(true);
       try {
         const response = await getNotifications(params);
-        setNotifications(response.data.notifications);
-        setUnreadCount(response.data.unreadCount);
+
+        // Deduplicate notifications - keep only the most recent one per task+type combination
+        // This handles stale duplicates that may exist in the database from previous bugs
+        let notifications = [];
+        if (Array.isArray(response?.data?.notifications)) {
+          notifications = response.data.notifications;
+        } else if (Array.isArray(response?.notifications)) {
+          notifications = response.notifications;
+        } else if (Array.isArray(response?.data)) {
+          notifications = response.data;
+        } else if (Array.isArray(response)) {
+          notifications = response;
+        }
+        
+        const seen = new Map(); // key: taskId-type, value: notification
+        const deduped = [];
+
+        for (const notif of notifications) {
+          const key = `${notif.task?.id || notif.taskId}-${notif.type}`;
+
+          // If no taskId, keep it (general notifications)
+          if (!key.startsWith("null") && !key.startsWith("undefined")) {
+            if (!seen.has(key)) {
+              seen.set(key, notif);
+              deduped.push(notif);
+            }
+            // Skip duplicates - keep only the first (most recent since they're ordered by createdAt desc)
+          } else {
+            deduped.push(notif);
+          }
+        }
+
+        // Recalculate unread count based on deduplicated list
+        const actualUnreadCount = deduped.filter((n) => !n.isRead).length;
+
+        setNotifications(deduped);
+        setUnreadCount(actualUnreadCount);
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
         // If it's an authentication error, clear tokens and force re-login
         if (error.response?.status === 401 || error.response?.status === 403) {
           console.log(
-            "Authentication error - tokens may be expired. Clearing tokens..."
+            "Authentication error - tokens may be expired. Clearing tokens...",
           );
 
           // Clear expired tokens
@@ -69,7 +104,7 @@ export const NotificationProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [user, authLoading]
+    [user, authLoading],
   );
 
   // Handle real-time notifications - move before useEffect to fix dependency
@@ -82,58 +117,81 @@ export const NotificationProvider = ({ children }) => {
       if (existingNotification) {
         console.log(
           "🔄 Notification already exists, skipping duplicate:",
-          notification.id
+          notification.id,
         );
         return prev; // Return unchanged array if notification already exists
       }
 
       // Check for existing notifications of the same type for the same task
-      // Replace the previous notification instead of adding a new one
+      // Remove ALL previous notifications for this task/type to ensure no duplicates remain
       const taskId = notification.task?.id || notification.taskId;
       const notificationType = notification.type;
 
-      if (taskId && notificationType) {
-        const existingTaskNotificationIndex = prev.findIndex(
-          (n) =>
-            (n.task?.id || n.taskId) === taskId && n.type === notificationType
-        );
+      console.log(
+        "🔍 Deduplication check - New notification taskId:",
+        taskId,
+        "type:",
+        notificationType,
+      );
+      console.log(
+        "🔍 Existing notifications:",
+        prev.map((n) => ({
+          id: n.id,
+          taskId: n.task?.id || n.taskId,
+          type: n.type,
+        })),
+      );
 
-        if (existingTaskNotificationIndex !== -1) {
+      let updatedNotifications = [...prev];
+
+      if (taskId && notificationType) {
+        // Filter out any existing notifications for this task and type
+        const filtered = updatedNotifications.filter((n) => {
+          const existingTaskId = n.task?.id || n.taskId;
+          const shouldRemove =
+            existingTaskId === taskId && n.type === notificationType;
+          if (shouldRemove) {
+            console.log(
+              "🗑️ Removing old notification:",
+              n.id,
+              "with taskId:",
+              existingTaskId,
+            );
+          }
+          return !shouldRemove;
+        });
+
+        // If we removed something, it means we are replacing/updating
+        if (filtered.length < updatedNotifications.length) {
           console.log(
-            "🔄 Replacing existing notification for same task:",
+            "🔄 Removed existing notification(s) for same task to prevent duplicates:",
             taskId,
-            "type:",
-            notificationType
           );
 
-          const existingTaskNotification = prev[existingTaskNotificationIndex];
-          const updatedNotifications = [...prev];
+          const removedUnreadCount = updatedNotifications.filter(
+            (n) =>
+              (n.task?.id || n.taskId) === taskId &&
+              n.type === notificationType &&
+              !n.isRead,
+          ).length;
 
-          // Replace the existing notification with the new one
-          updatedNotifications[existingTaskNotificationIndex] = notification;
-
-          // Update unread count only if the previous notification was read but new one is unread
-          if (existingTaskNotification.isRead && !notification.isRead) {
-            setUnreadCount((prevCount) => prevCount + 1);
+          if (removedUnreadCount > 0) {
+            setUnreadCount((prevCount) =>
+              Math.max(0, prevCount - removedUnreadCount),
+            );
           }
-          // If previous was unread and new is also unread, count stays the same
-          // If previous was unread and new is read, decrease count
-          else if (!existingTaskNotification.isRead && notification.isRead) {
-            setUnreadCount((prevCount) => Math.max(0, prevCount - 1));
-          }
-
-          return updatedNotifications;
         }
+
+        updatedNotifications = filtered;
       }
 
-      // If no existing notification for this task/type, add as new
+      // Add new notification to the list
       // Update unread count if it's a new unread notification
       if (!notification.isRead) {
         setUnreadCount((prevCount) => prevCount + 1);
       }
 
-      // Add new notification to the list
-      return [notification, ...prev];
+      return [notification, ...updatedNotifications];
     });
 
     // Show browser notification if permission is granted
@@ -201,57 +259,58 @@ export const NotificationProvider = ({ children }) => {
       if (existingNotification) {
         console.log(
           "🔄 Notification already exists in addNotification, skipping duplicate:",
-          notification.id
+          notification.id,
         );
         return prev; // Return unchanged array if notification already exists
       }
 
       // Check for existing notifications of the same type for the same task
-      // Replace the previous notification instead of adding a new one
+      // Remove ALL previous notifications for this task/type to ensure no duplicates remain
       const taskId = notification.task?.id || notification.taskId;
       const notificationType = notification.type;
 
+      let updatedNotifications = [...prev];
+
       if (taskId && notificationType) {
-        const existingTaskNotificationIndex = prev.findIndex(
+        // Filter out any existing notifications for this task and type
+        const filtered = updatedNotifications.filter(
           (n) =>
-            (n.task?.id || n.taskId) === taskId && n.type === notificationType
+            !(
+              (n.task?.id || n.taskId) === taskId && n.type === notificationType
+            ),
         );
 
-        if (existingTaskNotificationIndex !== -1) {
+        // If we removed something, it means we are replacing/updating
+        if (filtered.length < updatedNotifications.length) {
           console.log(
-            "🔄 Replacing existing notification for same task in addNotification:",
+            "🔄 Removed existing notification(s) for same task in addNotification to prevent duplicates:",
             taskId,
-            "type:",
-            notificationType
           );
 
-          const existingTaskNotification = prev[existingTaskNotificationIndex];
-          const updatedNotifications = [...prev];
+          const removedUnreadCount = updatedNotifications.filter(
+            (n) =>
+              (n.task?.id || n.taskId) === taskId &&
+              n.type === notificationType &&
+              !n.isRead,
+          ).length;
 
-          // Replace the existing notification with the new one
-          updatedNotifications[existingTaskNotificationIndex] = notification;
-
-          // Update unread count only if the previous notification was read but new one is unread
-          if (existingTaskNotification.isRead && !notification.isRead) {
-            setUnreadCount((prevCount) => prevCount + 1);
+          if (removedUnreadCount > 0) {
+            setUnreadCount((prevCount) =>
+              Math.max(0, prevCount - removedUnreadCount),
+            );
           }
-          // If previous was unread and new is also unread, count stays the same
-          // If previous was unread and new is read, decrease count
-          else if (!existingTaskNotification.isRead && notification.isRead) {
-            setUnreadCount((prevCount) => Math.max(0, prevCount - 1));
-          }
-
-          return updatedNotifications;
         }
+
+        updatedNotifications = filtered;
       }
 
-      // If no existing notification for this task/type, add as new
+      // Add new notification to the list
       // Update unread count if it's a new unread notification
       if (!notification.isRead) {
         setUnreadCount((prevCount) => prevCount + 1);
       }
 
-      return [notification, ...prev];
+      return [notification, ...updatedNotifications];
     });
   }, []);
 
@@ -259,8 +318,8 @@ export const NotificationProvider = ({ children }) => {
   const markAsRead = useCallback((notificationId) => {
     setNotifications((prev) =>
       prev.map((notif) =>
-        notif.id === notificationId ? { ...notif, isRead: true } : notif
-      )
+        notif.id === notificationId ? { ...notif, isRead: true } : notif,
+      ),
     );
     setUnreadCount((prev) => Math.max(0, prev - 1));
   }, []);
@@ -268,7 +327,7 @@ export const NotificationProvider = ({ children }) => {
   // Mark all as read
   const markAllAsRead = useCallback(() => {
     setNotifications((prev) =>
-      prev.map((notif) => ({ ...notif, isRead: true }))
+      prev.map((notif) => ({ ...notif, isRead: true })),
     );
     setUnreadCount(0);
   }, []);
@@ -278,13 +337,13 @@ export const NotificationProvider = ({ children }) => {
     (notificationId) => {
       const notification = notifications.find((n) => n.id === notificationId);
       setNotifications((prev) =>
-        prev.filter((notif) => notif.id !== notificationId)
+        prev.filter((notif) => notif.id !== notificationId),
       );
       if (notification && !notification.isRead) {
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     },
-    [notifications]
+    [notifications],
   );
 
   // Join project room (for managers)

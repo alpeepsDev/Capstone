@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "../ui";
 import { toast } from "react-hot-toast";
-import { useTheme } from "../../context";
+import { useTheme, useAuth } from "../../context";
 
 const TaskEditModal = ({ task, isOpen, onClose, onSave, users = [] }) => {
   const { isDark } = useTheme();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -243,8 +244,12 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, users = [] }) => {
                 <option value="IN_PROGRESS">
                   In Progress (Needs revision)
                 </option>
-                <option value="DONE">Done (Ready for re-approval)</option>
-                <option value="COMPLETED">Completed (Approved)</option>
+                <option value="IN_REVIEW">
+                  In Review (Ready for re-approval)
+                </option>
+                {user?.role !== "USER" && (
+                  <option value="COMPLETED">Completed (Approved)</option>
+                )}
               </select>
             </div>
 

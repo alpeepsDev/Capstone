@@ -20,14 +20,13 @@ const KanbanColumn = ({
   onTaskDelete,
   onTaskClick,
   onAddTask,
-  onRequestExchange,
 }) => {
   const { setNodeRef, isOver } = useDroppable({ id });
   const { isDark } = useTheme();
 
   const getColumnStyles = () => {
     const baseStyles = `kanban-column ${color || ""} rounded-md p-3 sm:p-4 h-[560px] w-full border ${isDark ? "border-gray-600" : "border-gray-300"} transition-all duration-150 flex flex-col`;
-    return isOver ? `${baseStyles} ring-2 ring-blue-400` : baseStyles;
+    return baseStyles;
   };
 
   const getTaskCount = () => tasks.length;
@@ -91,7 +90,7 @@ const KanbanColumn = ({
       >
         <div
           className={`kanban-task-list space-y-2 sm:space-y-2.5 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent 
-            ${isOver ? `bg-opacity-10 ${isDark ? "bg-blue-900" : "bg-blue-50"}` : ""} 
+            ${isOver ? "bg-opacity-10" : ""} 
             transition-all duration-150 rounded-md`}
           data-column-id={id}
           style={{
@@ -126,7 +125,6 @@ const KanbanColumn = ({
                 onEdit={onTaskEdit}
                 onDelete={onTaskDelete}
                 onTaskClick={onTaskClick}
-                onRequestExchange={onRequestExchange}
               />
             ))
           )}

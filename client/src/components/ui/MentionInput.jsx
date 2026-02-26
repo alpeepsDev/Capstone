@@ -36,7 +36,7 @@ const MentionInput = ({
       const range = selection.getRangeAt(0);
       const textBeforeCursor = range.startContainer.textContent.slice(
         0,
-        range.startOffset
+        range.startOffset,
       );
 
       const lastAtPos = textBeforeCursor.lastIndexOf("@");
@@ -44,6 +44,7 @@ const MentionInput = ({
       if (lastAtPos !== -1) {
         const query = textBeforeCursor.slice(lastAtPos + 1);
         // Only show if no spaces (simple check)
+        // Allow dots in username
         if (!query.includes(" ")) {
           setMentionRange({
             container: range.startContainer,
@@ -73,12 +74,12 @@ const MentionInput = ({
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setSuggestionIndex((prev) =>
-          prev < filteredUsers.length - 1 ? prev + 1 : 0
+          prev < filteredUsers.length - 1 ? prev + 1 : 0,
         );
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setSuggestionIndex((prev) =>
-          prev > 0 ? prev - 1 : filteredUsers.length - 1
+          prev > 0 ? prev - 1 : filteredUsers.length - 1,
         );
       } else if (e.key === "Escape") {
         setShowSuggestions(false);
@@ -98,7 +99,7 @@ const MentionInput = ({
     // Create the pill element
     const pill = document.createElement("span");
     pill.className =
-      "inline-flex items-center px-1.5 py-0.5 rounded text-sm font-medium bg-blue-100 text-blue-800 mx-1 select-none";
+      "inline-flex items-center px-1.5 py-0.5 rounded text-sm font-medium bg-blue-600 text-white mx-1 select-none";
     pill.contentEditable = false;
     pill.innerText = `@${user.username}`;
     pill.dataset.userId = user.id;
@@ -110,6 +111,13 @@ const MentionInput = ({
 
     textNode.textContent = beforeText;
     const afterNode = document.createTextNode(" " + afterText);
+
+    // Debug logging
+    console.log("Inserting mention:", {
+      user: user.username,
+      before: beforeText,
+      after: afterText,
+    });
 
     // Insert pill and trailing space
     textNode.parentNode.insertBefore(pill, textNode.nextSibling);
@@ -129,7 +137,7 @@ const MentionInput = ({
   };
 
   const filteredUsers = users.filter((user) =>
-    (user.username || "").toLowerCase().includes(suggestionQuery.toLowerCase())
+    (user.username || "").toLowerCase().includes(suggestionQuery.toLowerCase()),
   );
 
   return (
@@ -161,7 +169,7 @@ const MentionInput = ({
       {/* Suggestions Dropdown */}
       {showSuggestions && filteredUsers.length > 0 && (
         <div
-          className={`absolute bottom-full left-0 mb-1 w-64 max-h-48 overflow-y-auto rounded-md shadow-lg border ${
+          className={`absolute top-full left-0 mt-1 w-64 max-h-48 overflow-y-auto rounded-md shadow-lg border ${
             isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
           } z-50`}
         >

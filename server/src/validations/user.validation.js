@@ -41,18 +41,6 @@ export const updateRoleSchema = z.object({
   }),
 });
 
-export const validateRequest = (schema) => {
-  return (req, res, next) => {
-    try {
-      const validatedData = schema.parse(req.body);
-      req.body = validatedData;
-      next();
-    } catch (error) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation errors",
-        errors: error.errors,
-      });
-    }
-  };
-};
+export const userIdSchema = z.object({
+  userId: z.string().uuid("Invalid user ID format"),
+});

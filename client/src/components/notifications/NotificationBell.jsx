@@ -7,6 +7,14 @@ import {
   deleteNotification,
 } from "../../api/notifications";
 import { toast } from "react-hot-toast";
+import {
+  Bell,
+  AlertTriangle,
+  Edit,
+  ClipboardList,
+  CheckCircle,
+  ThumbsUp,
+} from "lucide-react";
 
 const NotificationBell = () => {
   const navigate = useNavigate();
@@ -37,9 +45,12 @@ const NotificationBell = () => {
   // Handle mark as read
   const handleMarkAsRead = async (notificationId) => {
     try {
-      await markNotificationAsRead(notificationId);
+      // Optimistic update
       markAsRead(notificationId);
+      await markNotificationAsRead(notificationId);
     } catch (error) {
+      // Revert or just show error (refetching would be best ideal rollback but simple error is okay for now)
+      console.error("Failed to mark as read:", error);
       toast.error("Failed to mark notification as read");
     }
   };
@@ -47,22 +58,29 @@ const NotificationBell = () => {
   // Handle mark all as read
   const handleMarkAllAsRead = async () => {
     try {
-      await markAllNotificationsAsRead();
+      // Optimistic update
       markAllAsRead();
+      await markAllNotificationsAsRead();
       toast.success("All notifications marked as read");
     } catch (error) {
+      console.error("Failed to mark all as read:", error);
       toast.error("Failed to mark all notifications as read");
+      // Optional: Refetch notifications here to revert state
     }
   };
 
   // Handle delete notification
   const handleDelete = async (notificationId) => {
+    // Prevent event propagation if triggered from button
     try {
-      await deleteNotification(notificationId);
+      // Optimistic update
       removeNotification(notificationId);
+      await deleteNotification(notificationId);
       toast.success("Notification deleted");
     } catch (error) {
+      console.error("Failed to delete notification:", error);
       toast.error("Failed to delete notification");
+      // Optional: Refetch notifications here to revert state
     }
   };
 
@@ -79,7 +97,7 @@ const NotificationBell = () => {
     // Navigate to task if applicable
     if (notification.taskId && notification.projectId) {
       navigate(
-        `/dashboard?projectId=${notification.projectId}&taskId=${notification.taskId}`
+        `/dashboard?projectId=${notification.projectId}&taskId=${notification.taskId}`,
       );
     }
   };
@@ -101,17 +119,17 @@ const NotificationBell = () => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case "TASK_CHANGES_REQUESTED":
-        return "⚠️";
+        return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
       case "TASK_UPDATED":
-        return "📝";
+        return <Edit className="w-5 h-5 text-blue-500" />;
       case "TASK_ASSIGNED":
-        return "📋";
+        return <ClipboardList className="w-5 h-5 text-indigo-500" />;
       case "TASK_COMPLETED":
-        return "✅";
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
       case "TASK_APPROVED":
-        return "👍";
+        return <ThumbsUp className="w-5 h-5 text-emerald-500" />;
       default:
-        return "🔔";
+        return <Bell className="w-5 h-5 text-gray-500" />;
     }
   };
 
@@ -126,19 +144,7 @@ const NotificationBell = () => {
             : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
         }`}
       >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 17h5l-5 5v-5zM10 17H5l5 5v-5zM12 2C8.686 2 6 4.686 6 8c0 1.657-.343 3.165-.943 4.57-.6 1.405-1.395 2.675-2.314 3.765A1 1 0 004 18h16a1 1 0 001.257-1.665c-.919-1.09-1.714-2.36-2.314-3.765C18.343 11.165 18 9.657 18 8c0-3.314-2.686-6-6-6z"
-          />
-        </svg>
+        <Bell className="w-6 h-6" />
 
         {/* Unread count badge */}
         {unreadCount > 0 && (

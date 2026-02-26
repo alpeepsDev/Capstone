@@ -1,11 +1,12 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:3001/api/v1";
+const API_BASE_URL = "/api/v1";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
   },
 });
 
@@ -46,7 +47,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Handle both 401 (unauthorized) and 403 (forbidden/expired token)
+    const isAuthError =
+      error.response?.status === 401 || error.response?.status === 403;
+
+    if (isAuthError && !originalRequest._retry) {
       if (isRefreshing) {
         // If we're already refreshing, queue this request
         return new Promise((resolve, reject) => {
@@ -73,6 +78,7 @@ api.interceptors.response.use(
           throw new Error("No refresh token available");
         }
 
+        console.log("🔄 Access token expired, refreshing automatically...");
         const response = await api.post("/users/refresh", { refreshToken });
         const { accessToken } = response.data.data;
 
@@ -84,11 +90,13 @@ api.interceptors.response.use(
           sessionStorage.setItem("accessToken", accessToken);
         }
 
+        console.log("✅ Token refreshed successfully!");
         processQueue(null, accessToken);
 
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch (refreshError) {
+        console.error("❌ Token refresh failed:", refreshError.message);
         processQueue(refreshError, null);
 
         // Clear all tokens and redirect to login

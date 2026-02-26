@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { toast, Toaster } from "react-hot-toast";
+import { toast } from "react-hot-toast";
 import {
   DndContext,
   DragOverlay,
@@ -16,6 +16,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useTheme } from "../../context";
+import { Skeleton } from "../ui";
 import KanbanColumn from "./KanbanColumn";
 import TaskCard from "./TaskCard";
 import webSocketService from "../../services/websocket.service";
@@ -29,9 +30,10 @@ const KanbanBoard = ({
   onTaskDelete,
   onTaskClick,
   onAddTask,
-  onRequestExchange,
+
   hideHeader = false, // New prop to hide the header
   projectId, // Add projectId prop
+  loading, // Add loading prop
 }) => {
   const [activeTask, setActiveTask] = useState(null);
   const { isDark } = useTheme();
@@ -58,7 +60,7 @@ const KanbanBoard = ({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   // Define columns based on task status with consistent styling
@@ -72,8 +74,8 @@ const KanbanBoard = ({
       title: "In Progress",
     },
     {
-      id: "DONE",
-      title: "Done",
+      id: "IN_REVIEW",
+      title: "In Review",
     },
     {
       id: "COMPLETED",
@@ -115,7 +117,7 @@ const KanbanBoard = ({
     if (!active || !over) return;
 
     // Enhanced visual feedback for better drop zone indication
-    const columns = ["PENDING", "IN_PROGRESS", "DONE", "COMPLETED"];
+    const columns = ["PENDING", "IN_PROGRESS", "IN_REVIEW", "COMPLETED"];
     const isOverColumn = columns.includes(over.id);
     const isOverTask = !isOverColumn;
 
@@ -125,7 +127,7 @@ const KanbanBoard = ({
       if (overTask) {
         // Tasks will slide smoothly to make space
         console.log(
-          `🎯 Dragging over task: ${overTask.title} in ${overTask.status} column`
+          `🎯 Dragging over task: ${overTask.title} in ${overTask.status} column`,
         );
       }
     } else if (isOverColumn) {
@@ -154,7 +156,7 @@ const KanbanBoard = ({
       return;
     }
 
-    const columns = ["PENDING", "IN_PROGRESS", "DONE", "COMPLETED"];
+    const columns = ["PENDING", "IN_PROGRESS", "IN_REVIEW", "COMPLETED"];
     const isColumnDrop = columns.includes(overId);
 
     console.log("📍 Drop Analysis:", {
@@ -212,12 +214,6 @@ const KanbanBoard = ({
             reorderedCount: reorderedTasks.length,
           });
 
-          // Show success feedback
-          toast.success("Task reordered! (Slide animation active)", {
-            duration: 1500,
-            icon: "🔄",
-          });
-
           // Call onTaskReorder if provided, or just show the animation
           if (onTaskMove) {
             // For now, we'll just show the visual feedback
@@ -237,32 +233,38 @@ const KanbanBoard = ({
   };
 
   const handleStatusChange = (task, newStatus) => {
-    // Only restrict moving COMPLETED tasks
     const canMoveTask = () => {
-      // If the task is COMPLETED, only managers can move it
-      if (task.status === "COMPLETED") {
-        return userRole === "MANAGER";
+      // Completed tasks cannot be moved by anyone (locked)
+      if (task.status === "COMPLETED") return false;
+
+      // Users cannot move tasks to COMPLETED directly
+      if (userRole === "USER" && newStatus === "COMPLETED") return false;
+
+      // If task is IN_REVIEW, managers can only accept (COMPLETED) or reject (IN_PROGRESS)
+      if (task.status === "IN_REVIEW" && userRole === "MANAGER") {
+        if (newStatus !== "COMPLETED" && newStatus !== "IN_PROGRESS") {
+          return false;
+        }
       }
 
-      // All other tasks can be moved freely
       return true;
     };
 
     if (canMoveTask()) {
-      // Special message for users moving tasks to DONE
-      if (userRole === "USER" && newStatus === "DONE") {
+      // Special message for users moving tasks to IN_REVIEW
+      if (userRole === "USER" && newStatus === "IN_REVIEW") {
         toast.success(
-          "Task moved to Done! Your manager will review and approve when complete.",
+          "Task moved to In Review! Your manager will review and approve when complete.",
           {
             duration: 4000,
             icon: "✅",
-          }
+          },
         );
       }
       // Special message for managers approving tasks
       else if (
         userRole === "MANAGER" &&
-        task.status === "DONE" &&
+        task.status === "IN_REVIEW" &&
         newStatus === "COMPLETED"
       ) {
         toast.success("Task approved and marked as completed!", {
@@ -274,7 +276,7 @@ const KanbanBoard = ({
     } else {
       // Show notification about permission
       toast.error(
-        `You don't have permission to move this task to ${newStatus}`
+        `You don't have permission to move this task to ${newStatus}`,
       );
     }
   };
@@ -296,134 +298,159 @@ const KanbanBoard = ({
 
   return (
     <>
-      <Toaster position="bottom-right" reverseOrder={false} />
-
       <div
         className={`${hideHeader ? "p-0" : "p-3 sm:p-4"} h-full flex flex-col overflow-hidden`}
       >
-        {/* Connection Status Indicator (Debug) */}
-        <div className="absolute top-2 right-2 z-50 pointer-events-none opacity-50">
-          <span
-            className={`inline-block w-2 h-2 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`}
-            title={isConnected ? "Connected" : "Disconnected"}
-          ></span>
-        </div>
-        {/* Kanban Board */}
-        <DndContext
-          sensors={sensors}
-          collisionDetection={pointerWithin}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-          autoScroll={{
-            threshold: {
-              x: 0.2,
-              y: 0.2,
-            },
-            acceleration: 10,
-          }}
-          measuring={{
-            droppable: {
-              strategy: "always",
-              frequency: "optimized",
-            },
-            dragOverlay: {
-              measure: () => ({
-                width: 320,
-                height: 180,
-              }),
-            },
-          }}
-        >
-          {/* Mobile: Scrollable columns */}
-          <div className="block lg:hidden">
-            <div className="flex gap-3 overflow-x-auto pb-5 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
-              {columns.map((column) => (
-                <div key={column.id} className="flex-shrink-0 w-72 snap-start">
-                  <KanbanColumn
-                    id={column.id}
-                    title={column.title}
-                    icon={column.icon}
-                    color={column.color}
-                    accentColor={column.accentColor}
-                    tasks={getTasksByStatus(column.id)}
-                    userRole={userRole}
-                    currentUserId={currentUserId}
-                    onTaskEdit={onTaskEdit}
-                    onTaskDelete={onTaskDelete}
-                    onTaskClick={onTaskClick}
-                    onAddTask={onAddTask}
-                    onRequestExchange={onRequestExchange}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Desktop: Enhanced grid layout */}
-          <div className="hidden lg:block flex-1 h-full overflow-hidden">
+        {/* Loading State */}
+        {loading && (
+          <div className="flex-1 h-full overflow-hidden">
             <div className="grid grid-cols-4 gap-2.5 xl:gap-3 h-full">
-              {columns.map((column) => (
-                <div key={column.id} className="min-w-0 h-full">
-                  <KanbanColumn
-                    id={column.id}
-                    title={column.title}
-                    icon={column.icon}
-                    color={column.color}
-                    accentColor={column.accentColor}
-                    tasks={getTasksByStatus(column.id)}
-                    userRole={userRole}
-                    currentUserId={currentUserId}
-                    onTaskEdit={onTaskEdit}
-                    onTaskDelete={onTaskDelete}
-                    onTaskClick={onTaskClick}
-                    onAddTask={onAddTask}
-                    onRequestExchange={onRequestExchange}
-                  />
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className={`h-full rounded-xl flex flex-col ${isDark ? "bg-gray-800/50" : "bg-gray-100"}`}
+                >
+                  <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                    <Skeleton className="h-6 w-1/2 rounded" />
+                  </div>
+                  <div className="p-3 space-y-3 flex-1">
+                    <Skeleton className="h-24 w-full rounded-lg" />
+                    <Skeleton className="h-24 w-full rounded-lg" />
+                    <Skeleton className="h-24 w-full rounded-lg" />
+                  </div>
                 </div>
               ))}
             </div>
           </div>
+        )}
 
-          {/* Drag Overlay */}
-          <DragOverlay>
-            {activeTask ? (
-              <TaskCard
-                task={{ ...activeTask, currentUserId }}
-                userRole={userRole}
-                onEdit={() => {}}
-                onDelete={() => {}}
-                onTaskClick={() => {}}
-                onRequestExchange={() => {}}
-                isOverlay
-              />
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+        {!loading && (
+          <>
+            {/* Connection Status Indicator (Debug) */}
+            <div className="absolute top-2 right-2 z-50 pointer-events-none opacity-50">
+              <span
+                className={`inline-block w-2 h-2 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`}
+                title={isConnected ? "Connected" : "Disconnected"}
+              ></span>
+            </div>
+            {/* Kanban Board */}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={pointerWithin}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+              autoScroll={{
+                threshold: {
+                  x: 0.2,
+                  y: 0.2,
+                },
+                acceleration: 10,
+              }}
+              measuring={{
+                droppable: {
+                  strategy: "always",
+                  frequency: "optimized",
+                },
+                dragOverlay: {
+                  measure: () => ({
+                    width: 320,
+                    height: 180,
+                  }),
+                },
+              }}
+            >
+              {/* Mobile: Scrollable columns */}
+              <div className="block lg:hidden">
+                <div className="flex gap-3 overflow-x-auto pb-5 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
+                  {columns.map((column) => (
+                    <div
+                      key={column.id}
+                      className="flex-shrink-0 w-72 snap-start"
+                    >
+                      <KanbanColumn
+                        id={column.id}
+                        title={column.title}
+                        icon={column.icon}
+                        color={column.color}
+                        accentColor={column.accentColor}
+                        tasks={getTasksByStatus(column.id)}
+                        userRole={userRole}
+                        currentUserId={currentUserId}
+                        onTaskEdit={onTaskEdit}
+                        onTaskDelete={onTaskDelete}
+                        onTaskClick={onTaskClick}
+                        onAddTask={onAddTask}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-        {/* Empty State */}
-        {safeTasks.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">📋</div>
-            <h3
-              className={`text-xl font-medium ${isDark ? "text-white" : "text-gray-900"} mb-2`}
-            >
-              No Tasks Yet
-            </h3>
-            <p
-              className={`${isDark ? "text-gray-300" : "text-gray-600"} mb-6 max-w-md mx-auto`}
-            >
-              {getEmptyStateMessage()}
-            </p>
-            {userRole === "MANAGER" && (
-              <button
-                onClick={() => onAddTask("PENDING")}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Create First Task
-              </button>
+              {/* Desktop: Enhanced grid layout */}
+              <div className="hidden lg:block flex-1 h-full overflow-hidden">
+                <div className="grid grid-cols-4 gap-2.5 xl:gap-3 h-full">
+                  {columns.map((column) => (
+                    <div key={column.id} className="min-w-0 h-full">
+                      <KanbanColumn
+                        id={column.id}
+                        title={column.title}
+                        icon={column.icon}
+                        color={column.color}
+                        accentColor={column.accentColor}
+                        tasks={getTasksByStatus(column.id)}
+                        userRole={userRole}
+                        currentUserId={currentUserId}
+                        onTaskEdit={onTaskEdit}
+                        onTaskDelete={onTaskDelete}
+                        onTaskClick={onTaskClick}
+                        onAddTask={onAddTask}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Drag Overlay */}
+              <DragOverlay>
+                {activeTask ? (
+                  <TaskCard
+                    task={{ ...activeTask, currentUserId }}
+                    userRole={userRole}
+                    onEdit={() => {}}
+                    onDelete={() => {}}
+                    onTaskClick={() => {}}
+                    isOverlay
+                  />
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+
+            {/* Empty State */}
+            {safeTasks.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">📋</div>
+                <h3
+                  className={`text-xl font-medium ${isDark ? "text-white" : "text-gray-900"} mb-2`}
+                >
+                  No Tasks Yet
+                </h3>
+                <p
+                  className={`${isDark ? "text-gray-300" : "text-gray-600"} mb-6 max-w-md mx-auto`}
+                >
+                  {getEmptyStateMessage()}
+                </p>
+                {userRole === "MANAGER" && (
+                  <button
+                    onClick={() => onAddTask("PENDING")}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Create First Task
+                  </button>
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
       </div>
     </>

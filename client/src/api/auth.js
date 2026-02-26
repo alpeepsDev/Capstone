@@ -1,52 +1,5 @@
 import api from "./index.js";
 
-// Mock users for testing different roles
-const MOCK_USERS = {
-  "user1@example.com": {
-    id: "u1",
-    username: "testuser",
-    email: "user1@example.com",
-    name: "Test User",
-    role: "USER",
-    avatar: null,
-    createdAt: "2025-09-01",
-    lastLogin: "2025-09-23",
-  },
-  "manager2@example.com": {
-    id: "m1",
-    username: "testmanager",
-    email: "manager2@example.com",
-    name: "Test Manager",
-    role: "MANAGER",
-    avatar: null,
-    createdAt: "2025-09-01",
-    lastLogin: "2025-09-23",
-  },
-  "moderator1@example.com": {
-    id: "mod1",
-    username: "testmoderator",
-    email: "moderator1@example.com",
-    name: "Test Moderator",
-    role: "MODERATOR",
-    avatar: null,
-    createdAt: "2025-09-01",
-    lastLogin: "2025-09-23",
-  },
-  "admin1@example.com": {
-    id: "a1",
-    username: "testadmin",
-    email: "admin1@example.com",
-    name: "Test Admin",
-    role: "ADMIN",
-    avatar: null,
-    createdAt: "2025-09-01",
-    lastLogin: "2025-09-23",
-  },
-};
-
-// Enable real authentication (no more mock mode)
-const USE_MOCK_AUTH = false;
-
 export const authService = {
   // Storage helper methods
   getStorage(persistent = true) {
@@ -86,57 +39,25 @@ export const authService = {
       // Extract rememberMe from credentials
       const { rememberMe = false, ...loginData } = credentials;
 
-      if (USE_MOCK_AUTH) {
-        // Mock authentication
-        await new Promise((resolve) => setTimeout(resolve, 800)); // Simulate API delay
+      // Real API authentication
+      const response = await api.post("/users/login", loginData);
 
-        const { email, password } = loginData;
-
-        // Mock authentication logic - in production, this would be server-side
-        const user = MOCK_USERS[email];
-
-        if (!user || password !== "password123") {
-          throw { message: "Invalid email or password" };
-        }
-
-        // Generate mock tokens
-        const accessToken = `mock_access_token_${user.id}_${Date.now()}`;
-        const refreshToken = `mock_refresh_token_${user.id}_${Date.now()}`;
-
-        // Store tokens based on rememberMe preference
-        this.setTokens(accessToken, refreshToken, rememberMe);
-        this.setCurrentUser(user, rememberMe);
-
-        return {
-          success: true,
-          message: "Login successful",
-          data: {
-            user,
-            accessToken,
-            refreshToken,
-          },
-        };
-      } else {
-        // Real API authentication
-        const response = await api.post("/users/login", loginData);
-
-        // Check if response has the expected structure
-        if (!response.data || !response.data.data) {
-          throw new Error("Invalid server response structure");
-        }
-
-        const { accessToken, refreshToken, user } = response.data.data;
-
-        if (!accessToken || !refreshToken || !user) {
-          throw new Error("Invalid login response: missing token or user data");
-        }
-
-        // Store tokens based on rememberMe preference
-        this.setTokens(accessToken, refreshToken, rememberMe);
-        this.setCurrentUser(user, rememberMe);
-
-        return response.data;
+      // Check if response has the expected structure
+      if (!response.data || !response.data.data) {
+        throw new Error("Invalid server response structure");
       }
+
+      const { accessToken, refreshToken, user } = response.data.data;
+
+      if (!accessToken || !refreshToken || !user) {
+        throw new Error("Invalid login response: missing token or user data");
+      }
+
+      // Store tokens based on rememberMe preference
+      this.setTokens(accessToken, refreshToken, rememberMe);
+      this.setCurrentUser(user, rememberMe);
+
+      return response.data;
     } catch (error) {
       // Improved error handling
       if (error.response) {
@@ -195,45 +116,9 @@ export const authService = {
 
   async register(userData) {
     try {
-      if (USE_MOCK_AUTH) {
-        // Mock registration
-        await new Promise((resolve) => setTimeout(resolve, 800)); // Simulate API delay
-
-        const { email, username, password, name } = userData;
-
-        // Check if user already exists
-        if (MOCK_USERS[email]) {
-          throw { message: "User with this email already exists" };
-        }
-
-        // Create new user (in real app, this would be stored in database)
-        const newUser = {
-          id: `u${Date.now()}`,
-          username,
-          email,
-          name: name || username,
-          role: "USER", // Default role for new users
-          avatar: null,
-          createdAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString(),
-        };
-
-        // In a real app, you'd store this in database
-        // For demo purposes, we'll just add to our mock users temporarily
-        MOCK_USERS[email] = newUser;
-
-        return {
-          success: true,
-          message: "Registration successful",
-          data: {
-            user: newUser,
-          },
-        };
-      } else {
-        // Real API registration
-        const response = await api.post("/users/register", userData);
-        return response.data;
-      }
+      // Real API registration
+      const response = await api.post("/users/register", userData);
+      return response.data;
     } catch (error) {
       if (error.response) {
         throw error.response.data || { message: "Registration failed" };
@@ -254,6 +139,32 @@ export const authService = {
         throw error.response.data || { message: "Failed to fetch profile" };
       } else {
         throw { message: "Failed to fetch profile" };
+      }
+    }
+  },
+
+  async uploadAvatar(formData) {
+    try {
+      const response = await api.post("/users/avatar", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      // Update local storage with new user data including avatar
+      if (response.data && response.data.data) {
+        const currentUser = this.getCurrentUser();
+        const updatedUser = { ...currentUser, ...response.data.data };
+        const persistent = this.isPersistent();
+        this.setCurrentUser(updatedUser, persistent);
+      }
+
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        throw error.response.data || { message: "Failed to upload avatar" };
+      } else {
+        throw { message: "Failed to upload avatar" };
       }
     }
   },

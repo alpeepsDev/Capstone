@@ -3,7 +3,11 @@ import jwt from "jsonwebtoken";
 // Store connected users
 const connectedUsers = new Map();
 
+let ioInstance = null;
+
 export const initializeWebSocket = (io) => {
+  ioInstance = io;
+
   // Authentication middleware for WebSocket
   io.use(async (socket, next) => {
     try {
@@ -25,6 +29,10 @@ export const initializeWebSocket = (io) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       socket.userId = decoded.userId;
       socket.userRole = decoded.role;
+
+      if (decoded.role === "ADMIN") {
+        socket.join("admin");
+      }
 
       console.log("✅ WebSocket auth success:", {
         userId: decoded.userId,
@@ -51,7 +59,7 @@ export const initializeWebSocket = (io) => {
       // Ideally we should verify if user is member of project here, but for now we allow joining
       socket.join(`project:${projectId}`);
       console.log(
-        `👤 User ${socket.userId} joined project room: project:${projectId}`
+        `👤 User ${socket.userId} joined project room: project:${projectId}`,
       );
 
       // Verify room membership
@@ -85,7 +93,7 @@ export const emitNotificationToProject = (io, projectId, notification) => {
   io.to(`project:${projectId}`).emit("notification", notification);
   console.log(
     `📢 Notification sent to project ${projectId}:`,
-    notification.title
+    notification.title,
   );
 };
 
@@ -123,4 +131,13 @@ export const emitTaskDeleted = (io, projectId, taskId) => {
 export const emitCommentAdded = (io, projectId, comment) => {
   io.to(`project:${projectId}`).emit("comment-added", comment);
   console.log(`📢 Comment added event sent to project ${projectId}`);
+};
+
+export const getIO = () => ioInstance;
+
+export const emitAdminUpdate = (model, operation, data) => {
+  if (ioInstance) {
+    ioInstance.to("admin").emit("admin-update", { model, operation, data });
+    console.log(`📢 Admin update emitted for model ${model} (${operation})`);
+  }
 };

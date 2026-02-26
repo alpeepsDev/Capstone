@@ -1,39 +1,61 @@
-import React, { useState, useEffect, Suspense } from "react";
-import { toast, Toaster } from "react-hot-toast";
-import { Card } from "../ui";
+import React, { useState, useEffect, Suspense, useMemo } from "react";
+import { toast } from "react-hot-toast";
+import { Card, Skeleton } from "../ui";
 // Lazy load heavy view components for better performance
 const KanbanBoard = React.lazy(() => import("../kanban/KanbanBoard"));
 const ModernGanttChart = React.lazy(() =>
-  import("../gantt").then((module) => ({ default: module.ModernGanttChart }))
+  import("../gantt").then((module) => ({ default: module.ModernGanttChart })),
 );
 const CalendarView = React.lazy(() =>
-  import("../calendar").then((module) => ({ default: module.CalendarView }))
+  import("../calendar").then((module) => ({ default: module.CalendarView })),
 );
+const BudgetAllocation = React.lazy(() =>
+  import("./BudgetAllocation").then((module) => ({ default: module.default })),
+);
+// Import extracted components
+import { TableView } from "./TableView";
+import { NoFavorites, NoProjects } from "./DashboardEmptyStates";
+
 import TaskDetailModal from "../modals/TaskDetailModal";
-import TaskExchangeModal from "../modals/TaskExchangeModal";
+
 import { UserAnalytics } from "../analytics";
-import { useTasks, useTaskExchanges } from "../../hooks";
+import { useTasks } from "../../hooks";
 import { useTheme } from "../../context";
 import { motion, AnimatePresence } from "framer-motion";
+
 import {
   Grid3X3,
   List,
   BarChart3,
   Calendar,
-  Zap,
   ArrowRight,
-  Clock,
-  CheckCircle,
-  AlertCircle,
   Plus,
+  DollarSign,
+  Zap,
 } from "../ui/icons";
 
 import { useSearchParams } from "react-router-dom"; // Add import
+import { Star } from "lucide-react";
+import InsightsWidget from "../insights/InsightsWidget";
 
 // Loading component for lazy-loaded views
 const ViewLoadingSpinner = () => (
-  <div className="flex items-center justify-center h-64">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  <div className="flex-1 h-full p-6 space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {[1, 2, 3, 4].map((i) => (
+        <div
+          key={i}
+          className="border rounded-lg p-4 space-y-3 dark:border-gray-700"
+        >
+          <Skeleton className="h-8 w-1/3" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      ))}
+    </div>
+    <div className="border rounded-lg p-6 h-96 dark:border-gray-700">
+      <Skeleton className="h-8 w-1/4 mb-6" />
+      <Skeleton className="h-full w-full rounded-lg" />
+    </div>
   </div>
 );
 
@@ -46,15 +68,23 @@ const UserDashboard = ({
   setSelectedProjectId,
   activeView,
   setActiveView,
+  favorites = [],
+  onToggleFavorite,
 }) => {
   const { isDark } = useTheme();
   const [searchParams, setSearchParams] = useSearchParams(); // Add searchParams
+
+  // Filter projects based on view - Memoized
+  const displayedProjects = useMemo(
+    () =>
+      activeView === "favorites"
+        ? projects?.filter((p) => favorites.includes(p.id))
+        : projects,
+    [activeView, projects, favorites],
+  );
+
   // Removed local state for sidebar, projects, activeView, selectedProjectId
   const [taskDetailModal, setTaskDetailModal] = useState({
-    isOpen: false,
-    task: null,
-  });
-  const [exchangeModal, setExchangeModal] = useState({
     isOpen: false,
     task: null,
   });
@@ -67,15 +97,6 @@ const UserDashboard = ({
     updateTaskStatus,
     deleteTask,
   } = useTasks(selectedProjectId);
-
-  // Fetch task exchanges
-  const {
-    exchanges,
-    loading: exchangesLoading,
-    acceptExchange,
-    rejectExchange,
-    requestExchange,
-  } = useTaskExchanges();
 
   // Handle URL params for direct task access (notifications)
   useEffect(() => {
@@ -109,14 +130,47 @@ const UserDashboard = ({
     }
   }, [tasks, searchParams, selectedProjectId]);
 
+  // Ensure arrays are initialized
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+
+  // Task filtering
+  const allProjectTasks = safeTasks;
+  const myTasks = useMemo(
+    () => safeTasks.filter((task) => task.assigneeId === user?.id),
+    [safeTasks, user?.id],
+  );
+
   // Loading state for user
   if (!user) {
     return (
-      <div className="py-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className={`ml-2 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
-          Loading dashboard...
-        </span>
+      <div className="min-h-full flex flex-col p-6 space-y-6">
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="mb-8">
+            <Skeleton className="h-10 w-64 mb-2" />
+            <Skeleton className="h-5 w-96" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className={`rounded-xl border p-6 ${isDark ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"}`}
+              >
+                <div className="flex justify-between mb-4">
+                  <Skeleton className="w-12 h-12 rounded-lg" />
+                </div>
+                <Skeleton className="h-7 w-3/4 mb-4" />
+                <Skeleton className="h-4 w-full mb-6" />
+                <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex -space-x-2">
+                    <Skeleton className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800" />
+                    <Skeleton className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800" />
+                  </div>
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -124,56 +178,53 @@ const UserDashboard = ({
   // Loading state for projects
   if (projectsLoading) {
     return (
-      <div className="py-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className={`ml-2 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
-          Loading projects...
-        </span>
+      <div className="min-h-full flex flex-col p-4 md:p-6 space-y-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className={`rounded-xl border p-6 ${isDark ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"}`}
+              >
+                <div className="flex justify-between mb-4">
+                  <Skeleton className="w-12 h-12 rounded-lg" />
+                </div>
+                <Skeleton className="h-7 w-3/4 mb-4" />
+                <Skeleton className="h-4 w-full mb-6" />
+                <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex -space-x-2">
+                    <Skeleton className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800" />
+                    <Skeleton className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800" />
+                  </div>
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
-  // No projects available
+  // Handle empty states
+  if (
+    activeView === "favorites" &&
+    (!displayedProjects || displayedProjects.length === 0)
+  ) {
+    return <NoFavorites isDark={isDark} setActiveView={setActiveView} />;
+  }
+
+  // No projects available (only show if not in favorites view)
   if (!projects || projects.length === 0) {
-    return (
-      <div className="w-full p-4 sm:p-6">
-        <Card
-          className={`p-6 text-center ${isDark ? "bg-gray-800" : "bg-white"}`}
-        >
-          <h2
-            className={`text-xl font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
-          >
-            No Projects Available
-          </h2>
-          <p className={`${isDark ? "text-gray-400" : "text-gray-600"} mt-2`}>
-            You have not been assigned to any projects yet. Please contact your
-            manager.
-          </p>
-        </Card>
-      </div>
-    );
-  }
-
-  // Loading state for tasks and exchanges
-  if (tasksLoading || exchangesLoading) {
-    return (
-      <div className="py-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className={`ml-2 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
-          Loading tasks...
-        </span>
-      </div>
-    );
+    return <NoProjects isDark={isDark} />;
   }
 
   // Ensure arrays are initialized
-  const safeTasks = Array.isArray(tasks) ? tasks : [];
-  const safeExchanges = Array.isArray(exchanges) ? exchanges : [];
-  const currentProject = projects?.find((p) => p.id === selectedProjectId);
-
-  // Task filtering
-  const allProjectTasks = safeTasks;
-  const myTasks = safeTasks.filter((task) => task.assigneeId === user.id);
 
   // Handler functions
   const handleViewChange = (newView) => {
@@ -192,28 +243,23 @@ const UserDashboard = ({
 
       await updateTaskStatus(taskId, newStatus);
 
-      // Special message for users moving tasks to DONE
-      if (newStatus === "DONE") {
+      // Special message for users moving tasks to IN_REVIEW
+      if (newStatus === "IN_REVIEW") {
         toast.success(
-          "Task moved to Done! Your manager will review and approve when complete.",
+          "Task moved to In Review! Your manager will review and approve when complete.",
           {
             duration: 4000,
-          }
+          },
         );
       } else {
         toast.success(
-          `Task moved to ${newStatus === "PENDING" ? "To Do" : newStatus === "IN_PROGRESS" ? "In Progress" : newStatus}`
+          `Task moved to ${newStatus === "PENDING" ? "To Do" : newStatus === "IN_PROGRESS" ? "In Progress" : newStatus}`,
         );
       }
     } catch (error) {
       console.error("Failed to move task:", error);
       toast.error("Failed to move task");
     }
-  };
-
-  const handleTaskEdit = (task) => {
-    console.log("Editing task:", task);
-    toast("Task editing feature coming soon!");
   };
 
   const handleTaskDelete = async (taskId) => {
@@ -234,59 +280,17 @@ const UserDashboard = ({
     setTaskDetailModal({ isOpen: false, task: null });
   };
 
-  const handleRequestExchange = (task) => {
-    setExchangeModal({ isOpen: true, task });
-  };
-
-  const handleExchangeModalClose = () => {
-    setExchangeModal({ isOpen: false, task: null });
-  };
-
-  const handleExchangeSubmit = async (exchangeData) => {
-    try {
-      await requestExchange(exchangeData);
-      toast.success("Exchange request sent successfully!");
-      setExchangeModal({ isOpen: false, task: null });
-    } catch (error) {
-      console.error("Failed to request exchange:", error);
-      toast.error("Failed to send exchange request");
-    }
-  };
-
-  const handleAddTask = (status) => {
-    console.log("Adding task with status:", status);
-    toast("Users cannot create tasks. Contact your manager.");
-  };
-
-  const handleAcceptExchange = async (exchangeId) => {
-    try {
-      await acceptExchange(exchangeId);
-      toast.success("Exchange request accepted!");
-      // Refresh tasks to show the reassigned task
-      await fetchTasks();
-    } catch (error) {
-      console.error("Failed to accept exchange:", error);
-      toast.error("Failed to accept exchange request");
-    }
-  };
-
-  const handleRejectExchange = async (exchangeId) => {
-    try {
-      await rejectExchange(exchangeId);
-      toast.success("Exchange request rejected");
-    } catch (error) {
-      console.error("Failed to reject exchange:", error);
-      toast.error("Failed to reject exchange request");
-    }
-  };
-
   return (
-    <div className={`flex h-full ${isDark ? "bg-gray-900" : "bg-gray-50"}`}>
-      <Toaster position="bottom-right" reverseOrder={false} />
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div
+      className={`flex ${activeView === "budget" || activeView === "project-analytics" ? "h-auto min-h-full" : "h-full"} ${isDark ? "bg-gray-900" : "bg-gray-50"}`}
+    >
+      <div
+        className={`flex-1 flex flex-col ${activeView === "budget" || activeView === "project-analytics" ? "overflow-visible" : "overflow-hidden"}`}
+      >
         {/* Content Area */}
-        <div className="flex-1 overflow-hidden">
+        <div
+          className={`flex-1 ${activeView === "budget" || activeView === "project-analytics" ? "overflow-visible" : "overflow-hidden"}`}
+        >
           {!selectedProjectId ? (
             // Empty state
             // Project Selection Grid
@@ -305,6 +309,11 @@ const UserDashboard = ({
                   </p>
                 </div>
 
+                {/* Nova Insights Widget */}
+                <div className="mb-6">
+                  <InsightsWidget />
+                </div>
+
                 <motion.div
                   variants={{
                     hidden: { opacity: 0 },
@@ -319,14 +328,17 @@ const UserDashboard = ({
                   animate="show"
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
-                  {projects?.map((project) => (
+                  {displayedProjects?.map((project) => (
                     <motion.div
                       key={project.id}
                       variants={{
                         hidden: { opacity: 0, y: 20 },
                         show: { opacity: 1, y: 0 },
                       }}
-                      onClick={() => setSelectedProjectId(project.id)}
+                      onClick={() => {
+                        setSelectedProjectId(project.id);
+                        setActiveView("table");
+                      }}
                       className={`group relative rounded-xl border p-6 cursor-pointer transition-all duration-300 hover:shadow-lg ${
                         isDark
                           ? "bg-gray-800 border-gray-700 hover:border-blue-500/50"
@@ -343,12 +355,28 @@ const UserDashboard = ({
                         >
                           <Grid3X3 className="w-6 h-6" />
                         </div>
-                        <div
-                          className={`opacity-0 group-hover:opacity-100 transition-opacity ${
-                            isDark ? "text-blue-400" : "text-blue-600"
-                          }`}
-                        >
-                          <ArrowRight className="w-5 h-5" />
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onToggleFavorite)
+                                onToggleFavorite(project.id);
+                            }}
+                            className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors relative z-10 ${favorites.includes(project.id) ? "text-yellow-400" : "text-gray-400 hover:text-yellow-400"}`}
+                          >
+                            <Star
+                              className={`w-5 h-5 ${favorites.includes(project.id) ? "fill-current" : ""}`}
+                            />
+                          </button>
+
+                          <div
+                            className={`opacity-0 group-hover:opacity-100 transition-opacity ${
+                              isDark ? "text-blue-400" : "text-blue-600"
+                            }`}
+                          >
+                            <ArrowRight className="w-5 h-5" />
+                          </div>
                         </div>
                       </div>
 
@@ -435,7 +463,9 @@ const UserDashboard = ({
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col min-h-0 overflow-hidden space-y-1">
+            <div
+              className={`flex-1 flex flex-col min-h-0 space-y-1 ${activeView === "budget" || activeView === "project-analytics" ? "overflow-visible h-auto" : "overflow-hidden"}`}
+            >
               {/* View Tabs */}
               <div
                 className={`flex gap-1.5 p-1 rounded-md ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
@@ -445,12 +475,14 @@ const UserDashboard = ({
                   { id: "gantt", label: "Timeline", icon: BarChart3 },
                   { id: "kanban", label: "Board", icon: Grid3X3 },
                   { id: "calendar", label: "Calendar", icon: Calendar },
-                ].map(({ id, label, icon: Icon }) => (
+                  { id: "project-analytics", label: "Analytics", icon: Zap },
+                  { id: "budget", label: "Budget", icon: DollarSign },
+                ].map((view) => (
                   <button
-                    key={id}
-                    onClick={() => handleViewChange(id)}
+                    key={view.id}
+                    onClick={() => handleViewChange(view.id)}
                     className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors z-10 ${
-                      activeView === id
+                      activeView === view.id
                         ? isDark
                           ? "text-white"
                           : "text-white"
@@ -459,7 +491,7 @@ const UserDashboard = ({
                           : "text-gray-600 hover:text-gray-900"
                     }`}
                   >
-                    {activeView === id && (
+                    {activeView === view.id && (
                       <motion.div
                         layoutId="activeTab"
                         className="absolute inset-0 bg-blue-600 rounded-md -z-10"
@@ -470,8 +502,8 @@ const UserDashboard = ({
                         }}
                       />
                     )}
-                    <Icon className="w-3.5 h-3.5" />
-                    {label}
+                    <view.icon className="w-3.5 h-3.5" />
+                    {view.label}
                   </button>
                 ))}
               </div>
@@ -484,11 +516,12 @@ const UserDashboard = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="flex-1 overflow-hidden min-h-0 flex flex-col"
+                  className={`flex-1 min-h-0 flex flex-col ${activeView === "budget" || activeView === "project-analytics" ? "h-auto overflow-visible" : "h-full overflow-hidden"}`}
                 >
-                  {activeView === "table" && (
+                  {(activeView === "table" || activeView === "dashboard") && (
                     <TableView
-                      tasks={allProjectTasks}
+                      tasks={myTasks}
+                      loading={tasksLoading}
                       user={user}
                       isDark={isDark}
                       onTaskClick={handleTaskClick}
@@ -497,7 +530,34 @@ const UserDashboard = ({
                   )}
 
                   {activeView === "gantt" && (
-                    <Suspense fallback={<ViewLoadingSpinner />}>
+                    <Suspense
+                      fallback={
+                        <div
+                          className={`flex-1 rounded-lg border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
+                        >
+                          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                              <div
+                                key={i}
+                                className="grid border-b border-gray-200 dark:border-gray-700"
+                                style={{ gridTemplateColumns: `150px 1fr` }}
+                              >
+                                <div className="p-2 border-r border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                                  <Skeleton className="w-1.5 h-1.5 rounded-full" />
+                                  <div className="flex-1">
+                                    <Skeleton className="h-3 w-3/4 mb-1 rounded" />
+                                    <Skeleton className="h-2 w-1/2 rounded" />
+                                  </div>
+                                </div>
+                                <div className="relative h-12 flex items-center px-4">
+                                  <Skeleton className="h-6 w-1/3 rounded" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      }
+                    >
                       <div
                         className={`flex-1 rounded-lg border ${
                           isDark
@@ -506,7 +566,8 @@ const UserDashboard = ({
                         } overflow-hidden`}
                       >
                         <ModernGanttChart
-                          tasks={allProjectTasks}
+                          tasks={myTasks}
+                          loading={tasksLoading}
                           onTaskClick={handleTaskClick}
                         />
                       </div>
@@ -514,33 +575,95 @@ const UserDashboard = ({
                   )}
 
                   {activeView === "kanban" && (
-                    <Suspense fallback={<ViewLoadingSpinner />}>
+                    <Suspense
+                      fallback={
+                        <div className="flex-1 h-full overflow-hidden">
+                          <div className="grid grid-cols-4 gap-2.5 xl:gap-3 h-full">
+                            {[1, 2, 3, 4].map((i) => (
+                              <div
+                                key={i}
+                                className={`h-full rounded-xl flex flex-col ${isDark ? "bg-gray-800/50" : "bg-gray-100"}`}
+                              >
+                                <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                                  <Skeleton className="h-6 w-1/2 rounded" />
+                                </div>
+                                <div className="p-3 space-y-3 flex-1">
+                                  <Skeleton className="h-24 w-full rounded-lg" />
+                                  <Skeleton className="h-24 w-full rounded-lg" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      }
+                    >
                       <div className="flex-1 overflow-hidden min-h-0">
                         <KanbanBoard
-                          tasks={allProjectTasks}
+                          tasks={myTasks}
+                          loading={tasksLoading}
                           onTaskMove={handleTaskMove}
                           onTaskClick={handleTaskClick}
                           onTaskDelete={handleTaskDelete}
                           hideHeader={true}
                           projectId={selectedProjectId}
+                          userRole="USER"
+                          currentUserId={user?.id}
                         />
                       </div>
                     </Suspense>
                   )}
 
                   {activeView === "calendar" && (
-                    <Suspense fallback={<ViewLoadingSpinner />}>
+                    <Suspense
+                      fallback={
+                        <div
+                          className={`flex-1 rounded-lg border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
+                        >
+                          <div className="grid grid-cols-7 gap-[3px] p-2">
+                            {[...Array(35)].map((_, i) => (
+                              <div
+                                key={i}
+                                className={`min-h-[60px] p-1.5 rounded border ${isDark ? "bg-gray-800/50 border-gray-700" : "bg-gray-50 border-gray-200"}`}
+                              >
+                                <div className="flex justify-between mb-1">
+                                  <Skeleton className="h-3 w-4 rounded" />
+                                </div>
+                                <div className="space-y-1">
+                                  <Skeleton className="h-2 w-full rounded" />
+                                  <Skeleton className="h-2 w-3/4 rounded" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      }
+                    >
                       <div
                         className={`flex-1 overflow-hidden rounded-lg border ${
                           isDark
                             ? "bg-gray-800 border-gray-700"
                             : "bg-white border-gray-200"
-                        }`}
+                        } overflow-hidden`}
                       >
                         <CalendarView
-                          tasks={allProjectTasks}
+                          tasks={myTasks}
+                          loading={tasksLoading}
                           onTaskClick={handleTaskClick}
                         />
+                      </div>
+                    </Suspense>
+                  )}
+
+                  {activeView === "project-analytics" && (
+                    <div className="flex-1 h-full overflow-y-auto">
+                      <UserAnalytics tasks={myTasks} user={user} />
+                    </div>
+                  )}
+
+                  {activeView === "budget" && (
+                    <Suspense fallback={<ViewLoadingSpinner />}>
+                      <div className="flex-1 h-auto overflow-visible">
+                        <BudgetAllocation projectId={selectedProjectId} />
                       </div>
                     </Suspense>
                   )}
@@ -555,172 +678,14 @@ const UserDashboard = ({
       <TaskDetailModal
         isOpen={taskDetailModal.isOpen}
         task={taskDetailModal.task}
-        exchanges={safeExchanges}
         onClose={handleTaskDetailClose}
-        onRequestExchange={handleRequestExchange}
-        onAcceptExchange={handleAcceptExchange}
-        onRejectExchange={handleRejectExchange}
-      />
-
-      <TaskExchangeModal
-        isOpen={exchangeModal.isOpen}
-        task={exchangeModal.task}
-        users={projects.flatMap((p) => p.members) || []}
-        onClose={handleExchangeModalClose}
-        onSubmit={handleExchangeSubmit}
+        onTaskUpdate={handleTaskMove}
       />
     </div>
   );
 };
 
 // Table View Component
-const TableView = ({ tasks, user, isDark, onTaskClick, onStatusChange }) => {
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "PENDING":
-        return "bg-yellow-100 text-yellow-800";
-      case "IN_PROGRESS":
-        return "bg-blue-100 text-blue-800";
-      case "DONE":
-        return "bg-green-100 text-green-800";
-      case "COMPLETED":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case "HIGH":
-        return "text-red-600";
-      case "MEDIUM":
-        return "text-orange-600";
-      case "LOW":
-        return "text-green-600";
-      default:
-        return "text-gray-600";
-    }
-  };
-
-  return (
-    <div
-      className={`rounded-lg overflow-hidden border ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
-    >
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr
-              className={`${isDark ? "bg-gray-700" : "bg-gray-50"} border-b ${isDark ? "border-gray-700" : "border-gray-200"}`}
-            >
-              <th
-                className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
-              >
-                Task
-              </th>
-              <th
-                className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
-              >
-                Status
-              </th>
-              <th
-                className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
-              >
-                Priority
-              </th>
-              <th
-                className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
-              >
-                Due Date
-              </th>
-              <th
-                className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
-              >
-                Assignee
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            className={`divide-y ${isDark ? "divide-gray-700" : "divide-gray-200"}`}
-          >
-            {tasks.length === 0 ? (
-              <tr>
-                <td
-                  colSpan="5"
-                  className={`px-4 py-10 text-center ${isDark ? "text-gray-400" : "text-gray-500"}`}
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <Clock className="w-8 h-8 opacity-50" />
-                    <p>No tasks to display</p>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              tasks.map((task) => (
-                <tr
-                  key={task.id}
-                  onClick={() => onTaskClick(task)}
-                  className={`cursor-pointer transition-all ${
-                    isDark ? "hover:bg-gray-700" : "hover:bg-gray-50"
-                  }`}
-                >
-                  <td
-                    className={`px-4 py-3 ${isDark ? "text-white" : "text-gray-900"}`}
-                  >
-                    <div>
-                      <p className="font-medium text-sm">{task.title}</p>
-                      <p
-                        className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"} line-clamp-1`}
-                      >
-                        {task.description || "No description"}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <select
-                      value={task.status}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        onStatusChange(task.id, e.target.value);
-                      }}
-                      className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(task.status)} border-none cursor-pointer`}
-                    >
-                      <option value="PENDING">To Do</option>
-                      <option value="IN_PROGRESS">In Progress</option>
-                      <option value="DONE">Done</option>
-                      <option value="COMPLETED">Completed</option>
-                    </select>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs font-semibold ${getPriorityColor(task.priority)}`}
-                    >
-                      {task.priority}
-                    </span>
-                  </td>
-                  <td
-                    className={`px-4 py-3 text-xs ${isDark ? "text-gray-400" : "text-gray-600"}`}
-                  >
-                    {task.dueDate
-                      ? new Date(task.dueDate).toLocaleDateString()
-                      : "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white bg-blue-600`}
-                    >
-                      {task.assignee?.username?.[0]?.toUpperCase() || "?"}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
+// TableView moved to separate file
 
 export default UserDashboard;

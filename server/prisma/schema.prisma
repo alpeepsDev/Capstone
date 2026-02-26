@@ -7,6 +7,481 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                 String             @id @default(cuid())
+  username           String             @unique
+  password           String
+  name               String?
+  role               UserRole           @default(USER)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  avatar             String?
+  email              String             @unique
+  usernameHash       String?            @unique
+  emailHash          String?            @unique
+  isActive           Boolean            @default(true)
+  lastLogin          DateTime?
+  apiLogs            ApiLog[]
+  auditLogs          AuditLog[]
+  automationActions  AutomationAction[]
+  notifications      Notification[]
+  novaInsights       NovaInsight[]
+  projectMemberships ProjectMember[]
+  managedProjects    Project[]          @relation("ProjectManager")
+  savedFilters       SavedFilter[]
+  taskComments       TaskComment[]
+  receivedExchanges  TaskExchange[]     @relation("ExchangeReceiver")
+  sentExchanges      TaskExchange[]     @relation("ExchangeRequester")
+  taskHistory        TaskHistory[]
+  taskRelations      TaskRelation[]
+  taskTemplates      TaskTemplate[]
+  assignedTasks      Task[]             @relation("TaskAssignee")
+  createdTasks       Task[]             @relation("TaskCreator")
+  aiPreference       UserAIPreference?
+  rateLimit          UserRateLimit?
+  workLogs           WorkLog[]
+
+  @@map("users")
+}
+
+model Project {
+  id               String           @id @default(cuid())
+  name             String
+  description      String?
+  managerId        String
+  isActive         Boolean          @default(true)
+  startDate        DateTime?
+  endDate          DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  totalBudget      Float            @default(0)
+  budgetCategories BudgetCategory[]
+  labels           Label[]
+  notifications    Notification[]
+  novaInsights     NovaInsight[]
+  members          ProjectMember[]
+  manager          User             @relation("ProjectManager", fields: [managerId], references: [id])
+  savedFilters     SavedFilter[]
+  taskTemplates    TaskTemplate[]
+  tasks            Task[]
+
+  @@index([name])
+  @@index([description])
+  @@map("projects")
+}
+
+model BudgetCategory {
+  id        String          @id @default(cuid())
+  name      String
+  allocated Float           @default(0)
+  color     String
+  projectId String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  project   Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  expenses  BudgetExpense[]
+
+  @@map("budget_categories")
+}
+
+model BudgetExpense {
+  id          String         @id @default(cuid())
+  description String
+  amount      Float
+  date        DateTime       @default(now())
+  categoryId  String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  category    BudgetCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@map("budget_expenses")
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  joinedAt  DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+model Task {
+  id                String             @id @default(cuid())
+  title             String
+  description       String?
+  status            TaskStatus         @default(PENDING)
+  priority          TaskPriority       @default(MEDIUM)
+  projectId         String
+  createdById       String
+  assigneeId        String?
+  dueDate           DateTime?
+  completedAt       DateTime?
+  position          Int                @default(0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  startDate         DateTime?
+  timeRemaining     Int?
+  timeSpent         Int                @default(0)
+  isOverdue         Boolean            @default(false)
+  lastActivity      DateTime           @default(now())
+  priorityScore     Int                @default(0)
+  riskLevel         TaskRiskLevel      @default(LOW)
+  epicId            String?
+  estimatedHours    Float?
+  originalEstimate  Float?
+  parentTaskId      String?
+  storyPoints       Int?
+  taskType          TaskType           @default(TASK)
+  automationActions AutomationAction[]
+  notifications     Notification[]
+  novaInsights      NovaInsight[]
+  comments          TaskComment[]
+  exchanges         TaskExchange[]
+  history           TaskHistory[]
+  labels            TaskLabel[]
+  predictions       TaskPrediction[]
+  sourceRelations   TaskRelation[]     @relation("SourceRelations")
+  targetRelations   TaskRelation[]     @relation("TargetRelations")
+  assignee          User?              @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdBy         User               @relation("TaskCreator", fields: [createdById], references: [id])
+  epic              Task?              @relation("EpicTasks", fields: [epicId], references: [id])
+  epicTasks         Task[]             @relation("EpicTasks")
+  parentTask        Task?              @relation("ParentChild", fields: [parentTaskId], references: [id])
+  subtasks          Task[]             @relation("ParentChild")
+  project           Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workLogs          WorkLog[]
+
+  @@index([title])
+  @@index([description])
+  @@map("tasks")
+}
+
+model WorkLog {
+  id          String   @id @default(cuid())
+  timeSpent   Int
+  startedAt   DateTime @default(now())
+  description String?
+  taskId      String
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("work_logs")
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  content   String
+  taskId    String
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id])
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_comments")
+}
+
+model TaskExchange {
+  id           String         @id @default(cuid())
+  taskId       String
+  requesterId  String
+  receiverId   String
+  status       ExchangeStatus @default(PENDING)
+  requestNote  String?
+  responseNote String?
+  requestedAt  DateTime       @default(now())
+  respondedAt  DateTime?
+  receiver     User           @relation("ExchangeReceiver", fields: [receiverId], references: [id])
+  requester    User           @relation("ExchangeRequester", fields: [requesterId], references: [id])
+  task         Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_exchanges")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String
+  userId    String
+  taskId    String?
+  projectId String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  project   Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task      Task?            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model ApiLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  username     String?
+  endpoint     String
+  method       String
+  statusCode   Int
+  responseTime Int
+  userAgent    String?
+  ipAddress    String?
+  timestamp    DateTime @default(now())
+  user         User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([endpoint])
+  @@index([timestamp])
+  @@map("api_logs")
+}
+
+model RateLimitConfig {
+  id        String   @id @default(cuid())
+  role      UserRole @unique
+  limit     Int
+  window    Int      @default(3600)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("rate_limit_configs")
+}
+
+model UserRateLimit {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  limit     Int
+  window    Int      @default(3600)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_rate_limits")
+}
+
+model EndpointRateLimit {
+  id        String   @id @default(cuid())
+  endpoint  String
+  method    String
+  limit     Int
+  window    Int      @default(60)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([endpoint, method])
+  @@map("endpoint_rate_limits")
+}
+
+model SystemHealthLog {
+  id                String   @id @default(cuid())
+  cpuUsage          Float
+  memoryUsage       Float
+  totalMemory       Float
+  freeMemory        Float
+  uptime            Float
+  activeConnections Int
+  timestamp         DateTime @default(now())
+
+  @@index([timestamp])
+  @@map("system_health_logs")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String
+  targetId  String?
+  details   Json?
+  timestamp DateTime @default(now())
+  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+model Label {
+  id          String      @id @default(cuid())
+  name        String
+  color       String
+  description String?
+  projectId   String?
+  isGlobal    Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  project     Project?    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks       TaskLabel[]
+
+  @@map("labels")
+}
+
+model TaskLabel {
+  taskId    String
+  labelId   String
+  createdAt DateTime @default(now())
+  label     Label    @relation(fields: [labelId], references: [id], onDelete: Cascade)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, labelId])
+  @@map("task_labels")
+}
+
+model TaskRelation {
+  id           String           @id @default(cuid())
+  sourceTaskId String
+  targetTaskId String
+  relationType TaskRelationType
+  createdAt    DateTime         @default(now())
+  createdById  String
+  createdBy    User             @relation(fields: [createdById], references: [id])
+  sourceTask   Task             @relation("SourceRelations", fields: [sourceTaskId], references: [id], onDelete: Cascade)
+  targetTask   Task             @relation("TargetRelations", fields: [targetTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceTaskId, targetTaskId, relationType])
+  @@index([sourceTaskId])
+  @@index([targetTaskId])
+  @@map("task_relations")
+}
+
+model TaskTemplate {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  taskType    TaskType
+  projectId   String?
+  priority    TaskPriority @default(MEDIUM)
+  template    Json
+  createdById String
+  isDefault   Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   User         @relation(fields: [createdById], references: [id])
+  project     Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("task_templates")
+}
+
+model TaskHistory {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  field     String
+  oldValue  String?
+  newValue  String?
+  createdAt DateTime @default(now())
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([createdAt])
+  @@map("task_history")
+}
+
+model SavedFilter {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  projectId String?
+  criteria  Json
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("saved_filters")
+}
+
+model NovaInsight {
+  id          String      @id @default(cuid())
+  userId      String
+  type        InsightType
+  title       String
+  description String
+  taskId      String?
+  projectId   String?
+  actionTaken Boolean     @default(false)
+  dismissed   Boolean     @default(false)
+  confidence  Float
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  project     Project?    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task        Task?       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([dismissed])
+  @@index([createdAt])
+  @@map("nova_insights")
+}
+
+model UserAIPreference {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  enableProactiveNotifs  Boolean  @default(true)
+  enableAutoAssignment   Boolean  @default(false)
+  enableAutoEscalation   Boolean  @default(true)
+  deadlineWarningDays    Int[]    @default([1, 3, 7])
+  preferredInsightTypes  String[] @default(["RISK_DETECTED", "DEADLINE_WARNING", "PATTERN_FOUND"])
+  weeklyReportDay        Int?
+  weeklyReportTime       String?
+  notificationQuietHours Json?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_ai_preferences")
+}
+
+model TaskPrediction {
+  id                    String    @id @default(cuid())
+  taskId                String
+  predictedCompletionAt DateTime
+  actualCompletionAt    DateTime?
+  confidence            Float
+  accuracyScore         Float?
+  factors               Json
+  basedOnSimilarTasks   Int       @default(0)
+  userVelocityFactor    Float?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  task                  Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([createdAt])
+  @@map("task_predictions")
+}
+
+model AutomationAction {
+  id           String         @id @default(cuid())
+  type         AutoActionType
+  taskId       String?
+  userId       String?
+  description  String
+  success      Boolean
+  metadata     Json?
+  errorMessage String?
+  createdAt    DateTime       @default(now())
+  task         Task?          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user         User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([type])
+  @@index([success])
+  @@index([createdAt])
+  @@map("automation_actions")
+}
+
 enum UserRole {
   ADMIN
   MANAGER
@@ -17,7 +492,7 @@ enum UserRole {
 enum TaskStatus {
   PENDING
   IN_PROGRESS
-  DONE
+  IN_REVIEW
   COMPLETED
   CANCELLED
 }
@@ -36,128 +511,19 @@ enum ExchangeStatus {
   CANCELLED
 }
 
-model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  email     String   @unique
-  password  String
-  name      String?
-  role      UserRole @default(USER)
-  avatar    String?
-  isActive  Boolean  @default(true)
-  lastLogin DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  managedProjects    Project[]      @relation("ProjectManager")
-  projectMemberships ProjectMember[]
-  createdTasks       Task[]         @relation("TaskCreator")
-  assignedTasks      Task[]         @relation("TaskAssignee")
-  taskComments       TaskComment[]
-  sentExchanges      TaskExchange[] @relation("ExchangeRequester")
-  receivedExchanges  TaskExchange[] @relation("ExchangeReceiver")
-  notifications      Notification[]
-  apiLogs            ApiLog[]
-  auditLogs          AuditLog[]
-  rateLimit          UserRateLimit?
-
-  @@map("users")
+enum TaskRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }
 
-model Project {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  managerId   String
-  isActive    Boolean  @default(true)
-  startDate   DateTime?
-  endDate     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  manager       User            @relation("ProjectManager", fields: [managerId], references: [id])
-  members       ProjectMember[]
-  tasks         Task[]
-  notifications Notification[]
-
-  @@map("projects")
-}
-
-model ProjectMember {
-  id        String   @id @default(cuid())
-  projectId String
-  userId    String
-  joinedAt  DateTime @default(now())
-
-  // Relations
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([projectId, userId])
-  @@map("project_members")
-}
-
-model Task {
-  id          String       @id @default(cuid())
-  title       String
-  description String?
-  status      TaskStatus   @default(PENDING)
-  priority    TaskPriority @default(MEDIUM)
-  projectId   String
-  createdById String
-  assigneeId  String?
-  startDate   DateTime?    // For Gantt chart
-  dueDate     DateTime?
-  completedAt DateTime?
-  position    Int          @default(0) // For Kanban ordering
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  // Relations
-  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdBy     User           @relation("TaskCreator", fields: [createdById], references: [id])
-  assignee      User?          @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  comments      TaskComment[]
-  exchanges     TaskExchange[]
-  notifications Notification[]
-
-  @@map("tasks")
-}
-
-model TaskComment {
-  id        String   @id @default(cuid())
-  content   String
-  taskId    String
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  author User @relation(fields: [authorId], references: [id])
-
-  @@map("task_comments")
-}
-
-model TaskExchange {
-  id           String         @id @default(cuid())
-  taskId       String
-  requesterId  String
-  receiverId   String
-  status       ExchangeStatus @default(PENDING)
-  requestNote  String?
-  responseNote String?
-  requestedAt  DateTime       @default(now())
-  respondedAt  DateTime?
-
-  // Relations
-  task      Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  requester User @relation("ExchangeRequester", fields: [requesterId], references: [id])
-  receiver  User @relation("ExchangeReceiver", fields: [receiverId], references: [id])
-
-  @@map("task_exchanges")
+enum TaskType {
+  TASK
+  STORY
+  BUG
+  EPIC
+  SUBTASK
 }
 
 enum NotificationType {
@@ -171,114 +537,37 @@ enum NotificationType {
   TASK_EXCHANGE_REJECTED
   PROJECT_ASSIGNED
   MENTION
+  AI_INSIGHT
+  DEADLINE_WARNING
+  RISK_ALERT
+  WEEKLY_SUMMARY
+  AUTO_ASSIGNMENT
 }
 
-model Notification {
-  id          String           @id @default(cuid())
-  type        NotificationType
-  title       String
-  message     String
-  userId      String
-  taskId      String?
-  projectId   String?
-  isRead      Boolean          @default(false)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-
-  // Relations
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  task    Task?    @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@map("notifications")
+enum TaskRelationType {
+  PARENT_CHILD
+  BLOCKS
+  BLOCKED_BY
+  RELATES_TO
+  DUPLICATES
+  DUPLICATE_OF
 }
 
-// Admin Monitoring Models
-model ApiLog {
-  id           String   @id @default(cuid())
-  userId       String?
-  username     String?
-  endpoint     String
-  method       String
-  statusCode   Int
-  responseTime Int      // in milliseconds
-  userAgent    String?
-  ipAddress    String?
-  timestamp    DateTime @default(now())
-  
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-  
-  @@index([userId])
-  @@index([endpoint])
-  @@index([timestamp])
-  @@map("api_logs")
+enum InsightType {
+  RISK_DETECTED
+  DEADLINE_WARNING
+  PATTERN_FOUND
+  WORKLOAD_IMBALANCE
+  TASK_SUGGESTION
+  PRODUCTIVITY_TIP
+  COMPLETION_PREDICTION
+  BUDGET_ALERT
 }
 
-model RateLimitConfig {
-  id        String   @id @default(cuid())
-  role      UserRole @unique
-  limit     Int      // requests per window
-  window    Int      @default(3600) // time window in seconds (default 1 hour)
-  enabled   Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@map("rate_limit_configs")
-}
-
-model UserRateLimit {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  limit     Int      // custom requests per window for this user
-  window    Int      @default(3600) // time window in seconds
-  enabled   Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@map("user_rate_limits")
-}
-
-model EndpointRateLimit {
-  id        String   @id @default(cuid())
-  endpoint  String   // e.g., "/api/projects", "/api/tasks"
-  method    String   // GET, POST, PUT, DELETE, or * for all methods
-  limit     Int      // requests per window
-  window    Int      @default(60) // time window in seconds (default 1 minute)
-  enabled   Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@unique([endpoint, method])
-  @@map("endpoint_rate_limits")
-}
-
-model SystemHealthLog {
-  id                String   @id @default(cuid())
-  cpuUsage          Float
-  memoryUsage       Float
-  totalMemory       Float
-  freeMemory        Float
-  uptime            Float
-  activeConnections Int
-  timestamp         DateTime @default(now())
-  
-  @@index([timestamp])
-  @@map("system_health_logs")
-}
-
-model AuditLog {
-  id        String   @id @default(cuid())
-  adminId   String
-  action    String   // e.g., "USER_DEACTIVATED", "ROLE_CHANGED", "RATE_LIMIT_UPDATED"
-  targetId  String?  // userId, configId, etc.
-  details   Json?    // Additional details about the action
-  timestamp DateTime @default(now())
-  
-  admin User @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  
-  @@index([adminId])
-  @@index([timestamp])
-  @@map("audit_logs")
+enum AutoActionType {
+  AUTO_ASSIGN
+  AUTO_ESCALATE
+  AUTO_SUGGEST_SPLIT
+  AUTO_PRIORITY_UPDATE
+  AUTO_NOTIFICATION
 }

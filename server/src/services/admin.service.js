@@ -1,11 +1,65 @@
 import prisma from "../config/database.js";
 import os from "os";
+import { decrypt, decryptUser } from "../utils/encryption.js";
 
 class AdminService {
   // ==================== API MONITORING ====================
 
+  async getDashboardStats() {
+    const [
+      totalUsers,
+      activeUsers,
+      totalProjects,
+      activeProjects,
+      totalTasks,
+      completedTasks,
+      recentProjects,
+    ] = await Promise.all([
+      prisma.user.count(),
+      prisma.user.count({ where: { isActive: true } }),
+      prisma.project.count(),
+      prisma.project.count({ where: { isActive: true } }),
+      prisma.task.count(),
+      prisma.task.count({ where: { status: "COMPLETED" } }),
+      prisma.project.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        include: {
+          manager: {
+            select: { name: true, email: true },
+          },
+          _count: {
+            select: { members: true, tasks: true },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      users: {
+        total: totalUsers,
+        active: activeUsers,
+      },
+      projects: {
+        total: totalProjects,
+        active: activeProjects,
+      },
+      tasks: {
+        total: totalTasks,
+        completed: completedTasks,
+      },
+      recentProjects: recentProjects.map((p) => ({
+        ...p,
+        name: decrypt(p.name),
+        description: decrypt(p.description),
+        manager: decryptUser(p.manager),
+      })),
+    };
+  }
+
   /**
-   * Get API usage statistics
+   * Get API statistics
+   * @param {string} timeRange - '1h', '24h', '7d', '30d'
    */
   async getApiStatistics(timeRange = "24h") {
     const timeRanges = {
@@ -156,8 +210,8 @@ class AdminService {
 
     return users.map((user) => ({
       userId: user.id,
-      username: user.username,
-      email: user.email,
+      username: decrypt(user.username),
+      email: decrypt(user.email),
       role: user.role,
       requestCount: user._count.apiLogs,
       rateLimit: configMap[user.role] || 200,
@@ -186,11 +240,8 @@ class AdminService {
     });
   }
 
-  // ==================== RATE LIMIT CONFIGURATION ====================
+  // Get all rate limit configurations
 
-  /**
-   * Get all rate limit configurations
-   */
   async getRateLimitConfigs() {
     const configs = await prisma.rateLimitConfig.findMany({
       orderBy: {
@@ -362,7 +413,10 @@ class AdminService {
       },
     });
 
-    return limits;
+    return limits.map((limit) => ({
+      ...limit,
+      user: decryptUser(limit.user),
+    }));
   }
 
   /**
@@ -438,7 +492,7 @@ class AdminService {
         cpu: parseFloat(cpuUsage.toFixed(2)),
         memory: parseFloat(memoryUsage.toFixed(2)),
         totalMemory: parseFloat(
-          (totalMemory / (1024 * 1024 * 1024)).toFixed(2)
+          (totalMemory / (1024 * 1024 * 1024)).toFixed(2),
         ),
         freeMemory: parseFloat((freeMemory / (1024 * 1024 * 1024)).toFixed(2)),
         uptime: this.formatUptime(uptime),
@@ -636,9 +690,9 @@ class AdminService {
 
     return users.map((user) => ({
       id: user.id,
-      username: user.username,
-      email: user.email,
-      name: user.name,
+      username: decrypt(user.username),
+      email: decrypt(user.email),
+      name: decrypt(user.name),
       role: user.role,
       isActive: user.isActive,
       lastLogin: user.lastLogin,
@@ -704,40 +758,50 @@ class AdminService {
   async getUserActivityDetails(userId, days = 7) {
     const startTime = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-    const [user, apiLogs, recentActivity] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          _count: {
-            select: {
-              managedProjects: true,
-              projectMemberships: true,
-              assignedTasks: true,
+    const [user, apiLogs, recentActivity, recentTasks, tasksCompletedCount] =
+      await Promise.all([
+        prisma.user.findUnique({
+          where: { id: userId },
+          include: {
+            _count: {
+              select: {
+                managedProjects: true,
+                projectMemberships: true,
+                assignedTasks: true,
+              },
             },
           },
-        },
-      }),
-      prisma.apiLog.findMany({
-        where: {
-          userId,
-          timestamp: { gte: startTime },
-        },
-        orderBy: { timestamp: "desc" },
-      }),
-      prisma.apiLog.groupBy({
-        by: ["endpoint", "method"],
-        where: {
-          userId,
-          timestamp: { gte: startTime },
-        },
-        _count: { id: true },
-        _avg: { responseTime: true },
-        orderBy: {
-          _count: { id: "desc" },
-        },
-        take: 10,
-      }),
-    ]);
+        }),
+        prisma.apiLog.findMany({
+          where: {
+            userId,
+            timestamp: { gte: startTime },
+          },
+          orderBy: { timestamp: "desc" },
+        }),
+        prisma.apiLog.groupBy({
+          by: ["endpoint", "method"],
+          where: {
+            userId,
+            timestamp: { gte: startTime },
+          },
+          _count: { id: true },
+          _avg: { responseTime: true },
+          orderBy: {
+            _count: { id: "desc" },
+          },
+          take: 10,
+        }),
+        prisma.task.findMany({
+          where: { assigneeId: userId },
+          orderBy: { updatedAt: "desc" },
+          take: 5,
+          include: { project: { select: { name: true } } },
+        }),
+        prisma.task.count({
+          where: { assigneeId: userId, status: "COMPLETED" },
+        }),
+      ]);
 
     // Group requests by day
     const requestsByDay = {};
@@ -749,11 +813,17 @@ class AdminService {
     return {
       user: {
         id: user.id,
-        username: user.username,
-        email: user.email,
+        username: decrypt(user.username),
+        email: decrypt(user.email),
+        name: decrypt(user.name),
         role: user.role,
         isActive: user.isActive,
         lastLogin: user.lastLogin,
+      },
+      summary: {
+        totalRequests: apiLogs.length,
+        tasksCompleted: tasksCompletedCount,
+        tasksAssigned: user._count.assignedTasks,
       },
       stats: {
         totalRequests: apiLogs.length,
@@ -771,6 +841,19 @@ class AdminService {
         count: ep._count.id,
         avgTime: Math.round(ep._avg.responseTime || 0),
       })),
+      recentTasks: recentTasks.map((t) => ({
+        id: t.id,
+        title: decrypt(t.title),
+        status: t.status,
+        project: t.project
+          ? { ...t.project, name: decrypt(t.project.name) }
+          : null,
+      })),
+      recentApiActivity: apiLogs.slice(0, 50).map((log) => ({
+        method: log.method,
+        endpoint: log.endpoint,
+        timestamp: log.timestamp.getTime(),
+      })),
     };
   }
 
@@ -778,7 +861,7 @@ class AdminService {
    * Get audit logs
    */
   async getAuditLogs(limit = 50) {
-    return await prisma.auditLog.findMany({
+    const logs = await prisma.auditLog.findMany({
       take: limit,
       orderBy: { timestamp: "desc" },
       include: {
@@ -790,6 +873,11 @@ class AdminService {
         },
       },
     });
+
+    return logs.map((log) => ({
+      ...log,
+      admin: log.admin ? decryptUser(log.admin) : null,
+    }));
   }
 
   /**
@@ -806,11 +894,8 @@ class AdminService {
     });
   }
 
-  // ==================== CLEANUP ====================
+  // Clean old logs
 
-  /**
-   * Clean old logs (should be run periodically)
-   */
   async cleanOldLogs(daysToKeep = 90) {
     const cutoffDate = new Date(Date.now() - daysToKeep * 24 * 60 * 60 * 1000);
 
@@ -830,6 +915,68 @@ class AdminService {
     return {
       deletedApiLogs: deletedApiLogs.count,
       deletedHealthLogs: deletedHealthLogs.count,
+    };
+  }
+
+  // Create a full system backup
+
+  async createBackup() {
+    // Fetch data from all key models
+    const [
+      users,
+      projects,
+      projectMembers,
+      tasks,
+      taskComments,
+      taskExchanges,
+      notifications,
+      apiLogs,
+      rateLimitConfigs,
+      userRateLimits,
+      endpointRateLimits,
+      systemHealthLogs,
+      auditLogs,
+    ] = await Promise.all([
+      prisma.user.findMany(),
+      prisma.project.findMany(),
+      prisma.projectMember.findMany(),
+      prisma.task.findMany(),
+      prisma.taskComment.findMany(),
+      prisma.taskExchange.findMany(),
+      prisma.notification.findMany(),
+      prisma.apiLog.findMany(),
+      prisma.rateLimitConfig.findMany(),
+      prisma.userRateLimit.findMany(),
+      prisma.endpointRateLimit.findMany(),
+      prisma.systemHealthLog.findMany(),
+      prisma.auditLog.findMany(),
+    ]);
+
+    return {
+      timestamp: new Date().toISOString(),
+      version: "1.0",
+      data: {
+        users,
+        projects,
+        projectMembers,
+        tasks,
+        taskComments,
+        taskExchanges,
+        notifications,
+        admin: {
+          apiLogs,
+          rateLimitConfigs,
+          userRateLimits,
+          endpointRateLimits,
+          systemHealthLogs,
+          auditLogs,
+        },
+      },
+      counts: {
+        users: users.length,
+        projects: projects.length,
+        tasks: tasks.length,
+      },
     };
   }
 }

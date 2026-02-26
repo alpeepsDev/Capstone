@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useTheme } from "../../context";
-import { Card } from "../ui";
+import { Card, Skeleton } from "../ui";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
-const CalendarView = ({ tasks, onTaskClick }) => {
+const CalendarView = ({ tasks, onTaskClick, loading }) => {
   const { isDark } = useTheme();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
@@ -75,7 +75,7 @@ const CalendarView = ({ tasks, onTaskClick }) => {
 
   // Get task color based on priority
   const getTaskColor = (task) => {
-    if (task.status === "COMPLETED" || task.status === "DONE") {
+    if (task.status === "COMPLETED" || task.status === "IN_REVIEW") {
       return "bg-green-500";
     }
     switch (task.priority) {
@@ -160,78 +160,94 @@ const CalendarView = ({ tasks, onTaskClick }) => {
 
           {/* Calendar Days */}
           <div className="grid grid-cols-7 gap-[3px]">
-            {calendarDays.map((dayObj, idx) => {
-              const { date, isCurrentMonth } = dayObj;
-              const dayTasks = getTasksForDate(date);
-              const today = isToday(date);
-
-              return (
-                <div
-                  key={idx}
-                  className={`min-h-[60px] p-1.5 rounded border transition-all cursor-pointer flex flex-col ${
-                    isDark
-                      ? today
-                        ? "bg-blue-900/20 border-blue-500"
-                        : isCurrentMonth
-                          ? "bg-gray-800 border-gray-700 hover:bg-gray-700"
-                          : "bg-gray-900/50 border-gray-800"
-                      : today
-                        ? "bg-blue-50 border-blue-500"
-                        : isCurrentMonth
-                          ? "bg-white border-gray-200 hover:bg-gray-50"
-                          : "bg-gray-50 border-gray-200"
-                  }`}
-                  onClick={() => {
-                    setSelectedDate(date);
-                  }}
-                >
-                  {/* Date Number */}
+            {loading
+              ? // Skeleton Calendar Grid
+                [...Array(35)].map((_, i) => (
                   <div
-                    className={`text-[11px] font-medium mb-0.5 ${
-                      today
-                        ? "text-blue-600 dark:text-blue-400 font-semibold"
-                        : isCurrentMonth
-                          ? isDark
-                            ? "text-gray-200"
-                            : "text-gray-900"
-                          : isDark
-                            ? "text-gray-600"
-                            : "text-gray-400"
-                    }`}
+                    key={i}
+                    className={`min-h-[60px] p-1.5 rounded border ${isDark ? "bg-gray-800/50 border-gray-700" : "bg-gray-50 border-gray-200"}`}
                   >
-                    {date.getDate()}
+                    <div className="flex justify-between mb-1">
+                      <Skeleton className="h-3 w-4 rounded" />
+                    </div>
+                    <div className="space-y-1">
+                      <Skeleton className="h-2 w-full rounded" />
+                      <Skeleton className="h-2 w-3/4 rounded" />
+                    </div>
                   </div>
+                ))
+              : calendarDays.map((dayObj, idx) => {
+                  const { date, isCurrentMonth } = dayObj;
+                  const dayTasks = getTasksForDate(date);
+                  const today = isToday(date);
 
-                  {/* Tasks */}
-                  <div className="space-y-[3px]">
-                    {dayTasks.slice(0, 2).map((task) => (
+                  return (
+                    <div
+                      key={idx}
+                      className={`min-h-[60px] p-1.5 rounded border transition-all cursor-pointer flex flex-col ${
+                        isDark
+                          ? today
+                            ? "bg-blue-900/20 border-blue-500"
+                            : isCurrentMonth
+                              ? "bg-gray-800 border-gray-700 hover:bg-gray-700"
+                              : "bg-gray-900/50 border-gray-800"
+                          : today
+                            ? "bg-blue-50 border-blue-500"
+                            : isCurrentMonth
+                              ? "bg-white border-gray-200 hover:bg-gray-50"
+                              : "bg-gray-50 border-gray-200"
+                      }`}
+                      onClick={() => {
+                        setSelectedDate(date);
+                      }}
+                    >
+                      {/* Date Number */}
                       <div
-                        key={task.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onTaskClick && onTaskClick(task);
-                        }}
-                        className={`${getTaskColor(
-                          task
-                        )} text-white text-[10px] px-1 py-0.5 rounded truncate hover:opacity-80 transition-opacity`}
-                        title={task.title}
-                      >
-                        {task.title}
-                      </div>
-                    ))}
-                    {dayTasks.length > 2 && (
-                      <div
-                        className={`text-[10px] px-1 ${
-                          isDark ? "text-gray-400" : "text-gray-600"
+                        className={`text-[11px] font-medium mb-0.5 ${
+                          today
+                            ? "text-blue-600 dark:text-blue-400 font-semibold"
+                            : isCurrentMonth
+                              ? isDark
+                                ? "text-gray-200"
+                                : "text-gray-900"
+                              : isDark
+                                ? "text-gray-600"
+                                : "text-gray-400"
                         }`}
                       >
-                        +{dayTasks.length - 2} more
+                        {date.getDate()}
                       </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+
+                      {/* Tasks */}
+                      <div className="space-y-[3px]">
+                        {dayTasks.slice(0, 2).map((task) => (
+                          <div
+                            key={task.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onTaskClick && onTaskClick(task);
+                            }}
+                            className={`${getTaskColor(
+                              task,
+                            )} text-white text-[10px] px-1 py-0.5 rounded truncate hover:opacity-80 transition-opacity`}
+                            title={task.title}
+                          >
+                            {task.title}
+                          </div>
+                        ))}
+                        {dayTasks.length > 2 && (
+                          <div
+                            className={`text-[10px] px-1 ${
+                              isDark ? "text-gray-400" : "text-gray-600"
+                            }`}
+                          >
+                            +{dayTasks.length - 2} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
           </div>
         </div>
 

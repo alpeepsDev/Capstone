@@ -71,7 +71,7 @@ const TaskExchangeModal = ({
 
   const availableMembers = normalizedMembers.filter(
     (member) =>
-      member.id !== task?.assigneeId && member.id !== task?.currentUserId,
+      member.id !== task?.assigneeId && member.id !== task?.currentUserId
   );
 
   console.log("Raw project members:", rawMembers);
@@ -79,38 +79,7 @@ const TaskExchangeModal = ({
   console.log("Available members after filtering:", availableMembers);
 
   // If no project members, create a mock list for demo purposes
-  const mockMembers = [
-    {
-      id: "manager1",
-      username: "Project Manager",
-      role: "MANAGER",
-      name: "John Manager",
-    },
-    {
-      id: "user1",
-      username: "team.member1",
-      role: "USER",
-      name: "Alice Developer",
-    },
-    {
-      id: "user2",
-      username: "team.member2",
-      role: "USER",
-      name: "Bob Designer",
-    },
-    {
-      id: "user3",
-      username: "team.member3",
-      role: "USER",
-      name: "Carol Tester",
-    },
-  ].filter(
-    (member) =>
-      member.id !== task?.assigneeId && member.id !== task?.currentUserId,
-  );
-
-  const membersToShow =
-    availableMembers.length > 0 ? availableMembers : mockMembers;
+  const membersToShow = availableMembers;
 
   console.log("Available members to show:", membersToShow);
 

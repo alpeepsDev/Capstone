@@ -43,18 +43,41 @@ async function startServer() {
   });
 }
 
-// Graceful shutdown
-process.on("SIGTERM", async () => {
-  console.log("SIGTERM received, shutting down gracefully");
-  await prisma.$disconnect();
-  process.exit(0);
-});
+// Graceful shutdown — close BullMQ workers & queues (if active) before disconnecting DB
+async function gracefulShutdown(signal) {
+  console.log(`${signal} received, shutting down gracefully...`);
 
-process.on("SIGINT", async () => {
-  console.log("SIGINT received, shutting down gracefully");
+  try {
+    // Dynamically import — only loads if BullMQ was actually initialized
+    const { allWorkers } = await import("./automation/scheduler.js");
+
+    if (allWorkers && allWorkers.length > 0) {
+      console.log("[Shutdown] Closing BullMQ workers...");
+      await Promise.allSettled(allWorkers.map((w) => w.close()));
+
+      // Also close queues if they were loaded
+      try {
+        const { allQueues } = await import("./queues/queues.js");
+        console.log("[Shutdown] Closing BullMQ queues...");
+        await Promise.allSettled(allQueues.map((q) => q.close()));
+      } catch {
+        // Queues were never loaded (fallback mode) — nothing to close
+      }
+    }
+  } catch {
+    // Scheduler module issue — skip BullMQ cleanup
+  }
+
+  // Disconnect Prisma
+  console.log("[Shutdown] Disconnecting database...");
   await prisma.$disconnect();
+
+  console.log("[Shutdown] ✅ Clean shutdown complete");
   process.exit(0);
-});
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 startServer().catch((error) => {
   console.error("Failed to start server:", error);

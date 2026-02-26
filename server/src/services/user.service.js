@@ -1,15 +1,17 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "../config/database.js";
+import { hash } from "../utils/hashing.js";
+import { encrypt } from "../utils/encryption.js";
 
 export const userService = {
   async createUser(userData) {
     const { username, email, password, name, role = "USER" } = userData;
 
-    // Check if user already exists (username or email)
+    // Check if user already exists (username or email) via deterministic hashes
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [{ username }, { email }],
+        OR: [{ usernameHash: hash(username) }, { emailHash: hash(email) }],
       },
     });
 
@@ -20,14 +22,17 @@ export const userService = {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
+    // Create user with encrypted PII and deterministic hashes for lookups
+    // Note: PII fields are auto-decrypted by Prisma middleware on return
     return await prisma.user.create({
       data: {
-        username,
-        email,
+        username: encrypt(username),
+        email: encrypt(email),
         password: hashedPassword,
-        name,
+        name: encrypt(name),
         role,
+        emailHash: hash(email),
+        usernameHash: hash(username),
       },
       select: {
         id: true,
@@ -41,9 +46,10 @@ export const userService = {
   },
 
   async authenticateUser(email, password) {
-    // Find user by email
+    // Find user by deterministic email hash
+    // Note: user PII fields are auto-decrypted by Prisma middleware
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { emailHash: hash(email) },
     });
 
     if (!user) {
@@ -72,14 +78,14 @@ export const userService = {
         role: user.role,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "15m" }, // 15 minutes
+      { expiresIn: "1h" }, // 1 hour
     );
 
     // Generate refresh token (long-lived)
     const refreshToken = jwt.sign(
       { userId: user.id, type: "refresh" },
       process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
-      { expiresIn: "7d" }, // 7 days
+      { expiresIn: process.env.JWT_EXPIRES_IN }, // 7 days
     );
 
     return {
@@ -107,7 +113,7 @@ export const userService = {
         throw new Error("Invalid token type");
       }
 
-      // Get user from database
+      // Get user from database (auto-decrypted by middleware)
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
         select: {
@@ -161,6 +167,21 @@ export const userService = {
         email: true,
         name: true,
         role: true,
+      },
+    });
+  },
+
+  async updateAvatar(userId, avatarPath) {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { avatar: avatarPath },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        name: true,
+        role: true,
+        avatar: true,
       },
     });
   },

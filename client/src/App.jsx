@@ -5,7 +5,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+import { ThemedToaster } from "./components/ui/ThemedToaster";
 import {
   AuthProvider,
   useAuth,
@@ -143,23 +143,7 @@ function App() {
         <AuthProvider>
           <NotificationProvider>
             <AppRoutes />
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: "#363636",
-                  color: "#fff",
-                },
-                success: {
-                  duration: 3000,
-                  theme: {
-                    primary: "green",
-                    secondary: "black",
-                  },
-                },
-              }}
-            />
+            <ThemedToaster />
           </NotificationProvider>
         </AuthProvider>
       </Router>

@@ -54,7 +54,7 @@ export const requireRole = (...allowedRoles) => {
 };
 
 export const requireAdmin = requireRole("ADMIN");
-export const requireAdminOrModerator = requireRole("ADMIN", "MODERATOR");
+export const requireAdminOrModerator = requireRole("ADMIN");
 export const requireManagerOrHigher = requireRole("ADMIN", "MANAGER");
 
 // Create alias for auth

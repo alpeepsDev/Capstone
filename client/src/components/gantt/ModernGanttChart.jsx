@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useTheme } from "../../context";
-import { Card } from "../ui";
+import { Card, Skeleton } from "../ui";
 import { ChevronLeft, ChevronRight, Calendar, User } from "lucide-react";
 
-const ModernGanttChart = ({ tasks, onTaskClick }) => {
+const ModernGanttChart = ({ tasks, onTaskClick, loading }) => {
   const { isDark } = useTheme();
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -51,11 +51,11 @@ const ModernGanttChart = ({ tasks, onTaskClick }) => {
 
     const startOffset = Math.max(
       0,
-      Math.floor((startDate - firstDay) / (1000 * 60 * 60 * 24))
+      Math.floor((startDate - firstDay) / (1000 * 60 * 60 * 24)),
     );
     const endOffset = Math.min(
       dateRange.length - 1,
-      Math.floor((endDate - firstDay) / (1000 * 60 * 60 * 24))
+      Math.floor((endDate - firstDay) / (1000 * 60 * 60 * 24)),
     );
 
     const width = ((endOffset - startOffset + 1) / dateRange.length) * 100;
@@ -66,7 +66,7 @@ const ModernGanttChart = ({ tasks, onTaskClick }) => {
 
   // Get task color based on priority and status
   const getTaskColor = (task) => {
-    if (task.status === "COMPLETED" || task.status === "DONE") {
+    if (task.status === "COMPLETED" || task.status === "IN_REVIEW") {
       return "bg-green-500";
     }
     switch (task.priority) {
@@ -202,7 +202,35 @@ const ModernGanttChart = ({ tasks, onTaskClick }) => {
           </div>
 
           {/* Tasks */}
-          {tasksWithDates.length === 0 ? (
+          {loading ? (
+            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  className="grid border-b border-gray-200 dark:border-gray-700"
+                  style={{ gridTemplateColumns: `150px 1fr` }}
+                >
+                  <div className="p-2 border-r border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                    <Skeleton className="w-1.5 h-1.5 rounded-full" />
+                    <div className="flex-1">
+                      <Skeleton className="h-3 w-3/4 mb-1 rounded" />
+                      <Skeleton className="h-2 w-1/2 rounded" />
+                    </div>
+                  </div>
+                  <div className="relative h-12 flex items-center px-4">
+                    {/* Random width and position skeletons for realistic feel */}
+                    <Skeleton
+                      className="h-6 rounded"
+                      style={{
+                        width: `${Math.floor(Math.random() * 30 + 10)}%`,
+                        marginLeft: `${Math.floor(Math.random() * 50)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : tasksWithDates.length === 0 ? (
             <div className="text-center py-8">
               <div className="text-2xl mb-2">📊</div>
               <p
@@ -320,7 +348,7 @@ const ModernGanttChart = ({ tasks, onTaskClick }) => {
                       {(() => {
                         const today = new Date();
                         const todayOffset = Math.floor(
-                          (today - dateRange[0]) / (1000 * 60 * 60 * 24)
+                          (today - dateRange[0]) / (1000 * 60 * 60 * 24),
                         );
                         if (
                           todayOffset >= 0 &&

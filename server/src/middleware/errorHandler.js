@@ -1,5 +1,8 @@
 export const errorHandler = (err, req, res, next) => {
   console.error(err.stack);
+  import("fs").then((fs) =>
+    fs.appendFileSync("error.log", err.stack + "\\n\\n"),
+  );
 
   // Prisma errors
   if (err.code === "P2002") {

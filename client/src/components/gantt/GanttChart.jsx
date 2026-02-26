@@ -37,7 +37,7 @@ const GanttChart = ({ tasks, onTaskClick, onDateChange }) => {
           progress:
             task.status === "COMPLETED"
               ? 100
-              : task.status === "DONE"
+              : task.status === "IN_REVIEW"
                 ? 90
                 : task.status === "IN_PROGRESS"
                   ? 50

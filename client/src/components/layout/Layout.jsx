@@ -3,6 +3,7 @@ import { toast } from "react-hot-toast";
 import { useTheme } from "../../context";
 import { Header, Sidebar } from "../navigation";
 import { ThemeToggle } from "../ui";
+import NovaAssistant from "../assistant/NovaAssistant";
 
 const Layout = ({
   user,
@@ -31,22 +32,6 @@ const Layout = ({
       setLocalActiveView(viewId);
     }
     console.log("Navigating to:", viewId);
-  };
-
-  // Render different content based on activeView
-  const getViewDescription = (view) => {
-    const descriptions = {
-      dashboard: "Main Overview",
-      tasks: "Task Management",
-      projects: "Project Management",
-      team: "Team Collaboration",
-      exchanges: "Task Exchange",
-      calendar: "Schedule View",
-      reports: "Analytics",
-      settings: "Configuration",
-      profile: "User Profile",
-    };
-    return descriptions[view] || "Current Section";
   };
 
   // Global notification listener
@@ -81,7 +66,7 @@ const Layout = ({
               color: isDark ? "#ffffff" : "#111827",
               border: isDark ? "1px solid #374151" : "1px solid #e5e7eb",
             },
-          }
+          },
         );
       } else if (notification.type === "TASK_CHANGES_REQUESTED") {
         toast.error(notification.message, {
@@ -103,7 +88,7 @@ const Layout = ({
     return () => {
       window.removeEventListener(
         "realtimeNotification",
-        handleRealtimeNotification
+        handleRealtimeNotification,
       );
     };
   }, [isDark]);
@@ -197,27 +182,7 @@ const Layout = ({
             </p>
           </div>
         );
-      case "approvals":
-        return (
-          <div
-            className={`${
-              isDark
-                ? "bg-gray-800 border-gray-700"
-                : "bg-white border-gray-200"
-            } rounded-lg shadow-sm border p-6`}
-          >
-            <h2
-              className={`text-2xl font-bold ${
-                isDark ? "text-gray-100" : "text-gray-900"
-              } mb-4`}
-            >
-              Task Approvals
-            </h2>
-            <p className={`${isDark ? "text-gray-300" : "text-gray-600"}`}>
-              Task approval interface coming soon...
-            </p>
-          </div>
-        );
+
       case "monitoring":
         return (
           <div
@@ -426,38 +391,59 @@ const Layout = ({
     }
   };
 
+  // Views that need scrollable content instead of overflow-hidden
+  const scrollableViews = [
+    "project-analytics",
+    "budget",
+    "dashboard",
+    "admin-monitoring",
+    "admin-ratelimits",
+    "admin-users",
+    "admin-auditlogs",
+    "admin-backup",
+  ];
+  const needsScroll = scrollableViews.includes(currentActiveView);
+
   return (
     <div
       className={`h-screen ${
         isDark ? "bg-gray-900" : "bg-gray-100"
-      } transition-colors duration-200 overflow-hidden pt-16`}
+      } transition-colors duration-200 ${needsScroll ? "overflow-y-auto" : "overflow-hidden"} pt-16`}
     >
       {/* Header */}
       <Header
         user={user}
         onLogout={onLogout}
         onNavigateToSettings={() => handleViewChange("settings")}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
       />
+
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 top-16 z-40 bg-black/30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
 
       <div className="flex h-full">
         {/* Sidebar */}
-        {sidebarOpen && (
-          <Sidebar
-            user={user}
-            activeView={currentActiveView}
-            onViewChange={handleViewChange}
-            // New props
-            projects={projects}
-            selectedProjectId={selectedProjectId}
-            onProjectSelect={onProjectSelect}
-            sidebarOpen={sidebarOpen}
-            setSidebarOpen={setSidebarOpen}
-          />
-        )}
+        <Sidebar
+          user={user}
+          activeView={currentActiveView}
+          onViewChange={handleViewChange}
+          // New props
+          projects={projects}
+          selectedProjectId={selectedProjectId}
+          onProjectSelect={onProjectSelect}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
 
         {/* Main Content */}
         <main
-          className={`flex-1 ${sidebarOpen ? "ml-64" : "ml-0"} transition-all duration-200 h-full overflow-hidden`}
+          className={`flex-1 ml-0 lg:ml-64 transition-all duration-200 h-full ${needsScroll ? "overflow-y-auto" : "overflow-hidden"}`}
         >
           {/* Page Content - Only show extra content for non-dashboard views */}
           {currentActiveView === "dashboard" ? (
@@ -478,6 +464,9 @@ const Layout = ({
           )}
         </main>
       </div>
+
+      {/* AI Assistant */}
+      <NovaAssistant />
     </div>
   );
 };
