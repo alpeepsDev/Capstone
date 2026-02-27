@@ -710,6 +710,9 @@ export const addTaskComment = asyncHandler(async (req, res) => {
           });
 
           if (!existingNotification) {
+            console.log(
+              `📢 Creating MENTION notification for user ${user.username} (${user.id}) on task ${id}, io available: ${!!io}`,
+            );
             await createNotification({
               userId: user.id,
               type: "MENTION",

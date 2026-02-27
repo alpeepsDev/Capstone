@@ -6,6 +6,7 @@ import {
   createWorklogSchema,
   updateWorklogSchema,
 } from "../../validations/worklog.validation.js";
+import { decryptUser } from "../../utils/encryption.js";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -58,7 +59,10 @@ router.post(
 
       res.status(201).json({
         success: true,
-        data: result.workLog,
+        data: {
+          ...result.workLog,
+          user: decryptUser(result.workLog.user),
+        },
         task: result.task,
       });
     } catch (error) {
@@ -93,7 +97,10 @@ router.get("/task/:taskId", auth, async (req, res) => {
 
     res.json({
       success: true,
-      data: workLogs,
+      data: workLogs.map((log) => ({
+        ...log,
+        user: decryptUser(log.user),
+      })),
     });
   } catch (error) {
     console.error("Error fetching work logs:", error);
@@ -225,7 +232,10 @@ router.put(
 
       res.json({
         success: true,
-        data: result.workLog,
+        data: {
+          ...result.workLog,
+          user: decryptUser(result.workLog.user),
+        },
         task: result.task,
       });
     } catch (error) {

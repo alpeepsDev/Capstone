@@ -18,17 +18,30 @@ let connectionChecked = false;
 async function testRedisConnection() {
   if (connectionChecked) return isRedisAvailable;
 
+  if (!REDIS_URL) {
+    console.warn("[Redis] ⚠️  REDIS_URL not set — skipping Redis");
+    connectionChecked = true;
+    return false;
+  }
+
   try {
-    connection = new IORedis(REDIS_URL, {
+    const opts = {
       maxRetriesPerRequest: null, // Required by BullMQ
       enableReadyCheck: false,
       lazyConnect: true,
-      connectTimeout: 3000,
+      connectTimeout: 5000,
       retryStrategy(times) {
         if (times > 2) return null; // Give up after 2 retries
         return 500;
       },
-    });
+    };
+
+    // Enable TLS for Upstash (rediss:// URLs)
+    if (REDIS_URL.startsWith("rediss://")) {
+      opts.tls = {};
+    }
+
+    connection = new IORedis(REDIS_URL, opts);
 
     // Swallow all error events so they don't crash the process
     connection.on("error", () => {});

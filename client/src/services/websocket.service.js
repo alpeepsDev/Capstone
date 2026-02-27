@@ -7,6 +7,7 @@ class WebSocketService {
     this.currentToken = null;
     this.currentProjectId = null;
     this.listeners = new Set();
+    this.pendingNotificationCallback = null;
   }
 
   addConnectionListener(callback) {
@@ -58,6 +59,13 @@ class WebSocketService {
         if (this.currentProjectId) {
           console.log(`🔄 Rejoining project room: ${this.currentProjectId}`);
           this.socket.emit("join-project", this.currentProjectId);
+        }
+
+        // Re-register notification listener on reconnect
+        if (this.pendingNotificationCallback) {
+          this.socket.off("notification", this.pendingNotificationCallback);
+          this.socket.on("notification", this.pendingNotificationCallback);
+          console.log("🔔 Re-registered notification handler after reconnect");
         }
       });
 
@@ -144,11 +152,18 @@ class WebSocketService {
   // IMPORTANT: We remove any existing listener first to prevent duplicate
   // registrations which can happen with React StrictMode double-mounting
   onNotification(callback) {
+    // Store callback so it can be re-registered on reconnect
+    this.pendingNotificationCallback = callback;
+
     if (this.socket) {
       // First remove any existing listener for this callback to prevent duplicates
       this.socket.off("notification", callback);
       this.socket.on("notification", callback);
       console.log("🔔 Registered notification handler (duplicates prevented)");
+    } else {
+      console.log(
+        "🔔 Notification handler stored, will register when socket connects",
+      );
     }
   }
 
@@ -156,6 +171,10 @@ class WebSocketService {
   offNotification(callback) {
     if (this.socket) {
       this.socket.off("notification", callback);
+    }
+    // Clear stored callback if it matches
+    if (this.pendingNotificationCallback === callback) {
+      this.pendingNotificationCallback = null;
     }
   }
 

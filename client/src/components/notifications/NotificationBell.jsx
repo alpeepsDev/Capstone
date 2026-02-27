@@ -14,6 +14,7 @@ import {
   ClipboardList,
   CheckCircle,
   ThumbsUp,
+  AtSign,
 } from "lucide-react";
 
 const NotificationBell = () => {
@@ -128,6 +129,8 @@ const NotificationBell = () => {
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case "TASK_APPROVED":
         return <ThumbsUp className="w-5 h-5 text-emerald-500" />;
+      case "MENTION":
+        return <AtSign className="w-5 h-5 text-purple-500" />;
       default:
         return <Bell className="w-5 h-5 text-gray-500" />;
     }
