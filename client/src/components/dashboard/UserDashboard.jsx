@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense, useMemo } from "react";
 import { toast } from "react-hot-toast";
-import { Card, Skeleton } from "../ui";
+import { Card, Skeleton, Button } from "../ui";
 // Lazy load heavy view components for better performance
 const KanbanBoard = React.lazy(() => import("../kanban/KanbanBoard"));
 const ModernGanttChart = React.lazy(() =>
@@ -93,6 +93,7 @@ const UserDashboard = ({
   const {
     tasks,
     loading: tasksLoading,
+    error: tasksError,
     fetchTasks,
     updateTaskStatus,
     deleteTask,
@@ -225,6 +226,27 @@ const UserDashboard = ({
   }
 
   // Ensure arrays are initialized
+
+  // Error state for task fetching
+  if (tasksError && selectedProjectId) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8">
+        <div
+          className={`rounded-lg border p-6 max-w-md text-center ${
+            isDark
+              ? "bg-red-900/20 border-red-700 text-red-400"
+              : "bg-red-50 border-red-200 text-red-700"
+          }`}
+        >
+          <h2 className="text-xl font-bold mb-2">Error Loading Tasks</h2>
+          <p className="mb-4 text-sm">{tasksError}</p>
+          <Button onClick={fetchTasks} variant="primary">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Handler functions
   const handleViewChange = (newView) => {

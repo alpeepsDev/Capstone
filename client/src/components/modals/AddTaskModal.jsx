@@ -22,6 +22,7 @@ const AddTaskModal = ({
     dueDate: "",
   });
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // Sync projectId when selectedProject changes
   useEffect(() => {
@@ -53,15 +54,19 @@ const AddTaskModal = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Inline validation
+    const errors = {};
     if (!formData.title.trim()) {
-      toast.error("Task title is required");
-      return;
+      errors.title = "Task title is required";
     }
-
     if (!formData.projectId) {
-      toast.error("Please select a project");
+      errors.projectId = "Please select a project";
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
+    setFieldErrors({});
 
     setLoading(true);
     try {
@@ -98,6 +103,10 @@ const AddTaskModal = ({
       ...prev,
       [name]: value,
     }));
+    // Clear field error on change
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
   // Get users for the selected project, sorted by task count (least busy first)
@@ -160,11 +169,17 @@ const AddTaskModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-20">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-20"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-task-modal-title"
+    >
       {/* Glassmorphism Backdrop */}
       <div
         className="absolute inset-0 backdrop-blur-md bg-black/30"
         onClick={onClose}
+        aria-label="Close modal"
       />
 
       {/* Modal with Glassmorphism Effect */}
@@ -179,12 +194,14 @@ const AddTaskModal = ({
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <h2
+              id="add-task-modal-title"
               className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
             >
               Create New Task
             </h2>
             <button
               onClick={onClose}
+              aria-label="Close modal"
               className={`${isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"} transition-colors p-1`}
             >
               <svg
@@ -209,6 +226,7 @@ const AddTaskModal = ({
             {selectedProject ? (
               <div>
                 <label
+                  htmlFor="add-task-project"
                   className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
                 >
                   Project
@@ -232,11 +250,13 @@ const AddTaskModal = ({
             ) : (
               <div>
                 <label
+                  htmlFor="add-task-project-select"
                   className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
                 >
                   Project *
                 </label>
                 <select
+                  id="add-task-project-select"
                   name="projectId"
                   value={formData.projectId}
                   onChange={handleChange}
@@ -254,39 +274,61 @@ const AddTaskModal = ({
                     </option>
                   ))}
                 </select>
+                {fieldErrors.projectId && (
+                  <p className="mt-1 text-sm text-red-500" role="alert">
+                    {fieldErrors.projectId}
+                  </p>
+                )}
               </div>
             )}
 
             {/* Title */}
             <div>
               <label
+                htmlFor="add-task-title"
                 className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
               >
                 Task Title *
               </label>
               <input
                 type="text"
+                id="add-task-title"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
+                aria-invalid={!!fieldErrors.title}
+                aria-describedby={fieldErrors.title ? "title-error" : undefined}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  isDark
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+                  fieldErrors.title
+                    ? "border-red-500 focus:ring-red-500"
+                    : isDark
+                      ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"
                 }`}
                 placeholder="Enter task title"
                 required
               />
+              {fieldErrors.title && (
+                <p
+                  id="title-error"
+                  className="mt-1 text-sm text-red-500"
+                  role="alert"
+                >
+                  {fieldErrors.title}
+                </p>
+              )}
             </div>
 
             {/* Description */}
             <div>
               <label
+                htmlFor="add-task-description"
                 className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
               >
                 Description
               </label>
               <textarea
+                id="add-task-description"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
@@ -303,11 +345,13 @@ const AddTaskModal = ({
             {/* Assignee */}
             <div>
               <label
+                htmlFor="add-task-assignee"
                 className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
               >
                 Assignee (Project Members Only)
               </label>
               <select
+                id="add-task-assignee"
                 name="assigneeId"
                 value={formData.assigneeId}
                 onChange={handleChange}
@@ -352,11 +396,13 @@ const AddTaskModal = ({
             {/* Priority */}
             <div>
               <label
+                htmlFor="add-task-priority"
                 className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
               >
                 Priority
               </label>
               <select
+                id="add-task-priority"
                 name="priority"
                 value={formData.priority}
                 onChange={handleChange}
@@ -375,11 +421,13 @@ const AddTaskModal = ({
             {/* Initial Status */}
             <div>
               <label
+                htmlFor="add-task-status"
                 className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
               >
                 Initial Status
               </label>
               <select
+                id="add-task-status"
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
@@ -397,11 +445,13 @@ const AddTaskModal = ({
             {/* Due Date */}
             <div>
               <label
+                htmlFor="add-task-duedate"
                 className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
               >
                 Due Date
               </label>
               <input
+                id="add-task-duedate"
                 type="date"
                 name="dueDate"
                 value={formData.dueDate}

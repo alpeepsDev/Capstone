@@ -124,14 +124,6 @@ const KanbanBoard = ({
     // Add visual feedback classes for smooth animations
     if (isOverTask) {
       const overTask = safeTasks.find((t) => t.id === over.id);
-      if (overTask) {
-        // Tasks will slide smoothly to make space
-        console.log(
-          `🎯 Dragging over task: ${overTask.title} in ${overTask.status} column`,
-        );
-      }
-    } else if (isOverColumn) {
-      console.log(`📁 Dragging over column: ${over.id}`);
     }
   };
 
@@ -139,10 +131,7 @@ const KanbanBoard = ({
     const { active, over } = event;
     setActiveTask(null);
 
-    console.log("🎯 DragEnd Event:", { active: active?.id, over: over?.id });
-
     if (!over || !active) {
-      console.log("❌ No valid drop target");
       return;
     }
 
@@ -152,30 +141,15 @@ const KanbanBoard = ({
     // Find the active task
     const activeTask = safeTasks.find((t) => t.id === activeId);
     if (!activeTask) {
-      console.log("❌ Active task not found:", activeId);
       return;
     }
 
     const columns = ["PENDING", "IN_PROGRESS", "IN_REVIEW", "COMPLETED"];
     const isColumnDrop = columns.includes(overId);
 
-    console.log("📍 Drop Analysis:", {
-      activeTask: activeTask.title,
-      activeStatus: activeTask.status,
-      overId,
-      isColumnDrop,
-      overTask: isColumnDrop
-        ? null
-        : safeTasks.find((t) => t.id === overId)?.title,
-    });
-
     if (isColumnDrop) {
       // Dropping on a column - change status
       const newStatus = overId;
-      console.log("📁 Column drop detected:", {
-        from: activeTask.status,
-        to: newStatus,
-      });
       if (activeTask.status !== newStatus) {
         handleStatusChange(activeTask, newStatus);
       }
@@ -184,19 +158,11 @@ const KanbanBoard = ({
       const overTask = safeTasks.find((t) => t.id === overId);
 
       if (!overTask) {
-        console.log("❌ Over task not found:", overId);
         return;
       }
 
-      console.log("🔄 Task-to-task drop:", {
-        activeTask: activeTask.title,
-        overTask: overTask.title,
-        sameColumn: activeTask.status === overTask.status,
-      });
-
       if (activeTask.status === overTask.status) {
         // Same column - reorder tasks
-        console.log("Reordering in same column:", activeTask.status);
 
         // Get all tasks in this column
         const columnTasks = getTasksByStatus(activeTask.status);
@@ -207,14 +173,6 @@ const KanbanBoard = ({
           // Create reordered array
           const reorderedTasks = arrayMove(columnTasks, oldIndex, newIndex);
 
-          console.log("Tasks reordered:", {
-            from: oldIndex,
-            to: newIndex,
-            column: activeTask.status,
-            reorderedCount: reorderedTasks.length,
-          });
-
-          // Call onTaskReorder if provided, or just show the animation
           if (onTaskMove) {
             // For now, we'll just show the visual feedback
             // You can add actual reordering logic here if needed
@@ -223,10 +181,6 @@ const KanbanBoard = ({
         }
       } else {
         // Different column - change status to match target column
-        console.log("🔀 Cross-column drop - changing status:", {
-          from: activeTask.status,
-          to: overTask.status,
-        });
         handleStatusChange(activeTask, overTask.status);
       }
     }

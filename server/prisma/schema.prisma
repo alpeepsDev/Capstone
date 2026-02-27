@@ -106,6 +106,7 @@ model ProjectMember {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, userId])
+  @@index([userId])
   @@map("project_members")
 }
 
@@ -157,6 +158,11 @@ model Task {
 
   @@index([title])
   @@index([description])
+  @@index([status])
+  @@index([assigneeId])
+  @@index([projectId])
+  @@index([priority])
+  @@index([dueDate])
   @@map("tasks")
 }
 
@@ -172,6 +178,8 @@ model WorkLog {
   task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user        User     @relation(fields: [userId], references: [id])
 
+  @@index([taskId])
+  @@index([userId])
   @@map("work_logs")
 }
 
@@ -185,6 +193,7 @@ model TaskComment {
   author    User     @relation(fields: [authorId], references: [id])
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
+  @@index([taskId])
   @@map("task_comments")
 }
 
@@ -220,6 +229,8 @@ model Notification {
   task      Task?            @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, isRead])
+  @@index([userId])
   @@map("notifications")
 }
 

@@ -56,7 +56,7 @@ export default defineConfig({
             "@dnd-kit/sortable",
             "@dnd-kit/utilities",
           ],
-          "vendor-charts": ["frappe-gantt"],
+          "vendor-charts": ["frappe-gantt", "recharts"],
           "vendor-socket": ["socket.io-client"],
           "vendor-icons": ["lucide-react"],
         },

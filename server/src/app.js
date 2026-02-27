@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -37,8 +38,22 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.use(express.static(path.join(__dirname, "../../client/dist")));
-app.use(express.static(path.join(__dirname, "../../client/dist")));
+// Compress all HTTP responses (API JSON, HTML, etc.)
+app.use(compression());
+
+// Serve static files with long-term caching (Vite hashes filenames)
+app.use(
+  express.static(path.join(__dirname, "../../client/dist"), {
+    maxAge: "1y",
+    immutable: true,
+    setHeaders(res, filePath) {
+      // HTML files should always revalidate to pick up new deploys
+      if (filePath.endsWith(".html")) {
+        res.setHeader("Cache-Control", "no-cache");
+      }
+    },
+  }),
+);
 
 // Middleware
 app.use(
@@ -51,7 +66,7 @@ app.use(
 );
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.CLIENT_URL,
     credentials: true,
   }),
 );
@@ -117,13 +132,5 @@ app.get(/^(?!\/api).*/, (req, res) => {
 
 // Error handling middleware
 app.use(errorHandler);
-
-// 404 handler
-app.use("*", (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Route not found",
-  });
-});
 
 export default app;

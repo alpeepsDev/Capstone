@@ -38,7 +38,7 @@ export const initScheduler = async () => {
   }
 };
 
-// ─── BULLMQ MODE ──────────────────────────────────────────────────────
+// BULLMQ MODE
 async function initBullMQMode() {
   console.log("[Nova Scheduler] 🚀 Initializing with BullMQ (Redis-backed)...");
 
@@ -114,7 +114,7 @@ async function initBullMQMode() {
   }
 }
 
-// ─── FALLBACK MODE (setInterval — original behavior) ──────────────────
+// FALLBACK MODE (setInterval) 
 function initFallbackMode() {
   console.log(
     "[Nova Scheduler] 🔄 Using setInterval fallback (no Redis detected)...",
