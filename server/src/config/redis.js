@@ -6,7 +6,7 @@ import IORedis from "ioredis";
  * If Redis is unavailable, the scheduler automatically falls back
  * to setInterval mode. No errors are thrown to the process.
  */
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+const REDIS_URL = process.env.REDIS_URL;
 
 let connection = null;
 let isRedisAvailable = false;
