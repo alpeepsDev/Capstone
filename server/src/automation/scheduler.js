@@ -58,7 +58,7 @@ async function initBullMQMode() {
     // Register repeatable jobs
     await riskAnalysisQueue.upsertJobScheduler(
       "risk-analysis-repeat",
-      { every: 5 * 60 * 1000 },
+      { every: 15 * 60 * 1000 },
       { name: "risk-analysis", data: {} },
     );
 
@@ -76,13 +76,13 @@ async function initBullMQMode() {
 
     await notificationsQueue.upsertJobScheduler(
       "weekly-summaries-repeat",
-      { every: 15 * 60 * 1000 },
+      { every: 7 * 24 * 60 * 60 * 1000 },
       { name: "weekly-summaries", data: { task: "weekly-summaries" } },
     );
 
     await automationActionsQueue.upsertJobScheduler(
       "automation-actions-repeat",
-      { every: 15 * 60 * 1000 },
+      { every: 30 * 60 * 1000 },
       { name: "automation-actions", data: {} },
     );
 
@@ -99,11 +99,11 @@ async function initBullMQMode() {
     );
 
     console.log("[Nova Scheduler] ✅ BullMQ job schedulers registered");
-    console.log("[Nova Scheduler] 📊 Risk Analysis: Every 5min");
+    console.log("[Nova Scheduler] 📊 Risk Analysis: Every 15min");
     console.log(
-      "[Nova Scheduler] 🔔 Notifications: Deadlines 1hr | Risks 30min",
+      "[Nova Scheduler] 🔔 Notifications: Deadlines 1hr | Risks 30min | Weekly 7days",
     );
-    console.log("[Nova Scheduler] 🤖 Automations: Every 15min");
+    console.log("[Nova Scheduler] 🤖 Automations: Every 30min");
     console.log("[Nova Scheduler] 🔮 Predictions: Every 4hrs");
     console.log("[Nova Scheduler] 💡 Insights: Every 24hrs");
     console.log(`[Nova Scheduler] 👷 ${activeWorkers.length} workers active`);
@@ -114,25 +114,25 @@ async function initBullMQMode() {
   }
 }
 
-// FALLBACK MODE (setInterval) 
+// FALLBACK MODE (setInterval)
 function initFallbackMode() {
   console.log(
     "[Nova Scheduler] 🔄 Using setInterval fallback (no Redis detected)...",
   );
 
-  // Phase 1: Risk Analysis — every 5 minutes
+  // Phase 1: Risk Analysis — every 15 minutes
   setTimeout(() => {
     runAutomation();
-    setInterval(runAutomation, 5 * 60 * 1000);
+    setInterval(runAutomation, 15 * 60 * 1000);
   }, 30 * 1000);
 
   // Phase 2: Notifications
   initNotifFallback();
 
-  // Phase 3: Automated Actions — every 15 minutes
+  // Phase 3: Automated Actions — every 30 minutes
   setTimeout(() => {
     runAutomationActions();
-    setInterval(runAutomationActions, 15 * 60 * 1000);
+    setInterval(runAutomationActions, 30 * 60 * 1000);
   }, 60 * 1000);
 
   // Phase 4: Predictions — every 4 hours
