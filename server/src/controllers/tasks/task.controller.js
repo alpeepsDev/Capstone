@@ -1,6 +1,7 @@
 import prisma from "../../config/database.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { createNotification } from "../notifications/notification.controller.js";
+import { hash } from "../../utils/hashing.js";
 import {
   emitTaskCreated,
   emitTaskUpdated,
@@ -675,19 +676,38 @@ export const addTaskComment = asyncHandler(async (req, res) => {
     projectId: task.projectId, // We need to fetch task to get projectId
   });
 
-  // Handle mentions - IMPROVED RACE CONDITION HANDLING
-  // Modified regex to support dots in usernames (e.g., @firstname.lastname)
-  const mentionRegex = /@([\w.]+)/g;
-  const mentions = [...content.matchAll(mentionRegex)];
+  // Handle mentions - IMPROVED RACE CONDITION AND CASE SENSITIVITY HANDLING
+  // Clean content of any potential zero-width spaces or non-breaking spaces that content-editable spans might introduce
+  const cleanContent = content
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/\u00A0/g, " ");
+  const mentionRegex = /@([\w.-]+)/g; // also supporting dash in usernames just in case
+  const mentions = [...cleanContent.matchAll(mentionRegex)];
+
+  console.log("💬 NEW COMMENT ADDED:", {
+    originalContent: content,
+    cleanContent,
+    mentionsFound: mentions.map((m) => m[1]),
+  });
 
   if (mentions.length > 0) {
     // Deduplicate usernames
     const usernames = [...new Set(mentions.map((match) => match[1]))];
 
-    // Find users by username
+    // Find users by usernameHash (encrypted usernames can't be queried directly)
+    // Build hash lookups for both original case and lowercase to handle case-insensitive mentions
+    const hashLookups = usernames.flatMap((uname) => {
+      const lookups = [{ usernameHash: hash(uname) }];
+      const lower = uname.toLowerCase();
+      if (lower !== uname) {
+        lookups.push({ usernameHash: hash(lower) });
+      }
+      return lookups;
+    });
+
     const mentionedUsers = await prisma.user.findMany({
       where: {
-        username: { in: usernames },
+        OR: hashLookups,
       },
     });
 
@@ -697,7 +717,6 @@ export const addTaskComment = asyncHandler(async (req, res) => {
         try {
           // Check if a similar notification was created VERY recently (last 10 seconds)
           // This prevents double notifications from double-requests or race conditions
-          // By querying the database, we support multiple server instances (unlike in-memory Set)
           const existingNotification = await prisma.notification.findFirst({
             where: {
               userId: user.id,
@@ -713,7 +732,9 @@ export const addTaskComment = asyncHandler(async (req, res) => {
             console.log(
               `📢 Creating MENTION notification for user ${user.username} (${user.id}) on task ${id}, io available: ${!!io}`,
             );
-            await createNotification({
+
+            // Background the real-time notification creation to not block the event loop entirely
+            createNotification({
               userId: user.id,
               type: "MENTION",
               title: "You were mentioned",
@@ -721,7 +742,12 @@ export const addTaskComment = asyncHandler(async (req, res) => {
               taskId: id,
               projectId: task.projectId,
               io,
-            });
+            }).catch((err) =>
+              console.error(
+                "Error creating mention notification in background:",
+                err,
+              ),
+            );
           } else {
             console.log(
               `Skipping duplicate mention notification for user ${user.username} on task ${id}`,

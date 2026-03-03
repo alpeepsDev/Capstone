@@ -44,3 +44,19 @@ export const updateRoleSchema = z.object({
 export const userIdSchema = z.object({
   userId: z.string().uuid("Invalid user ID format"),
 });
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
+export const resetPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  otp: z.string().length(6, "OTP must be exactly 6 digits"),
+  newPassword: z
+    .string()
+    .min(6, "Password must be at least 6 characters long")
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+    ),
+});

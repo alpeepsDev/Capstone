@@ -44,8 +44,24 @@ const Layout = ({
         toast(
           (t) => (
             <div
-              className="flex items-start gap-3"
-              onClick={() => toast.dismiss(t.id)}
+              className="flex items-start gap-3 cursor-pointer p-1"
+              onClick={() => {
+                toast.dismiss(t.id);
+                const taskId = notification.taskId || notification.task?.id;
+                const projectId =
+                  notification.projectId || notification.project?.id;
+
+                if (taskId && projectId) {
+                  // Dispatch custom event for immediate response
+                  window.dispatchEvent(
+                    new CustomEvent("openTaskFromNotification", {
+                      detail: { taskId, projectId },
+                    }),
+                  );
+                  // Change URL for full navigation
+                  window.location.href = `/dashboard?projectId=${projectId}&taskId=${taskId}`;
+                }
+              }}
             >
               <div className="flex-1">
                 <p className="font-medium text-sm text-gray-900 dark:text-gray-100">

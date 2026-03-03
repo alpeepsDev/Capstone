@@ -153,7 +153,7 @@ export const generateWeeklySummaries = async () => {
 
       // Build summary message
       const summary = `
-Weekly Summary for ${user.name}:
+Weekly Summary for ${user.name || "User"}:
 
 Last Week: Completed ${completedTasks.length} tasks
 This Week: ${thisWeekTasks.length} tasks due

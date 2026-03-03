@@ -54,6 +54,15 @@ export const generateDailyInsights = async (userId) => {
       );
 
       if (highRiskTasks.length > 0) {
+        // Higher confidence if a large percentage of their tasks are high risk, or if they have many high risk tasks
+        const riskRatio =
+          highRiskTasks.length / Math.max(1, user.assignedTasks.length);
+        const volumeFactor = Math.min(1.0, highRiskTasks.length / 5);
+        const calculatedConfidence = Math.max(
+          0.65,
+          Math.min(0.98, riskRatio * 0.4 + volumeFactor * 0.6 + 0.5),
+        );
+
         insights.push({
           userId,
           type: "RISK_DETECTED",
@@ -64,7 +73,7 @@ export const generateDailyInsights = async (userId) => {
             .join(", ")}`,
           taskId: highRiskTasks[0].id,
           projectId: highRiskTasks[0].projectId,
-          confidence: 0.9,
+          confidence: calculatedConfidence,
           metadata: {
             taskCount: highRiskTasks.length,
             topTasks: highRiskTasks.slice(0, 3).map((t) => ({
@@ -88,12 +97,29 @@ export const generateDailyInsights = async (userId) => {
       });
 
       if (upcomingDeadlines.length > 0) {
+        // Higher confidence if deadlines are closer (0 days = 99%, 3 days = 70%)
+        const avgDaysUntil =
+          upcomingDeadlines.reduce((sum, t) => {
+            return (
+              sum +
+              Math.ceil(
+                (new Date(t.dueDate) - new Date()) / (1000 * 60 * 60 * 24),
+              )
+            );
+          }, 0) / upcomingDeadlines.length;
+
+        const timeFactor = Math.max(0, 1 - avgDaysUntil / 4); // 0 days = 1.0, 3 days = 0.25
+        const calculatedConfidence = Math.max(
+          0.7,
+          Math.min(0.99, 0.6 + timeFactor * 0.39),
+        );
+
         insights.push({
           userId,
           type: "DEADLINE_WARNING",
           title: `${upcomingDeadlines.length} task${upcomingDeadlines.length > 1 ? "s" : ""} due soon`,
           description: `Deadlines approaching in the next 3 days`,
-          confidence: 1.0,
+          confidence: calculatedConfidence,
           metadata: {
             tasks: upcomingDeadlines.map((t) => ({
               id: t.id,
@@ -132,12 +158,19 @@ export const generateDailyInsights = async (userId) => {
     if (preferences.preferredInsightTypes.includes("WORKLOAD_IMBALANCE")) {
       const activeTasks = user.assignedTasks.length;
       if (activeTasks > 15) {
+        // Confidence scales up as the workload gets more absurd (16 tasks = 75%, 30 tasks = 95%)
+        const overloadFactor = Math.min(1.0, (activeTasks - 15) / 15);
+        const calculatedConfidence = Math.max(
+          0.75,
+          Math.min(0.95, 0.75 + overloadFactor * 0.2),
+        );
+
         insights.push({
           userId,
           type: "WORKLOAD_IMBALANCE",
           title: "High workload detected",
           description: `You have ${activeTasks} active tasks. Consider delegating or postponing lower-priority items.`,
-          confidence: 0.85,
+          confidence: calculatedConfidence,
           metadata: {
             activeTaskCount: activeTasks,
             suggestion: "DELEGATE",
@@ -149,7 +182,7 @@ export const generateDailyInsights = async (userId) => {
           type: "TASK_SUGGESTION",
           title: "No active tasks",
           description: "Consider picking up new tasks from your projects.",
-          confidence: 0.7,
+          confidence: 0.8,
           metadata: {
             suggestion: "PICKUP_TASKS",
           },

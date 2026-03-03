@@ -1,0 +1,383 @@
+
+    <!DOCTYPE html>
+    <div class="mermaid">
+      erDiagram
+User {
+	String id
+	String username
+	String password
+	String name
+	UserRole role
+	DateTime createdAt
+	DateTime updatedAt
+	String avatar
+	String email
+	String usernameHash
+	String emailHash
+	Boolean isActive
+	DateTime lastLogin
+	String resetPasswordOtp
+	DateTime resetPasswordExpires
+	ApiLog apiLogs
+	AuditLog auditLogs
+	AutomationAction automationActions
+	Notification notifications
+	NovaInsight novaInsights
+	ProjectMember projectMemberships
+	Project managedProjects
+	SavedFilter savedFilters
+	TaskComment taskComments
+	TaskExchange receivedExchanges
+	TaskExchange sentExchanges
+	TaskHistory taskHistory
+	TaskRelation taskRelations
+	TaskTemplate taskTemplates
+	Task assignedTasks
+	Task createdTasks
+	UserAIPreference aiPreference
+	UserRateLimit rateLimit
+	WorkLog workLogs
+}
+Project {
+	String id
+	String name
+	String description
+	String managerId
+	Boolean isActive
+	DateTime startDate
+	DateTime endDate
+	DateTime createdAt
+	DateTime updatedAt
+	Float totalBudget
+	BudgetCategory budgetCategories
+	Label labels
+	Notification notifications
+	NovaInsight novaInsights
+	ProjectMember members
+	SavedFilter savedFilters
+	TaskTemplate taskTemplates
+	Task tasks
+}
+Project }o--|| User : manager
+BudgetCategory {
+	String id
+	String name
+	Float allocated
+	String color
+	String projectId
+	DateTime createdAt
+	DateTime updatedAt
+	BudgetExpense expenses
+}
+BudgetCategory }o--|| Project : project
+BudgetExpense {
+	String id
+	String description
+	Float amount
+	DateTime date
+	String categoryId
+	DateTime createdAt
+	DateTime updatedAt
+}
+BudgetExpense }o--|| BudgetCategory : category
+ProjectMember {
+	String id
+	String projectId
+	String userId
+	DateTime joinedAt
+}
+ProjectMember }o--|| Project : project
+ProjectMember }o--|| User : user
+Task {
+	String id
+	String title
+	String description
+	TaskStatus status
+	TaskPriority priority
+	String projectId
+	String createdById
+	String assigneeId
+	DateTime dueDate
+	DateTime completedAt
+	Int position
+	DateTime createdAt
+	DateTime updatedAt
+	DateTime startDate
+	Int timeRemaining
+	Int timeSpent
+	Boolean isOverdue
+	DateTime lastActivity
+	Int priorityScore
+	TaskRiskLevel riskLevel
+	String epicId
+	Float estimatedHours
+	Float originalEstimate
+	String parentTaskId
+	Int storyPoints
+	TaskType taskType
+	AutomationAction automationActions
+	Notification notifications
+	NovaInsight novaInsights
+	TaskComment comments
+	TaskExchange exchanges
+	TaskHistory history
+	TaskLabel labels
+	TaskPrediction predictions
+	TaskRelation sourceRelations
+	TaskRelation targetRelations
+	Task epicTasks
+	Task subtasks
+	WorkLog workLogs
+}
+Task }o--o| User : assignee
+Task }o--|| User : createdBy
+Task }o--o| Task : epic
+Task }o--o| Task : parentTask
+Task }o--|| Project : project
+WorkLog {
+	String id
+	Int timeSpent
+	DateTime startedAt
+	String description
+	String taskId
+	String userId
+	DateTime createdAt
+	DateTime updatedAt
+}
+WorkLog }o--|| Task : task
+WorkLog }o--|| User : user
+TaskComment {
+	String id
+	String content
+	String taskId
+	String authorId
+	DateTime createdAt
+	DateTime updatedAt
+}
+TaskComment }o--|| User : author
+TaskComment }o--|| Task : task
+TaskExchange {
+	String id
+	String taskId
+	String requesterId
+	String receiverId
+	ExchangeStatus status
+	String requestNote
+	String responseNote
+	DateTime requestedAt
+	DateTime respondedAt
+}
+TaskExchange }o--|| User : receiver
+TaskExchange }o--|| User : requester
+TaskExchange }o--|| Task : task
+Notification {
+	String id
+	NotificationType type
+	String title
+	String message
+	String userId
+	String taskId
+	String projectId
+	Boolean isRead
+	DateTime createdAt
+	DateTime updatedAt
+}
+Notification }o--o| Project : project
+Notification }o--o| Task : task
+Notification }o--|| User : user
+ApiLog {
+	String id
+	String userId
+	String username
+	String endpoint
+	String method
+	Int statusCode
+	Int responseTime
+	String userAgent
+	String ipAddress
+	DateTime timestamp
+}
+ApiLog }o--o| User : user
+RateLimitConfig {
+	String id
+	UserRole role
+	Int limit
+	Int window
+	Boolean enabled
+	DateTime createdAt
+	DateTime updatedAt
+}
+UserRateLimit {
+	String id
+	String userId
+	Int limit
+	Int window
+	Boolean enabled
+	DateTime createdAt
+	DateTime updatedAt
+}
+UserRateLimit |o--|| User : user
+EndpointRateLimit {
+	String id
+	String endpoint
+	String method
+	Int limit
+	Int window
+	Boolean enabled
+	DateTime createdAt
+	DateTime updatedAt
+}
+SystemHealthLog {
+	String id
+	Float cpuUsage
+	Float memoryUsage
+	Float totalMemory
+	Float freeMemory
+	Float uptime
+	Int activeConnections
+	DateTime timestamp
+}
+AuditLog {
+	String id
+	String adminId
+	String action
+	String targetId
+	Json details
+	DateTime timestamp
+}
+AuditLog }o--|| User : admin
+Label {
+	String id
+	String name
+	String color
+	String description
+	String projectId
+	Boolean isGlobal
+	DateTime createdAt
+	DateTime updatedAt
+	TaskLabel tasks
+}
+Label }o--o| Project : project
+TaskLabel {
+	String taskId
+	String labelId
+	DateTime createdAt
+}
+TaskLabel }o--|| Label : label
+TaskLabel }o--|| Task : task
+TaskRelation {
+	String id
+	String sourceTaskId
+	String targetTaskId
+	TaskRelationType relationType
+	DateTime createdAt
+	String createdById
+}
+TaskRelation }o--|| User : createdBy
+TaskRelation }o--|| Task : sourceTask
+TaskRelation }o--|| Task : targetTask
+TaskTemplate {
+	String id
+	String name
+	String description
+	TaskType taskType
+	String projectId
+	TaskPriority priority
+	Json template
+	String createdById
+	Boolean isDefault
+	DateTime createdAt
+	DateTime updatedAt
+}
+TaskTemplate }o--|| User : createdBy
+TaskTemplate }o--o| Project : project
+TaskHistory {
+	String id
+	String taskId
+	String userId
+	String field
+	String oldValue
+	String newValue
+	DateTime createdAt
+}
+TaskHistory }o--|| Task : task
+TaskHistory }o--|| User : user
+SavedFilter {
+	String id
+	String name
+	String userId
+	String projectId
+	Json criteria
+	Boolean isPublic
+	DateTime createdAt
+	DateTime updatedAt
+}
+SavedFilter }o--o| Project : project
+SavedFilter }o--|| User : user
+NovaInsight {
+	String id
+	String userId
+	InsightType type
+	String title
+	String description
+	String taskId
+	String projectId
+	Boolean actionTaken
+	Boolean dismissed
+	Float confidence
+	Json metadata
+	DateTime createdAt
+	DateTime updatedAt
+}
+NovaInsight }o--o| Project : project
+NovaInsight }o--o| Task : task
+NovaInsight }o--|| User : user
+UserAIPreference {
+	String id
+	String userId
+	Boolean enableProactiveNotifs
+	Boolean enableAutoAssignment
+	Boolean enableAutoEscalation
+	Int deadlineWarningDays
+	String preferredInsightTypes
+	Int weeklyReportDay
+	String weeklyReportTime
+	Json notificationQuietHours
+	DateTime createdAt
+	DateTime updatedAt
+}
+UserAIPreference |o--|| User : user
+TaskPrediction {
+	String id
+	String taskId
+	DateTime predictedCompletionAt
+	DateTime actualCompletionAt
+	Float confidence
+	Float accuracyScore
+	Json factors
+	Int basedOnSimilarTasks
+	Float userVelocityFactor
+	DateTime createdAt
+	DateTime updatedAt
+}
+TaskPrediction }o--|| Task : task
+AutomationAction {
+	String id
+	AutoActionType type
+	String taskId
+	String userId
+	String description
+	Boolean success
+	Json metadata
+	String errorMessage
+	DateTime createdAt
+}
+AutomationAction }o--o| Task : task
+AutomationAction }o--o| User : user
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+      mermaid.initialize({ startOnLoad: true });
+    </script>
+  

@@ -1,9 +1,6 @@
-import pkg from "@prisma/client";
-const { PrismaClient } = pkg;
+import prisma from "../../config/database.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { emitNotificationToUser } from "../../services/websocket.service.js";
-
-const prisma = new PrismaClient();
 
 // Get all notifications for current user
 export const getNotifications = asyncHandler(async (req, res) => {
@@ -179,6 +176,8 @@ export const createNotification = async ({
         message: notification.message,
         isRead: notification.isRead,
         createdAt: notification.createdAt,
+        taskId: notification.taskId,
+        projectId: notification.projectId,
         task: notification.task,
         project: notification.project,
       });

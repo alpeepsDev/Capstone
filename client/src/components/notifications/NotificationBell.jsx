@@ -15,6 +15,9 @@ import {
   CheckCircle,
   ThumbsUp,
   AtSign,
+  Trash2,
+  Check,
+  BarChart,
 } from "lucide-react";
 
 const NotificationBell = () => {
@@ -95,11 +98,18 @@ const NotificationBell = () => {
     // Close dropdown
     setIsOpen(false);
 
-    // Navigate to task if applicable
-    if (notification.taskId && notification.projectId) {
-      navigate(
-        `/dashboard?projectId=${notification.projectId}&taskId=${notification.taskId}`,
+    // Navigate to task if applicable (support both flat and nested formats)
+    const taskId = notification.taskId || notification.task?.id;
+    const projectId = notification.projectId || notification.project?.id;
+
+    if (taskId && projectId) {
+      // Dispatch a custom event so the dashboard can react immediately
+      window.dispatchEvent(
+        new CustomEvent("openTaskFromNotification", {
+          detail: { taskId, projectId },
+        }),
       );
+      navigate(`/dashboard?projectId=${projectId}&taskId=${taskId}`);
     }
   };
 
@@ -131,6 +141,10 @@ const NotificationBell = () => {
         return <ThumbsUp className="w-5 h-5 text-emerald-500" />;
       case "MENTION":
         return <AtSign className="w-5 h-5 text-purple-500" />;
+      case "WEEKLY_SUMMARY":
+        return <BarChart className="w-5 h-5 text-blue-500" />;
+      case "RISK_ALERT":
+        return <AlertTriangle className="w-5 h-5 text-red-500" />;
       default:
         return <Bell className="w-5 h-5 text-gray-500" />;
     }
@@ -243,17 +257,7 @@ const NotificationBell = () => {
                               className="p-1 text-blue-600 hover:text-blue-800"
                               title="Mark as read"
                             >
-                              <svg
-                                className="w-4 h-4"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
+                              <Check className="w-4 h-4" />
                             </button>
                           )}
                           <button
@@ -261,19 +265,7 @@ const NotificationBell = () => {
                             className={`p-1 ${isDark ? "text-gray-400 hover:text-red-400" : "text-gray-500 hover:text-red-600"}`}
                             title="Delete"
                           >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </div>

@@ -34,3 +34,4 @@ export { EyeOff } from "lucide-react";
 export { DollarSign } from "lucide-react";
 export { Tag } from "lucide-react";
 export { Lock } from "lucide-react";
+export { Sparkles } from "lucide-react";

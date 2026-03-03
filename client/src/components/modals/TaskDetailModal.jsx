@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Button, Badge } from "../ui";
-import { Lock } from "../ui/icons";
+import { Lock, Sparkles } from "../ui/icons";
 import MentionInput from "../ui/MentionInput";
 import { toast } from "react-hot-toast";
 import { tasksApi } from "../../api/tasks";
@@ -609,9 +609,9 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h4
-                            className={`text-sm font-semibold ${isDark ? "text-blue-300" : "text-blue-900"}`}
+                            className={`flex items-center gap-1.5 text-sm font-semibold ${isDark ? "text-blue-300" : "text-blue-900"}`}
                           >
-                            🤖 Nova AI Prediction
+                            <Sparkles className="w-4 h-4" /> Nova AI Prediction
                           </h4>
                           <span
                             className={`px-2 py-0.5 rounded-full text-xs font-medium ${isDark ? "bg-blue-800/50 text-blue-200" : "bg-blue-100 text-blue-800"}`}
@@ -637,40 +637,6 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
                             })}
                           </span>
                         </p>
-                        {localTask.predictions[0].factors && (
-                          <div
-                            className={`text-xs ${isDark ? "text-blue-300/70" : "text-blue-700/70"} space-y-0.5`}
-                          >
-                            {/* Render factors as text if it's an object */}
-                            {typeof localTask.predictions[0].factors ===
-                              "object" &&
-                            !localTask.predictions[0].factors.similarTasksCount
-                              ? Object.entries(
-                                  localTask.predictions[0].factors,
-                                ).map(([key, value]) => (
-                                  <div key={key} className="capitalize">
-                                    {key}: {String(value)}
-                                  </div>
-                                ))
-                              : null}
-
-                            {localTask.predictions[0].factors
-                              ?.similarTasksCount !== undefined && (
-                              <div>
-                                • Based on{" "}
-                                {
-                                  localTask.predictions[0].factors
-                                    .similarTasksCount
-                                }{" "}
-                                similar task
-                                {localTask.predictions[0].factors
-                                  .similarTasksCount !== 1
-                                  ? "s"
-                                  : ""}
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>

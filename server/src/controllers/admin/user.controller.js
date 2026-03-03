@@ -124,4 +124,27 @@ export const userController = {
       data: users,
     });
   }),
+
+  forgotPassword: asyncHandler(async (req, res) => {
+    const { email } = req.body;
+
+    await userService.forgotPassword(email);
+
+    res.json({
+      success: true,
+      message:
+        "If an account with that email exists, a password reset link has been sent.",
+    });
+  }),
+
+  resetPassword: asyncHandler(async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+
+    await userService.resetPassword(email, otp, newPassword);
+
+    res.json({
+      success: true,
+      message: "Password has been reset successfully. You can now log in.",
+    });
+  }),
 };

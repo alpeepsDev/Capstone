@@ -27,6 +27,13 @@ export const NotificationProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const { user, loading: authLoading } = useAuth();
 
+  // Automatically sync unreadCount based on notifications list
+  // This prevents React StrictMode double-invocation bugs from causing
+  // duplicate increments during state updater side-effects.
+  useEffect(() => {
+    setUnreadCount(notifications.filter((n) => !n.isRead).length);
+  }, [notifications]);
+
   // Fetch notifications
   const fetchNotifications = useCallback(
     async (params = {}) => {
@@ -53,7 +60,7 @@ export const NotificationProvider = ({ children }) => {
         } else if (Array.isArray(response)) {
           notifications = response;
         }
-        
+
         const seen = new Map(); // key: taskId-type, value: notification
         const deduped = [];
 
@@ -72,11 +79,9 @@ export const NotificationProvider = ({ children }) => {
           }
         }
 
-        // Recalculate unread count based on deduplicated list
-        const actualUnreadCount = deduped.filter((n) => !n.isRead).length;
+        // Recalculate unread count based on deduplicated list is handled by useEffect
 
         setNotifications(deduped);
-        setUnreadCount(actualUnreadCount);
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
         // If it's an authentication error, clear tokens and force re-login
@@ -109,16 +114,10 @@ export const NotificationProvider = ({ children }) => {
 
   // Handle real-time notifications - move before useEffect to fix dependency
   const handleRealtimeNotification = useCallback((notification) => {
-    console.log("📢 Real-time notification received:", notification);
-
     setNotifications((prev) => {
       // Check if notification already exists (exact duplicate)
       const existingNotification = prev.find((n) => n.id === notification.id);
       if (existingNotification) {
-        console.log(
-          "🔄 Notification already exists, skipping duplicate:",
-          notification.id,
-        );
         return prev; // Return unchanged array if notification already exists
       }
 
@@ -126,21 +125,6 @@ export const NotificationProvider = ({ children }) => {
       // Remove ALL previous notifications for this task/type to ensure no duplicates remain
       const taskId = notification.task?.id || notification.taskId;
       const notificationType = notification.type;
-
-      console.log(
-        "🔍 Deduplication check - New notification taskId:",
-        taskId,
-        "type:",
-        notificationType,
-      );
-      console.log(
-        "🔍 Existing notifications:",
-        prev.map((n) => ({
-          id: n.id,
-          taskId: n.task?.id || n.taskId,
-          type: n.type,
-        })),
-      );
 
       let updatedNotifications = [...prev];
 
@@ -150,57 +134,49 @@ export const NotificationProvider = ({ children }) => {
           const existingTaskId = n.task?.id || n.taskId;
           const shouldRemove =
             existingTaskId === taskId && n.type === notificationType;
-          if (shouldRemove) {
-            console.log(
-              "🗑️ Removing old notification:",
-              n.id,
-              "with taskId:",
-              existingTaskId,
-            );
-          }
           return !shouldRemove;
         });
-
-        // If we removed something, it means we are replacing/updating
-        if (filtered.length < updatedNotifications.length) {
-          console.log(
-            "🔄 Removed existing notification(s) for same task to prevent duplicates:",
-            taskId,
-          );
-
-          const removedUnreadCount = updatedNotifications.filter(
-            (n) =>
-              (n.task?.id || n.taskId) === taskId &&
-              n.type === notificationType &&
-              !n.isRead,
-          ).length;
-
-          if (removedUnreadCount > 0) {
-            setUnreadCount((prevCount) =>
-              Math.max(0, prevCount - removedUnreadCount),
-            );
-          }
-        }
 
         updatedNotifications = filtered;
       }
 
       // Add new notification to the list
-      // Update unread count if it's a new unread notification
-      if (!notification.isRead) {
-        setUnreadCount((prevCount) => prevCount + 1);
-      }
-
+      // unreadCount is automatically synced in useEffect
       return [notification, ...updatedNotifications];
     });
 
     // Show browser notification if permission is granted
     if (Notification.permission === "granted") {
-      new Notification(notification.title, {
+      const browserNotification = new Notification(notification.title, {
         body: notification.message,
         icon: "/favicon.ico",
         tag: notification.id, // Prevent duplicate notifications
       });
+
+      browserNotification.onclick = function (event) {
+        event.preventDefault(); // Prevent the browser from focusing the Notification's target URL instead
+
+        // Bring the browser tab to the front
+        window.focus();
+        if (window.parent) {
+          window.parent.focus();
+        }
+
+        const taskId = notification.taskId || notification.task?.id;
+        const projectId = notification.projectId || notification.project?.id;
+
+        if (taskId && projectId) {
+          // Dispatch custom event for immediate response in open dashboards
+          window.dispatchEvent(
+            new CustomEvent("openTaskFromNotification", {
+              detail: { taskId, projectId },
+            }),
+          );
+        }
+
+        // Close the notification after clicking
+        browserNotification.close();
+      };
     }
   }, []); // No dependencies needed since we use function updates
 
@@ -286,30 +262,13 @@ export const NotificationProvider = ({ children }) => {
             "🔄 Removed existing notification(s) for same task in addNotification to prevent duplicates:",
             taskId,
           );
-
-          const removedUnreadCount = updatedNotifications.filter(
-            (n) =>
-              (n.task?.id || n.taskId) === taskId &&
-              n.type === notificationType &&
-              !n.isRead,
-          ).length;
-
-          if (removedUnreadCount > 0) {
-            setUnreadCount((prevCount) =>
-              Math.max(0, prevCount - removedUnreadCount),
-            );
-          }
         }
 
         updatedNotifications = filtered;
       }
 
       // Add new notification to the list
-      // Update unread count if it's a new unread notification
-      if (!notification.isRead) {
-        setUnreadCount((prevCount) => prevCount + 1);
-      }
-
+      // unreadCount is automatically synced in useEffect
       return [notification, ...updatedNotifications];
     });
   }, []);
@@ -321,7 +280,6 @@ export const NotificationProvider = ({ children }) => {
         notif.id === notificationId ? { ...notif, isRead: true } : notif,
       ),
     );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
   }, []);
 
   // Mark all as read
@@ -329,22 +287,14 @@ export const NotificationProvider = ({ children }) => {
     setNotifications((prev) =>
       prev.map((notif) => ({ ...notif, isRead: true })),
     );
-    setUnreadCount(0);
   }, []);
 
   // Remove notification
-  const removeNotification = useCallback(
-    (notificationId) => {
-      const notification = notifications.find((n) => n.id === notificationId);
-      setNotifications((prev) =>
-        prev.filter((notif) => notif.id !== notificationId),
-      );
-      if (notification && !notification.isRead) {
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      }
-    },
-    [notifications],
-  );
+  const removeNotification = useCallback((notificationId) => {
+    setNotifications((prev) =>
+      prev.filter((notif) => notif.id !== notificationId),
+    );
+  }, []);
 
   // Join project room (for managers)
   const joinProject = useCallback((projectId) => {

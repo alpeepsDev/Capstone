@@ -144,6 +144,84 @@ export const userService = {
     }
   },
 
+  async forgotPassword(email) {
+    // Find user by deterministic email hash
+    const user = await prisma.user.findUnique({
+      where: { emailHash: hash(email) },
+    });
+
+    if (!user) {
+      // Return true anyway to prevent email enumeration attacks
+      return true;
+    }
+
+    // Generate a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Hash the OTP before saving it to DB
+    const otpHash = await bcrypt.hash(otp, 10);
+
+    // Set expiration to 15 minutes from now
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+
+    // Update user record
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetPasswordOtp: otpHash,
+        resetPasswordExpires: expiresAt,
+      },
+    });
+
+    // Send the email
+    const { sendPasswordResetEmail } = await import("../utils/email.js");
+    await sendPasswordResetEmail(email, otp);
+
+    return true;
+  },
+
+  async resetPassword(email, otp, newPassword) {
+    // Find user by deterministic email hash
+    const user = await prisma.user.findUnique({
+      where: { emailHash: hash(email) },
+    });
+
+    if (!user) {
+      throw new Error("Invalid request");
+    }
+
+    // Verify OTP exists and hasn't expired
+    if (!user.resetPasswordOtp || !user.resetPasswordExpires) {
+      throw new Error("Invalid or expired reset code");
+    }
+
+    if (new Date() > user.resetPasswordExpires) {
+      throw new Error("Reset code has expired");
+    }
+
+    // Verify OTP matches hash
+    const isOtpValid = await bcrypt.compare(otp, user.resetPasswordOtp);
+    if (!isOtpValid) {
+      throw new Error("Invalid reset code");
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update user and clear OTP fields
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetPasswordOtp: null,
+        resetPasswordExpires: null,
+      },
+    });
+
+    return true;
+  },
+
   async getUserById(userId) {
     return await prisma.user.findUnique({
       where: { id: userId },

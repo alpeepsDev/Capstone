@@ -16,6 +16,8 @@ import {
 // Lazy load components for better performance
 const Login = React.lazy(() => import("./pages/Login"));
 const Register = React.lazy(() => import("./pages/Register"));
+const ForgotPassword = React.lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 
@@ -106,6 +108,26 @@ const AppRoutes = () => {
           <PublicRoute>
             <Suspense fallback={<LoadingSpinner />}>
               <Register />
+            </Suspense>
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <PublicRoute>
+            <Suspense fallback={<LoadingSpinner />}>
+              <ForgotPassword />
+            </Suspense>
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <PublicRoute>
+            <Suspense fallback={<LoadingSpinner />}>
+              <ResetPassword />
             </Suspense>
           </PublicRoute>
         }

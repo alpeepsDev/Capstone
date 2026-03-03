@@ -5,6 +5,8 @@ import {
   loginSchema,
   updateRoleSchema,
   userIdSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } from "../../validations/user.validation.js";
 import { validateRequest } from "../../middleware/validation.middleware.js";
 import { auth, requireAdmin } from "../../middleware/auth.js";
@@ -21,6 +23,18 @@ router.post(
 );
 router.post("/login", validateRequest(loginSchema), userController.login);
 router.post("/refresh", userController.refreshToken);
+
+router.post(
+  "/forgot-password",
+  validateRequest(forgotPasswordSchema),
+  userController.forgotPassword,
+);
+
+router.post(
+  "/reset-password",
+  validateRequest(resetPasswordSchema),
+  userController.resetPassword,
+);
 
 // Protected routes
 router.get("/profile", auth, userController.getProfile);

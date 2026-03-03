@@ -131,7 +131,14 @@ const MentionInput = ({
     selection.addRange(newRange);
 
     // Update state
-    onChange(editorRef.current.innerText);
+    // Wait for the browser to render the new elements before reading innerText,
+    // otherwise it won't include the newly inserted contentEditable=false span text
+    setTimeout(() => {
+      if (editorRef.current) {
+        onChange(editorRef.current.innerText);
+      }
+    }, 0);
+
     setShowSuggestions(false);
     editorRef.current.focus();
   };

@@ -21,6 +21,8 @@ model User {
   emailHash          String?            @unique
   isActive           Boolean            @default(true)
   lastLogin          DateTime?
+  resetPasswordOtp   String?
+  resetPasswordExpires DateTime?
   apiLogs            ApiLog[]
   auditLogs          AuditLog[]
   automationActions  AutomationAction[]

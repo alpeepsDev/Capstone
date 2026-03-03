@@ -32,39 +32,84 @@ export const predictCompletionDate = async (taskId) => {
     // Find similar completed tasks
     const similarTasks = await findSimilarTasks(task);
 
-    // Calculate average time for similar tasks
-    const avgSimilarTime =
-      similarTasks.length > 0
-        ? similarTasks.reduce((sum, t) => {
-            const hours = differenceInHours(
-              new Date(t.completedAt),
-              new Date(t.createdAt),
-            );
-            return sum + hours;
-          }, 0) / similarTasks.length
-        : null;
+    // Calculate average time and standard deviation for similar tasks
+    let avgSimilarTime = null;
+    let similarStdDev = null;
+
+    if (similarTasks.length > 0) {
+      const taskHours = similarTasks.map((t) =>
+        differenceInHours(new Date(t.completedAt), new Date(t.createdAt)),
+      );
+      avgSimilarTime =
+        taskHours.reduce((sum, hours) => sum + hours, 0) / similarTasks.length;
+
+      const variance =
+        taskHours.reduce(
+          (sum, hours) => sum + Math.pow(hours - avgSimilarTime, 2),
+          0,
+        ) / similarTasks.length;
+      similarStdDev = Math.sqrt(variance);
+    }
 
     // Weighted prediction algorithm
     let estimatedHours;
     let confidence;
 
-    if (avgSimilarTime !== null && userVelocity !== null) {
+    // Base confidence starts low, increases with data points and consistency
+    const calculateConfidence = (stdDev, avg, itemsCount) => {
+      // Lower coefficient of variation (stdDev/avg) means higher consistency = higher confidence
+      if (avg === 0 || count === 0) return 0.2;
+      const cv = stdDev / avg;
+
+      // Map CV from [0, 1.5] -> [0.95, 0.4] backwards
+      let consistencyScore = Math.max(0.4, 0.95 - cv * 0.35);
+
+      // Scale by sample size (diminishing returns after ~10 items)
+      const volumeScore = Math.min(1.0, itemsCount / 10);
+
+      return consistencyScore * 0.7 + volumeScore * 0.3;
+    };
+
+    if (avgSimilarTime !== null && userVelocity.avg !== null) {
       // Combine both factors: 60% similar tasks, 40% user velocity
-      estimatedHours = avgSimilarTime * 0.6 + userVelocity * 0.4;
-      confidence = Math.min(0.85, 0.5 + similarTasks.length * 0.05);
+      estimatedHours = avgSimilarTime * 0.6 + userVelocity.avg * 0.4;
+
+      const velocityConf = calculateConfidence(
+        userVelocity.stdDev,
+        userVelocity.avg,
+        userVelocity.count,
+      );
+      const similarConf = calculateConfidence(
+        similarStdDev,
+        avgSimilarTime,
+        similarTasks.length,
+      );
+
+      confidence = velocityConf * 0.4 + similarConf * 0.6;
     } else if (avgSimilarTime !== null) {
       // Only have similar tasks
       estimatedHours = avgSimilarTime;
-      confidence = Math.min(0.7, 0.4 + similarTasks.length * 0.05);
-    } else if (userVelocity !== null) {
+      confidence = calculateConfidence(
+        similarStdDev,
+        avgSimilarTime,
+        similarTasks.length,
+      );
+    } else if (userVelocity.avg !== null) {
       // Only have user velocity
-      estimatedHours = userVelocity;
-      confidence = 0.6;
+      estimatedHours = userVelocity.avg;
+      confidence = calculateConfidence(
+        userVelocity.stdDev,
+        userVelocity.avg,
+        userVelocity.count,
+      );
     } else {
       // No data - use default estimate
       estimatedHours = 48; // 2 days default
-      confidence = 0.3;
+      confidence = 0.15; // Very low confidence since we have no data
     }
+
+    // Normalize confidence bounds
+    confidence = Math.max(0.1, Math.min(0.98, confidence));
 
     // Adjust for priority (urgent tasks tend to complete faster)
     if (task.priority === "URGENT") {
@@ -105,7 +150,7 @@ export const predictCompletionDate = async (taskId) => {
 };
 
 /**
- * Calculate user's average task completion velocity (in hours)
+ * Calculate user's average task completion velocity and variance (in hours)
  */
 const calculateUserVelocity = async (userId) => {
   const completedTasks = await prisma.task.findMany({
@@ -123,17 +168,25 @@ const calculateUserVelocity = async (userId) => {
     },
   });
 
-  if (completedTasks.length === 0) return null;
+  if (completedTasks.length === 0) return { avg: null, stdDev: null, count: 0 };
 
-  const totalHours = completedTasks.reduce((sum, task) => {
-    const hours = differenceInHours(
+  const taskHours = completedTasks.map((task) => {
+    return differenceInHours(
       new Date(task.completedAt),
       new Date(task.createdAt),
     );
-    return sum + hours;
-  }, 0);
+  });
 
-  return totalHours / completedTasks.length;
+  const totalHours = taskHours.reduce((sum, hours) => sum + hours, 0);
+  const avg = totalHours / taskHours.length;
+
+  // Calculate standard deviation to measure consistency (lower variance = higher confidence)
+  const variance =
+    taskHours.reduce((sum, hours) => sum + Math.pow(hours - avg, 2), 0) /
+    taskHours.length;
+  const stdDev = Math.sqrt(variance);
+
+  return { avg, stdDev, count: taskHours.length };
 };
 
 /**

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, useRef } from "react";
 import { toast } from "react-hot-toast";
 import { Card, Badge, Button, Skeleton } from "../ui";
 import { useManagerDashboard, useTasks } from "../../hooks";
@@ -157,6 +157,9 @@ const ManagerDashboard = ({
     (t) => t.projectId === selectedProjectId,
   );
 
+  // Ref to track pending task opening from notification click
+  const pendingTaskIdRef = useRef(null);
+
   // Helper to sync URL
   useEffect(() => {
     const projectIdParam = searchParams.get("projectId");
@@ -166,26 +169,82 @@ const ManagerDashboard = ({
       if (selectedProjectId !== projectIdParam) {
         setSelectedProjectId(projectIdParam);
       }
+      // Track the taskId we need to open
+      if (taskIdParam) {
+        pendingTaskIdRef.current = taskIdParam;
+      }
     }
   }, [searchParams, projects, selectedProjectId]);
 
-  // Open modal for direct link
+  // Open modal for direct link - watches for tasks to load
   useEffect(() => {
-    const taskIdParam = searchParams.get("taskId");
-    const projectIdParam = searchParams.get("projectId");
+    const openPendingTask = async () => {
+      if (pendingTaskIdRef.current && selectedProjectTasks?.length > 0) {
+        const taskId = pendingTaskIdRef.current;
+        let taskToOpen = selectedProjectTasks.find((t) => t.id === taskId);
 
-    if (
-      taskIdParam &&
-      projectIdParam &&
-      selectedProjectId === projectIdParam &&
-      selectedProjectTasks?.length > 0
-    ) {
-      const taskToOpen = selectedProjectTasks.find((t) => t.id === taskIdParam);
-      if (taskToOpen) {
-        setTaskDetailModal({ isOpen: true, task: taskToOpen });
+        if (!taskToOpen) {
+          try {
+            const response = await tasksApi.getTask(taskId);
+            if (response.data) taskToOpen = response.data;
+          } catch (error) {
+            console.error("Failed to fetch task from API:", error);
+          }
+        }
+
+        if (taskToOpen) {
+          setTaskDetailModal({ isOpen: true, task: taskToOpen });
+          pendingTaskIdRef.current = null;
+          // Clear taskId from URL
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete("taskId");
+          setSearchParams(newParams, { replace: true });
+        }
       }
-    }
-  }, [selectedProjectTasks, searchParams, selectedProjectId]);
+    };
+
+    openPendingTask();
+  }, [selectedProjectTasks, searchParams, setSearchParams]);
+
+  // Listen for notification click event (bypasses URL race conditions)
+  useEffect(() => {
+    const handleNotificationOpen = async (e) => {
+      const { taskId, projectId } = e.detail;
+      if (projectId && taskId) {
+        setSelectedProjectId(projectId);
+        pendingTaskIdRef.current = taskId;
+
+        // If tasks are already loaded for this project, open immediately
+        if (
+          selectedProjectId === projectId &&
+          selectedProjectTasks?.length > 0
+        ) {
+          let taskToOpen = selectedProjectTasks.find((t) => t.id === taskId);
+
+          if (!taskToOpen) {
+            try {
+              const response = await tasksApi.getTask(taskId);
+              if (response.data) taskToOpen = response.data;
+            } catch (error) {
+              console.error("Failed to fetch task from API:", error);
+            }
+          }
+
+          if (taskToOpen) {
+            setTaskDetailModal({ isOpen: true, task: taskToOpen });
+            pendingTaskIdRef.current = null;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("openTaskFromNotification", handleNotificationOpen);
+    return () =>
+      window.removeEventListener(
+        "openTaskFromNotification",
+        handleNotificationOpen,
+      );
+  }, [selectedProjectId, selectedProjectTasks, setSelectedProjectId]);
 
   // Fetch users
   useEffect(() => {

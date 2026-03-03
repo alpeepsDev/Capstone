@@ -9,7 +9,7 @@ import {
   RefreshCw,
   Lightbulb,
   AlertCircle,
-  BarChart3,
+  Sparkles,
 } from "lucide-react";
 import {
   getInsights,
@@ -162,7 +162,7 @@ const InsightsWidget = () => {
             <div
               className={`p-2 rounded-lg ${isDark ? "bg-blue-900/30" : "bg-blue-50"}`}
             >
-              <BarChart3
+              <Sparkles
                 className={`w-5 h-5 ${isDark ? "text-blue-400" : "text-blue-600"}`}
               />
             </div>
@@ -172,11 +172,6 @@ const InsightsWidget = () => {
               >
                 Nova Insights
               </h3>
-              <p
-                className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
-              >
-                AI-powered recommendations
-              </p>
             </div>
           </div>
           <button

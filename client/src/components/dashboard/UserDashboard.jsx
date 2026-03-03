@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, useMemo } from "react";
+import React, { useState, useEffect, Suspense, useMemo, useRef } from "react";
 import { toast } from "react-hot-toast";
 import { Card, Skeleton, Button } from "../ui";
 // Lazy load heavy view components for better performance
@@ -21,6 +21,7 @@ import TaskDetailModal from "../modals/TaskDetailModal";
 import { UserAnalytics } from "../analytics";
 import { useTasks } from "../../hooks";
 import { useTheme } from "../../context";
+import { tasksApi } from "../../api/tasks";
 import { motion, AnimatePresence } from "framer-motion";
 
 import {
@@ -99,37 +100,90 @@ const UserDashboard = ({
     deleteTask,
   } = useTasks(selectedProjectId);
 
+  // Ref to track pending task opening from notification click
+  const pendingTaskIdRef = useRef(null);
+
   // Handle URL params for direct task access (notifications)
   useEffect(() => {
     const projectIdParam = searchParams.get("projectId");
     const taskIdParam = searchParams.get("taskId");
 
-    if (projectIdParam && taskIdParam && projects) {
-      // 1. Switch project if needed
+    if (projectIdParam && projects) {
       if (selectedProjectId !== projectIdParam) {
         setSelectedProjectId(projectIdParam);
+      }
+      if (taskIdParam) {
+        pendingTaskIdRef.current = taskIdParam;
       }
     }
   }, [searchParams, projects, selectedProjectId, setSelectedProjectId]);
 
-  // Separate effect to open modal once tasks are loaded
+  // Open modal once tasks are loaded for pending task
   useEffect(() => {
-    const taskIdParam = searchParams.get("taskId");
-    const projectIdParam = searchParams.get("projectId");
+    const openPendingTask = async () => {
+      if (pendingTaskIdRef.current && tasks && tasks.length > 0) {
+        const taskId = pendingTaskIdRef.current;
+        let taskToOpen = tasks.find((t) => t.id === taskId);
 
-    if (
-      taskIdParam &&
-      projectIdParam &&
-      selectedProjectId === projectIdParam &&
-      tasks &&
-      tasks.length > 0
-    ) {
-      const taskToOpen = tasks.find((t) => t.id === taskIdParam);
-      if (taskToOpen) {
-        setTaskDetailModal({ isOpen: true, task: taskToOpen });
+        if (!taskToOpen) {
+          try {
+            const response = await tasksApi.getTask(taskId);
+            if (response.data) taskToOpen = response.data;
+          } catch (error) {
+            console.error("Failed to fetch task from API:", error);
+          }
+        }
+
+        if (taskToOpen) {
+          setTaskDetailModal({ isOpen: true, task: taskToOpen });
+          pendingTaskIdRef.current = null;
+          // Clear taskId from URL
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete("taskId");
+          setSearchParams(newParams, { replace: true });
+        }
       }
-    }
-  }, [tasks, searchParams, selectedProjectId]);
+    };
+
+    openPendingTask();
+  }, [tasks, searchParams, setSearchParams]);
+
+  // Listen for notification click event (bypasses URL race conditions)
+  useEffect(() => {
+    const handleNotificationOpen = async (e) => {
+      const { taskId, projectId } = e.detail;
+      if (projectId && taskId) {
+        setSelectedProjectId(projectId);
+        pendingTaskIdRef.current = taskId;
+
+        // If tasks are already loaded for this project, open immediately
+        if (selectedProjectId === projectId && tasks && tasks.length > 0) {
+          let taskToOpen = tasks.find((t) => t.id === taskId);
+
+          if (!taskToOpen) {
+            try {
+              const response = await tasksApi.getTask(taskId);
+              if (response.data) taskToOpen = response.data;
+            } catch (error) {
+              console.error("Failed to fetch task from API:", error);
+            }
+          }
+
+          if (taskToOpen) {
+            setTaskDetailModal({ isOpen: true, task: taskToOpen });
+            pendingTaskIdRef.current = null;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("openTaskFromNotification", handleNotificationOpen);
+    return () =>
+      window.removeEventListener(
+        "openTaskFromNotification",
+        handleNotificationOpen,
+      );
+  }, [selectedProjectId, tasks, setSelectedProjectId]);
 
   // Ensure arrays are initialized
   const safeTasks = Array.isArray(tasks) ? tasks : [];
@@ -318,23 +372,12 @@ const UserDashboard = ({
             // Project Selection Grid
             <div className="h-full overflow-y-auto p-6">
               <div className="max-w-7xl mx-auto">
-                <div className="mb-8">
-                  <h1
-                    className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
-                  >
-                    Welcome Back, {user?.username}!
-                  </h1>
-                  <p
-                    className={`mt-2 ${isDark ? "text-gray-400" : "text-gray-600"}`}
-                  >
-                    Select a project to view its dashboard and manage tasks.
-                  </p>
-                </div>
-
-                {/* Nova Insights Widget */}
-                <div className="mb-6">
-                  <InsightsWidget />
-                </div>
+                {/* Nova Insights Widget - Hide on favorites view */}
+                {activeView !== "favorites" && (
+                  <div className="mb-6">
+                    <InsightsWidget />
+                  </div>
+                )}
 
                 <motion.div
                   variants={{

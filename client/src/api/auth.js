@@ -95,7 +95,7 @@ export const authService = {
 
       if (!accessToken || !user) {
         throw new Error(
-          "Invalid refresh response: missing access token or user data"
+          "Invalid refresh response: missing access token or user data",
         );
       }
 
@@ -139,6 +139,36 @@ export const authService = {
         throw error.response.data || { message: "Failed to fetch profile" };
       } else {
         throw { message: "Failed to fetch profile" };
+      }
+    }
+  },
+
+  async forgotPassword(email) {
+    try {
+      const response = await api.post("/users/forgot-password", { email });
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        throw error.response.data || { message: "Failed to send reset email" };
+      } else {
+        throw { message: "Network error. Please check your connection." };
+      }
+    }
+  },
+
+  async resetPassword(email, otp, newPassword) {
+    try {
+      const response = await api.post("/users/reset-password", {
+        email,
+        otp,
+        newPassword,
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        throw error.response.data || { message: "Failed to reset password" };
+      } else {
+        throw { message: "Network error. Please check your connection." };
       }
     }
   },

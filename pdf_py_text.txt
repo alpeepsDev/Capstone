@@ -1,0 +1,1130 @@
+1 
+ THE DEVELOPMENT AND IMPLEMENTATION OF A PROJECT 
+MANAGEMENT SYSTEM FOR ROKSHU CORPORATION WITH DATA 
+ANALYTICS  
+ 
+ 
+ 
+ 
+A Capstone Project  
+presented to the faculty  of the  
+College of Information Technology Education  
+Manila  
+ 
+ 
+ 
+In Partial Fulfillment of the  
+Requirements for the Degree of  
+Bachelor of Science in Information Technology  
+ 
+ 
+ 
+ 
+By 
+ 
+Proponents  
+Agustin, Alfie M.  
+Micabani, Angelica Mae  
+Murillo, Dior Daniel  
+Pardilla, Vincent Kelvin N.  
+Reyes, John Rey  
+Ruiz, Vince Joseph  
+ 
+ 
+ 
+ 
+ 
+September 2025  
+2 
+  
+APPROVAL SHEET  
+ 
+This Capstone Project entitled “ Development and implementation of a project management 
+system for rokshu corporation with data analytics ” was prepared and submitted by:  
+ 
+Name of Proponents  
+Agustin, Alfie M.  
+Murillo, Dior Daniel  
+Pardilla, Vincent Kelvin N.  
+Reyes, John Rey  
+Ruiz, Vince Joseph  
+ 
+has been approved by the REVIEW COMMITTEE as partial fulfillment of the requirements 
+for the subject Capstone Project 1.  
+ 
+Name of Adviser  
+Adviser  
+ 
+____________________________________________________________________  
+REVIEW COMMITTEE  
+ 
+ 
+    Panelist 1                Panelist 2   
+                     Panelist                       Panelist  
+Panelist  
+Panelist Chair  
+____________________________________________________________________  
+ 
+Accepted and approved by:  
+ 
+Program Head  
+College of Information Technology Education  
+ 
+College Dean  
+College of Information Technology Education  
+3 
+ ACKNOWLEDGMENT  
+ 
+ The researchers sincerely thank everyone who supported the development of this web -
+based project management system. They are especially grateful to their adviser for valuable 
+guidance, to the faculty of the College of Information Technology Education for t heir 
+knowledge and resources, and to the respondents who provided helpful feedback during testing. 
+The researchers also extend their appreciation to their families and friends for their 
+encouragement, and above all, to God for the wisdom and perseverance t o complete this study.  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+4 
+ ABSTRAC T        
+                                                                                                        
+ This study presents the development of a web -based project management system 
+designed for Rokshu Corporation to improve task organization, collaboration, and progress 
+tracking. The company has experienced challenges such as missed deadlines, unclear 
+respon sibilities, and communication gaps when relying on traditional project management 
+methods. To address these issues, the proposed system provides features such as task assignment, 
+scheduling, and real -time monitoring, all accessible through an online platfo rm.  
+  
+ By centralizing project information in one system, it enhances productivity, 
+accountability, and teamwork within the organization. This project aims to offer Rokshu 
+Corporation a simple yet effective solution for managing projects more efficiently and achi eving 
+better outcomes.  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+5 
+  
+6 
+ TABLE OF CONTENTS  
+Chapter I. The Problem and Its Background  
+ 1.0 Introduction  ………………………………………………     8 
+ 1.1 Project Context…………………………………………………….  
+ 1.2 Objective of the Study……………………………………………….  
+  1.2.1 General Objective of the Study  
+  1.2.2 Specific Objectives of the Study  
+ 1.3 Scope and Delimitation of the Study  
+  1.3.1 Scope  
+  1.3.2 Limitation  
+ 1.4 Significance of the Study  
+ 
+Chapter II. Review of Related Literature and Studies  
+ 2.1 Theoretical Background  
+ 2.2 Review of Related Literature and Studies  
+ 2.3 Technical Background  
+  2.3.1 Conceptual Framework  
+ 2.4 Definition of Terms  
+ 
+Chapter III. Research Design and Methodology  
+ 3.1 Research Design  
+  3.1.1 Software Architecture  
+  3.1.2 Data Flow Diagram  
+  3.3.3 Software Development Life Cycle  
+  3.3.4 System Flowchart  
+  3.3.5 Entity Relationship Diagram  
+  3.3.6 Use Case Diagram  
+7 
+   3.3.7  System  Screenshots  
+3.2 Statistical Treatment of Data  
+  3.2.1 Data Gathering Technique  
+  3.2.2 Setting of the Study  
+  3.2.3 Subject of the Study  
+  3.2.4 Sampling Technique  
+  3.2.5 Statistical Treatment of Data  
+ 
+Chapter IV. Presentation of Data Analysis and Interpretation  
+ 4.1 Evaluation Procedure  
+ 4.2 System Test Plan  
+ 4.3 Statistical Analysis  
+  4.3.1 Respondents Profile  
+  4.3.2 Questionnaire Results  
+ 4.4 Statistical Result Interpretation  
+ 
+Chapter V. Summary of Findings, Conclusion, and Recommendation  
+ 5.1 Summary  
+ 5.2 Conclusion  
+ 5.3 Recommendations  
+ 
+Appendices  
+Appendix A: References  
+Appendix B: Source Codes  
+Appendix C: Informed Consent  
+Appendix D: Accomplished Survey Forms  
+Appendix E: Curriculum Vitae  
+8 
+ LIST OF FIGURES  
+Figure  
+Figure name…………………………………………....……………Page Number  
+Figure name…………………………………………....……………Page Number  
+Figure name…………………………………………....……………Page Number  
+Figure name…………………………………………....……………Page Number  
+Figure name…………………………………………....……………Page Number  
+LIST OF TABLES  
+Table  
+Table name…………………………………………....……………Page Number  
+Table name…………………………………………....……………Page Number  
+Table name…………………………………………....……………Page Number  
+Table name…………………………………………....……………Page Number  
+Table name…………………………………………....……………Page Number  
+Table name…………………………………………....……………Page Number  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+9 
+ CHAPTER I  
+INTRODUCTION  
+1.0 Introduction  
+ In today’s digital age, organizations and teams depend s on technology to manage tasks and 
+projects effectively. Proper project management ensures that work is completed on time, resources are 
+used wisely, and goals are achieved. However, many groups, including small organizations and student 
+teams, still face challenges in tracking tasks, meeting deadlines, and collaborating efficiently. Traditional 
+methods such as paper -based planning or scattered communication often cause confusion, delays, and 
+lack of ac countability.  
+ 
+ To address these issues, this study focuses on developing a web -based project 
+management system that provides tools for task assignment, scheduling, progress monitoring, 
+and real -time collaboration. Being web -based, the system can be accessed anytime and a nywhere 
+with an internet connection, making it practical for both remote and on -site teams. This project 
+aims to offer a simple yet effective solution that improves productivity, strengthens 
+communication, and helps organizations achieve better project out comes.  
+ 
+1.1 Project Context  
+ In every organization, managing projects effectively is essential to ensure that goals are 
+achieved on time and resources are maximized. However, many companies, including Rokshu 
+Corporation, face difficulties in organizing tasks, monitoring progress, and maintaining clear 
+communication among team members. Relying on manual methods or basic tools often results 
+in missed deadlines, unclear responsibilities, and inefficient workflows.  
+ 
+ To address these challenges,  our team developed a web -based project management 
+system tailored for Rokshu Corporation. The system provides an accessible platform where 
+tasks can be assigned, schedules can be tracked, and progress can be monitored in real time.  
+10 
+ By centralizing project information, it helps reduce confusion and promotes accountability 
+among team members.  
+ 
+ This project is significant because it introduces a practical solution that enhances 
+collaboration and productivity within the company. Through this system, Rokshu Corporation 
+can improve its project handling process, minimize delays, and strengthen teamwo rk, ultimately 
+leading to better outcomes for both employees and the organization as a whole.  
+ 
+1.2 Objective of the Study  
+ The objectives of this study outline the goals that the researchers seek to accomplish 
+through the development and implementation of the Web -Based Project Management System 
+for Rokshu Corporation. These objectives ensure that the project remains focused on  solving 
+the existing challenges in task management, collaboration, and project monitoring within the 
+organization.  
+ 
+           1.2.1 General Objective  
+  The general objective of this project is to design and implement a web -based project  
+management system that streamlines project organization,  improves communication  among 
+team members, and provides efficient tracking of tasks  and progress for Rokshu  Corporation . 
+         1.2.2 Specific Objectives of the Study  
+        This study specifically aims to:  
+• Develop a system that enables task creation, assignment, and scheduling in an 
+organized manner.  
+• Provide a feature that allows users to monitor project progress and deadlines in real 
+time.  
+• Facilitate collaboration and communication among employees through a 
+centralized online platform.  
+11 
+ • Store and manage project -related data in one accessible system to improve 
+accountability.  
+ 
+1.3 Scope and Delimitation of the Study  
+ This section outlines the coverage and boundaries of the study to clarify what the project 
+includes and excludes.  
+ 
+1.3.1 Scope  
+ This study focuses on the design and development of a web -based project management 
+system for Rokshu Corporation. The system covers essential project management functions 
+such as task creation, assignment, scheduling, and progress monitoring. It also provi des features 
+that support collaboration and communication among team members. Since it is web -based, 
+the system can be accessed through any device with an internet connection, ensuring 
+convenience and flexibility for its users. The study further includes system testing and 
+evaluation based on the feedback of selected employees and stakeholders of Rokshu 
+Corporation.  
+ 
+      1.3.2 Limitation  
+ The system is limited to core project management features and does not include 
+advanced tools such as budgeting, automated resource allocation, or third -party software 
+integration. It also requires a stable internet connection to function properly, which m ay affect 
+users in areas with poor connectivity. The evaluation of the system is based only on the feedback 
+of a specific group of respondents from Rokshu Corporation and may not represent all 
+potential users.  
+12 
+ 1.4 Significance of the Study  
+ This study is valuable because it will benefit different groups within and beyond 
+Rokshu Corporation:  
+• For the Management  
+The system provides a reliable tool to oversee projects, track progress, and ensure 
+accountability among team members. It helps management make better decisions by 
+giving them access to organized and updated project information.  
+ 
+• For Employees  
+The system offers an easier way to manage assigned tasks, monitor deadlines, and 
+collaborate with colleagues. It reduces confusion and strengthens teamwork by 
+centralizing communication and project data in one platform.  
+ 
+• For Clients of Rokshu Corporation  
+With improved project management, clients can expect more organized processes and 
+timely delivery of outputs, which strengthens trust and satisfaction with the company’s 
+services.  
+ 
+• For Future Researchers and IT Students  
+This study can serve as a useful reference for those who wish to develop similar systems 
+or explore improvements in project management tools. It provides insights into how 
+technology can address organizational challenges and enhance productivity.  
+13 
+ CHAPTER II  
+REVIEW OF RELATED LITERATURE AND STUDIES  
+ This chapter indicates the ideas and concepts relevant to the present subject relating to 
+the other studies and is discussed to provide the foundation of the proposed study. In order to 
+find the correct method and procedures, careful review of literature a nd studies must be done 
+for the development of the study.  
+ 
+2.1 Review of Related Literature and Studies  
+ 
+Foreign Studies  
+ 
+ Haloul  et al. (2024) conducted a comprehensive review of Project Management 
+Information Systems (PMIS) across industries such as construction, IT, finance, and 
+manufacturing. Their study emphasized that PMIS allows managers to plan, monitor, and 
+evaluate project s more efficiently. The findings suggest that web -based PMIS enhances 
+organizational performance by centralizing project data and promoting professional project 
+delivery.  
+ 
+ In a separate work, Mortadza and Rizal (2024) examined the role of digital Project 
+Management Systems (PMS) in improving project reporting. They argued that traditional 
+reporting methods often lead to delays and miscommunication, while PMS solutions enable  
+real-time visibility and automation that strengthen decision -making and collaboration. Despite 
+these benefits, they also identified barriers to adoption, such as integration difficulties, 
+cybersecurity concerns, and resistance to organizational change.  
+ 
+ Similarly, Singh and Jankovitz (2018) explored the importance of project management 
+skills in preparing professionals for modern workplaces. They concluded that project 
+management tools not only support accountability and teamwork but also improve 
+communic ation within collaborative projects. Their study recommended strategies such as 
+structured scheduling, use of communication frameworks, and accountability mechanisms to 
+ensure project success.  
+ 
+ 
+ 
+ 
+14 
+ Local Studies  
+ 
+ Laguador  (2017) investigated project monitoring practices among selected IT 
+companies in the Philippines. Results revealed that many firms still rely on manual methods, 
+such as spreadsheets, which often lead to inefficiencies and errors. The study recommended the 
+use of digital project management platforms to improve task monitoring, coordination, and 
+accountability.  
+ 
+ Cruz and Medina (2019) analyzed the implementation of task management systems in 
+a Manila -based BPO company. Their findings showed that the introduction of a web -based 
+tracking system reduced task delays and improved coordination among employees, especiall y 
+those working on different shifts. Managers benefited from the ability to assign, track, and 
+evaluate tasks in real time.  
+ 
+ Del Rosario (2021) examined the adoption of project management tools in small and 
+medium -sized enterprises (SMEs) in Cavite. The study highlighted that SMEs using online task 
+management platforms experienced greater productivity and transparency. However, it also 
+noted challenges such as high adoption costs and lack of technical expertise, which limited wider 
+system usage.  
+ 
+2.2 Technical Background  
+ This section discusses the technical foundations of the study, including frameworks and 
+concepts that guide the design and functionality of project management systems. It explains the 
+flow of inputs, processes, and outputs (IPO) relevant to both the existi ng and proposed systems.
+  
+15 
+ 2.3.1 Conceptual Framework of the Existing System  
+ 
+ The traditional project management practices used in many organizations rely on 
+manual methods such as verbal task assignments, emails, spreadsheets, and face -to-face meetings. 
+While these approaches allow for basic monitoring, they are highly prone to del ays, 
+miscommunication, and fragmented data storage. Without a centralized system, managers 
+struggle with visibility, while employees experience unclear responsibilities and overlapping 
+tasks.   
+ 
+Traditional Way  
+ 
+ 
+ 
+Figure 2.3.1.1  
+ 
+ This figure presents the existing traditional project management methods. The input 
+includes manual task assignments, email/paper -based updates, and basic spreadsheets. The 
+process involves manual progress tracking, periodic project status meetings, and se parate 
+communication channels. The output results in delayed reporting, inconsistent data, limited 
+collaboration, and poor accountability among project members.  
+ 
+  Input
+•Manual task 
+assignments 
+(verbal/email)
+•Paper/email -
+based updates
+•Basic 
+spreadsheetsProcess
+•Manual progress 
+tracking
+•Periodic status 
+meetings
+•Communication 
+via separate 
+channelsOutput
+•Delayed 
+reporting
+•Data 
+inconsistencies
+•Limited 
+collaboration
+•Poor 
+accountability
+16 
+ 2.3.2 Conceptual Framework of the Proposed System  
+   
+ The proposed web -based project/task management system addresses the gaps in the 
+existing setup by introducing automation, centralized storage, and collaboration tools. It is 
+designed to provide Rokshu Corporation with real -time tracking, clear accountabili ty, and 
+improved project visibility.  
+ 
+Our Proposed System   
+ 
+Figure 2.3.2.1   
+ This figure shows the proposed system where the input includes user roles, task details, 
+deadlines, and real -time updates. The process covers centralized data storage, dashboard 
+reporting, collaboration tools, and automatic alerts. The output ensures timel y task completion, 
+transparency, improved collaboration, and unified project monitoring.  
+ Input
+•User roles 
+(managers, team 
+members)
+•Task details (title, 
+deadline, assignee)
+•Real -time updates 
+(status, progress, 
+file uploads)
+•Notifications/alerts 
+for deadlinesProcess
+•Centralized 
+database for tasks 
+and progress
+•Dashboard 
+reflecting real -time 
+project status
+•Collaboration tools 
+(comments, file 
+sharing)
+•Role -based access 
+& reporting
+•Automatic alerts 
+for 
+upcoming/overdue 
+tasksOutput
+•Clear 
+accountability 
+among team 
+members
+•Timely completion 
+of tasks
+•Reduced 
+miscommunication
+•Easy monitoring 
+for managers
+•Unified project 
+documentation
+17 
+ 2.4 Definition of Terms  
+ 
+To provide clarity and consistency, the following key terms are defined as used in this study:  
+ 
+Project Management System  (PMS) – A software tool that assists in planning, assigning, 
+monitoring, and evaluating projects and tasks within an organization.  
+ 
+Task Management  – The process of creating, assigning, tracking, and completing tasks within 
+a project to ensure timely execution and accountability.  
+ 
+Web -Based System  – A software application that runs on a web server and can be accessed 
+through a browser using the internet, providing flexibility and accessibility across devices.  
+ 
+Dashboard  – A visual interface in the system that displays real -time project information such 
+as task progress, deadlines, and assigned responsibilities.  
+ 
+Collaboration Tools  – Features in the system that allow team members to communicate, share 
+files, and work together efficiently on assigned tasks.  
+ 
+Centralized Database  – A structured digital storage where all project data, including tasks, 
+updates, and reports, are securely stored and accessed by authorized users.  
+ 
+Role -Based Access Control  (RBAC) – A security method where system access and 
+permissions are based on user roles, such as manager or team member.  
+ 
+Notifications/Alerts  – Automated reminders generated by the system to inform users of 
+upcoming deadlines, overdue tasks, or updates in project status.  
+ 
+Progress Monitoring  – The continuous tracking and assessment of project activities and task 
+completion to ensure alignment with goals and deadlines.  
+ 
+Accountability  – The responsibility of each user to complete assigned tasks on time, made 
+visible through system tracking and reporting features.  
+ 
+ 
+ 
+ 
+ 
+18 
+ CHAPTER III  
+RESEARCH DESIGN AND METHODOLOGY  
+In this chapter, the System and Program flowchart, Data Flow  Diagram, Use Case Diagram, 
+Software Architecture, and other project  diagrams are indicated. This diagrams are important 
+so that the study is  readable to anyone.  
+ 
+3.1 Research Design  
+ This study employed a Quantitative –Developmental Research Design to guide the 
+creation, implementation, and evaluation of the Project Management System for Rokshu 
+Corporation with Data Analytics. The quantitative component focused on collecting 
+measurable data from respondents to assess the effectiveness, usability, and reliability of the 
+developed system, while the developmental aspect concentrated on the actual design and system 
+construction.  
+ 
+ The developmental phase followed the Software Development Life Cycle (SDLC), 
+specifically the Waterfall Model, which includes stages such as requirements analysis, system 
+design, coding, testing, and implementation. This ensured that each stage of system 
+development was systematically and sequentially executed to meet the company’s operational 
+needs.  
+ 
+ The quantitative phase involved the distribution of survey questionnaires to selected 
+employees and managers of Rokshu Corporation. Their responses were statistically analyzed 
+using tools such as Weighted Mean and Standard Deviation to determine the level of user 
+satisfaction and consistency of feedback. These numerical results provided a factual basis for 
+evaluating the system’s overall performance. In this study, the researchers implemented several 
+strategies to further expand the data and analyze it pro perly for an accurate and relevant project 
+management system for Rokshu Corporation. Combining the methods was necessary to ensure 
+19 
+ proper implementation and adjustment of the analysis of the developed system, allowing the 
+researchers to better align it with the real needs of the organization.  
+ 
+ By combining quantitative evaluation with the developmental process, the study 
+provided a clear, data -driven assessment of the system’s efficiency and user acceptability. This 
+approach ensured that the Project Management System not only met technical requi rements 
+but also produced measurable improvements in project coordination, task management, and 
+data -driven decision -making within Rokshu Corporatio n. 
+ 
+ 3.1.1  Software  Architecture  
+                       Figure 3.1. 2 – Software Architecture  
+ 
+ The Project Management System uses a layered architecture that organizes the system 
+into separate functional components to ensure efficiency and maintainability. Each layer 
+handles specific tasks that contribute to the overall functionality of the system. The Presentation 
+Layer provides the user interface that allows interaction between users and the system. The 
+Logic Layer manages the core functions and business processes. The Data Layer is responsible 
+
+20 
+ for storing, retrieving, and maintaining information in the database. Lastly, the External Services 
+Layer represents third -party integrations or external systems that support the system’s features.  
+  
+            Figure 3.1.2.1 – Data Flow Diagram of the System  
+ 
+ The Data Flow Diagram (DFD) illustrates the movement of data within the proposed 
+system. It shows the interaction between the system’s main users the Admin, Manager, and User 
+and the internal processes such as Authentication, Task Management, and User Mana gement.  
+
+21 
+  
+ For the Manager, the system allows authentication, creation of tasks, viewing task 
+statuses, and managing approvals. The User can authenticate, view and update task statuses, and 
+add comments to tasks. Meanwhile, the Admin has access to authentication, use r management 
+(including updating roles), and system rate limiting.  
+ 
+ Each of these processes communicates with corresponding data stores such as User Data, 
+Task Data, Manager Data, Admin Data, and Rate Limit Data, ensuring that all inputs and 
+outputs are properly maintained within the system. This diagram highlights the log ical data flow 
+and the relationships between users and system modules, ensuring efficient data processing and 
+management.  
+ 
+3.3.3 Software Development Life Cycle  
+ The development of the Project Management System was carried out using the Agile 
+Software Development Life Cycle, which ensures that the system is built through a flexible and 
+iterative process. This approach allows the development team to plan, design, te st, and refine 
+the system in multiple stages, ensuring that each part is continuously improved based on 
+feedback and evaluation.  
+ 
+ The Agile methodology is a project management approach that organizes the 
+development process into several short and manageable phases called sprints. Each sprint 
+involves creating and testing specific features of the system, followed by reviewing the resu lts 
+and applying necessary modifications before moving to the next stage. This process promotes 
+adaptability, collaboration, and continuous improvement throughout the system’s 
+development.  
+ 
+22 
+  Agile focuses on delivering progress in small increments, enabling the team to conduct 
+regular testing and gather feedback efficiently. This method encourages open communication 
+among the developers, users, and stakeholders to make sure the system fulfills  its intended 
+functions effectively. Although Agile was first introduced for software development projects, it 
+has now become a widely used framework for various types of projects that require constant 
+revisions and updates.  
+ 
+                                  Figure 3.3.3.1 – Agile Software Development Life Cycle  
+ 
+ The researchers selected the Agile Software Development Life Cycle because it supports 
+flexibility and responsiveness to change during the creation of the Web -Based Project 
+Management System. Through this approach, the team can easily incorporate user sugg estions 
+and perform necessary revisions after each testing phase to enhance the system’s features and 
+performance. The Agile process aims to produce a system that is efficient, user -friendly, and 
+reliable, providing users with an organized and effective t ool for managing projects and 
+improving productivity.  
+ 
+  
+
+23 
+  
+ 
+ 
+ 
+ 
+ 
+ 3.3.4 System Flowchart  
+ 
+          Figure 3.3.4.1 – System Flowchart of the Project Management System  
+ 
+ The System Flowchart provides a graphical representation of the overall process within 
+the system. It shows how users interact with the system, how data is processed, and the decision 
+points involved in each operation. This includes login verification, pro ject creation, task 
+updates, and report generation. The flowchart helps developers and users understand the logical 
+structure of the system’s workflow.  
+ 
+
+24 
+   
+ 
+ 
+ 
+ 
+ 
+ 3.3.5 Entity Relationship Diagram  
+ 
+            Figure 3.3.5.1 – Entity Relationship Diagram of the Project Management System  
+ 
+ The Entity Relationship Diagram (ERD) defines the data structure and relationships 
+among the different entities in the system. It identifies the key entities such as Users, Projects, 
+Tasks, and Reports, along with their attributes and connections. The ERD ensures that data is 
+
+25 
+ organized efficiently and that relationships between entities are clearly defined to maintain data 
+integrity.  
+ 
+ 
+ 
+ 
+ 3.3.6 Use Case Diagram  
+ 
+       Figure 3.3.6.1 – Use Case Diagram of the Project Management System  
+ 
+ The Use Case Diagram provides an overview of the system’s main functions and the 
+interactions between users and the system. It identifies the primary actors such as Administrator, 
+Project Manager, and Member, and maps their specific actions like managing a ccounts, 
+assigning tasks, monitoring progress, and generating reports. This diagram helps define user 
+roles and ensures that all functional requirements are met.  
+ 
+ 
+ 
+ 
+ 
+
+26 
+  
+ 
+3.2 System Screenshots  
+ 
+     Figure: Login  
+This is the login screen for the TaskForge application, showing the form fields for 
+authentication.  
+ 
+Figure: Register  
+
+27 
+ This is the Register screen , where the users can register.  
+ 
+ 
+Figure: Dashboard/Gantt Chart  
+ 
+This screenshot shows the Dashboard/ Gantt Chart view, a visual representation of the project 
+schedule and task dependencies over time. It helps the user track task timelines against the  
+calendar.   
+
+28 
+  
+ 
+ 
+Figure: Kanban Board  
+ 
+A close -up of the Kanban Board view, which organizes the user's tasks into workflow stages: 
+To Do, In Progress, Done, and Completed.  
+
+29 
+  
+ 
+ 
+Figure: Calendar  
+ 
+This view shows the user's tasks scheduled on a Monthly Calendar, allowing for an easy -to-
+digest timeline of upcoming due dates.  
+ 
+
+30 
+  
+Figure: Task Detail  
+This modal shows the Task detail and can comment.  
+
+31 
+  
+ 
+Figure: Analytics  
+This is the Analytics tab, providing User Analytics for the user (Jane Smith) . 
+
+32 
+  
+Figure: User Profile  
+ 
+A general view of the user's dashboard, showing the navigation bar and confirming the logged -
+in user, Jane Smith (USER).  
+ 
+Figure: Settings & Preferences  
+ 
+This is the Settings & Preferences tab, where the user can change the theme of the web app to 
+
+33 
+ dark mode and light mode.  
+ 
+Figure: Manager Dashboard/Projects tab  
+ 
+This shows the projects and their progress.  
+ 
+Figure: Project creation  
+ 
+This modal shows the creation of project and assigning members to a project.  
+
+34 
+  
+ 
+Figure: Kanban Board  
+ 
+This shows the Kanban Board on Manager View and only manager can drag and drop the task 
+to completed.  
+
+35 
+  
+Figure: Approval  
+ 
+This tab shows where the manager can approve or request changes on the task.  
+ 
+ 
+
+36 
+  
+ 
+Figure: Request Changes  
+ 
+This shows Request Changes modal where manager can request what to change on task.  
+
+37 
+  
+Figure: Analytics  
+ 
+This shows the analytics on manager view.  
+
+38 
+  
+Figure: Settings & Preferences  
+ 
+This is the Settings & Preferences tab, where the user can change the theme of the web app to 
+dark mode and light mode.  
+ 
+Figure: Admin Dashboard  
+ 
+This shows the Overview tab on Dashboard where the admins can see the performance 
+
+39 
+ metrics.  
+ 
+Figure: API Monitoring  
+ 
+This shows API Monitoring tab where admins can see the top endpoints and users activity 
+within 24 hours.  
+
+40 
+  
+Figure: Rate Limit  
+ 
+This tab shows Rate Limiter where admin can limit the usage per -role, per -user, and endpoint 
+of the API to prevent DoS/Ddos attack and t t manages and optimizes the consumption of 
+server resources (CPU, memory, database connections).  
+
+41 
+  
+Figure: User Management  
+ 
+This tab shows User Management where admin can see the users and update their role into 
+manager.  
+ 
+3.2.1 Data Gathering Technique  
+ The researchers utilized a survey questionnaire as the main data -gathering 
+instrument to collect quantitative data regarding the effectiveness and performance of 
+the developed Project Management System for Rokshu Corporation with Data 
+Analytics. The questi onnaire was created and distributed using Google Forms to ensure 
+accessibility, accuracy, and convenience for respondents.  
+ 
+ The instrument was designed based on selected ISO/IEC 25010 software 
+quality characteristics, which include functionality, usability, efficiency, reliability, 
+maintainability, and overall satisfaction. Each category contained specific statements 
+that allow ed respondents to rate their level of agreement and satisfaction with the 
+developed system.  
+
+42 
+  
+ To ensure systematic data collection, the researchers followed a structured 
+procedure. The survey link was shared with the employees and managers of Rokshu 
+Corporation who directly participated in the system testing and evaluation. These 
+respondents were c hosen because of their familiarity with the company’s project 
+management process and their involvement in daily operational activities.  
+ 
+A five -point Likert scale was used to measure the respondents’ level of agreement for 
+each statement:  
+5 – Strongly Agree  4 – Agree  3 – Neutral  2 – Disagree  1 – Strongly Disagree.  
+ 
+ The responses were automatically recorded and tabulated using Google Sheets, 
+providing a reliable dataset for analysis. The researchers then applied Weighted Mean 
+and Standard Deviation to evaluate the respondents’ feedback and determine the 
+system’s level  of user satisfaction, consistency, and effectiveness.  
+ 
+ The questionnaire also included an open -ended section where participants 
+could provide comments and suggestions for possible improvements to the system. This 
+combination of quantitative data and qualitative insights helped the researchers gain a 
+deeper und erstanding of the system’s strengths and areas for enhancement.  
+ 
+ Overall, this data -gathering process ensured that the evaluation of the Project 
+Management System was objective, systematic, and data -driven, reflecting the actual 
+experiences and perspectives of its intended users at Rokshu Corporation.  
+ 
+3.2.3 Setting of the Study  
+ 
+43 
+  The study was conducted at Rokshu  Corporation, located at 8838 Sampaloc, Makati, 
+1203 Kalakhang Maynila, Philippines. Established in 2015, Rokshu Corporation is a trading 
+company that specializes in musical and sporting goods. The company sources its products from 
+various suppliers in Met ro Manila and distributes them nationwide through a network of sales 
+representatives and delivery partners.  
+ 
+ Rokshu Corporation primarily operates through direct selling and face -to-face 
+transactions, enabling close coordination with clients across different provinces. The company 
+continues to expand its trading network and strengthen its internal operations to s upport its 
+growing market coverage throughout the Philippines.  
+ 
+ The researchers identified that the company’s existing project and sales management 
+processes were mostly manual, relying on spreadsheets, written reports, and verbal 
+communication. These traditional methods sometimes resulted in delays in coordination, 
+difficulty in tracking tasks, and inconsistencies in reporting.  
+ 
+ To address these operational challenges, the researchers implemented the Project 
+Management System with Data Analytics within the company’s office environment. The 
+system was tested and deployed in Rokshu Corporation’s main office in Makati, where 
+employee s and managers participated in the evaluation and testing process. Conducting the 
+study within the actual workplace allowed the researchers to assess the system’s functionality, 
+efficiency, and suitability in a real business setting, ensuring that it alig ns with the organization’s 
+operational goals and workflow.  
+ 
+ 
+3.2.4 Subject of the Study  
+ 
+44 
+  The subjects of the study were the employees and managers of Rokshu 
+Corporation who were directly involved in project management and monitoring 
+activities. These participants were selected because they were the primary users of the 
+developed Project Manage ment System and could provide accurate assessments of its 
+performance.  
+ 
+ The respondents included  company owner  and staff members. Their feedback 
+and evaluations were vital in determining the system’s effectiveness, usability, and 
+overall impact on the company’s project management operations.  
+ 
+ A total of 30 e mployees participated in the evaluation through survey 
+questionnaires and feedback sessions, ensuring diverse perspectives from different roles 
+within the organization.  
+ 
+3.2.5 Sampling Technique  
+ The researchers used a purposive sampling technique in selecting the 
+respondents for the study. This method was chosen because only specific individuals 
+within the company possessed the knowledge and experience required to evaluate the 
+system effectively.  
+ 
+ Participants were selected based on their direct involvement in project 
+management activities and their familiarity with the company’s current processes. 
+Through purposive sampling, the researchers ensured that the data collected came from 
+credible sources  who could provide meaningful insights about the developed system’s 
+functionality and usability.  
+ 
+45 
+  This sampling approach allowed for a focused and relevant evaluation of the 
+system’s performance and its potential to improve the project management process at 
+Rokshu Corporation.  
+ 
+3.2.6 Statistical Treatment of Data  
+ 
+ The data gathered from the survey questionnaires were analyzed using Weighted 
+Mean and Standard Deviation as the main statistical tools. These methods were 
+employed to determine the level of user satisfaction and to assess the effectiveness of the 
+develope d system based on the respondents’ evaluations.  
+ 
+The questionnaire utilized a five -point Likert scale with the following values:  
+5 – Strongly Agree  4 – Agree  3 – Neutral  2 – Disagree  1 – Strongly Disagree  
+ 
+ The Weighted Mean (WM) for each criterion, such as functionality, usability, 
+efficiency, reliability, maintainability, and overall satisfaction, was computed using the 
+formula:  
+ 
+Weighted  Mean  (WM)=∑( 𝑓×𝑤)𝑁 
+ 
+Where:  
+f = frequency of each response  
+w = weight assigned to each response  
+N = total number of respondents  
+ 
+ To measure the consistency of the respondents’ ratings, the Standard Deviation 
+(SD) was also calculated using the formula:  
+46 
+ Standard  Deviation  (SD)=∑(𝑓×(𝑤−WM)2)𝑁 
+ 
+ A smaller standard deviation indicates that responses are close to the mean, 
+showing consistency among respondents, while a larger value suggests more variation in 
+their opinions.  
+ 
+The following scale was used to interpret the computed Weighted Mean results:  
+Range  Interpretation  
+4.21 – 5.00  Strongly Agree (Very Satisfied)  
+3.41 – 4.20  Agree (Satisfied)  
+2.61 – 3.40  Neutral (Moderately Satisfied)  
+1.81 – 2.60  Disagree (Less Satisfied)  
+1.00 – 1.80  Strongly Disagree (Not Satisfied)  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+CHAPTER IV  
+PRESENTATION OF DATA ANALYSIS AND INTERPRETATION  
+47 
+ This chapter discusses the analysis and interpretation of data as well as the findings of the 
+conducted evaluation.  
+ 
+4.1 Evaluation Procedure  
+……..Start Here  
+ 
+4.2 System Test Plan  
+……..Start Here  
+ 
+4.3 Statistical Analysis  
+ 4.3.1 Respondents Profile  
+……..Start Here (Don’t forget the table or figure name and description)  
+ 4.3.2 Questionnaire Results  
+……..Start Here (Don’t forget the table or figure name and description)  
+ 
+4.4 Statistical Result Interpretation  
+……..Start Here  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+CHAPTER V  
+SUMMARY OF FINDINGS, CONCLUSION, AND RECOMMENDATION  
+48 
+ This chapter presents the summary of the findings of the study, the  
+conclusions made by the researcher on the basis of findings, and the  
+recommendations of the researcher.  
+ 
+5.1 Summary  
+Start Here (at least 2 Paragrahps, 5 Sentences per Paragraph)  
+ 
+5.2 Conclusion  
+Start Here (at least 2 Paragrahps, 5 Sentences per Paragraph)  
+ 
+5.3 Recommendation  
+Start Here (at least 2 Paragrahps, 5 Sentences per Paragraph)  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+APPENDICES  
+APPENDIX A  
+REFERENCES  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+APPENDIX B  
+SOURCE CODES  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+APPENDIX C  
+INFORMED CONSENT  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+APPENDIX D  
+ACCOMPLISHED SURVEY FORMS  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+APPENDIX E  
+CURRICULUM VITAE  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
