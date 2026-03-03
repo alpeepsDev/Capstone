@@ -5,10 +5,12 @@
 .env.production
 *.env
 
-# Documentation files to exclude
+# Documentation and temporary files to exclude
 DEMO_GUIDE.md
 REFRESH_TOKEN_GUIDE.md
 Capstone Documentation.pdf
+git_changes.txt
+pdf_py_text.txt
 
 # Node modules
 node_modules/
