@@ -94,9 +94,6 @@ const KanbanBoard = ({
         case "MANAGER":
           // Managers see all tasks in their projects
           return task.status === status;
-        case "MODERATOR":
-          // Moderators see all tasks for monitoring
-          return task.status === status;
         case "ADMIN":
           // Admins see system overview but don't participate
           return task.status === status;
@@ -241,8 +238,6 @@ const KanbanBoard = ({
         return "No tasks assigned to you yet. Contact your manager for task assignments.";
       case "MANAGER":
         return "No tasks in this project yet. Create your first task to get started.";
-      case "MODERATOR":
-        return "No tasks to monitor in this project.";
       case "ADMIN":
         return "System overview - no direct task participation.";
       default:

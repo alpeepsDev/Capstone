@@ -11,8 +11,6 @@ import RichTextRenderer from "../ui/RichTextRenderer";
 
 import LogTimeModal from "./LogTimeModal";
 import { formatTime } from "../../utils/timeUtils";
-import LabelSelector from "../labels/LabelSelector";
-
 const TASK_STATUSES = [
   { id: "PENDING", label: "To Do", color: "default" },
   { id: "IN_PROGRESS", label: "In Progress", color: "primary" },
@@ -148,7 +146,6 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
   const [isLogTimeModalOpen, setIsLogTimeModalOpen] = useState(false);
   const [editingLog, setEditingLog] = useState(null); // State for editing work log
   const [localTask, setLocalTask] = useState(task);
-  const [taskLabels, setTaskLabels] = useState(task?.labels || []);
 
   const handleStatusUpdate = async (newStatus) => {
     if (localTask.status === newStatus) return;
@@ -192,10 +189,8 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
   const [mentionQuery, setMentionQuery] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
 
-  // Update local task when prop changes
   useEffect(() => {
     setLocalTask(task);
-    setTaskLabels(task?.labels || []);
   }, [task]);
 
   // Handle ESC key press
@@ -662,21 +657,6 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
                   <p className="italic opacity-60">No description provided.</p>
                 )}
               </div>
-            </div>
-
-            {/* 3. Labels Section */}
-            <div className="mt-6">
-              <h3
-                className={`text-xs font-bold uppercase tracking-wider mb-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}
-              >
-                Labels
-              </h3>
-              <LabelSelector
-                taskId={localTask.id}
-                projectId={localTask.projectId}
-                selectedLabels={taskLabels}
-                onChange={setTaskLabels}
-              />
             </div>
           </div>
 

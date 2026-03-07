@@ -19,15 +19,7 @@ import {
   updateCategorySchema,
   addExpenseSchema,
 } from "../src/validations/budget.validation.js";
-import {
-  createExchangeSchema,
-  respondExchangeSchema,
-} from "../src/validations/exchange.validation.js";
-import {
-  createLabelSchema,
-  updateLabelSchema,
-  addLabelToTaskSchema,
-} from "../src/validations/label.validation.js";
+
 import {
   createFilterSchema,
   updateFilterSchema,
@@ -125,7 +117,7 @@ describe("Task Validation", () => {
   });
 
   it("accepts valid moveTask data", () => {
-    const result = moveTaskSchema.safeParse({ status: "DONE" });
+    const result = moveTaskSchema.safeParse({ status: "COMPLETED" });
     expect(result.success).toBe(true);
   });
 
@@ -202,58 +194,6 @@ describe("Budget Validation", () => {
   });
 });
 
-// ========== Exchange Schemas ==========
-describe("Exchange Validation", () => {
-  it("accepts valid exchange creation", () => {
-    const result = createExchangeSchema.safeParse({
-      taskId: "task123",
-      receiverId: "user456",
-      requestNote: "Please take this task",
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it("rejects exchange without taskId", () => {
-    const result = createExchangeSchema.safeParse({ receiverId: "user456" });
-    expect(result.success).toBe(false);
-  });
-
-  it("accepts valid exchange response", () => {
-    const result = respondExchangeSchema.safeParse({ status: "ACCEPTED" });
-    expect(result.success).toBe(true);
-  });
-
-  it("rejects invalid exchange response status", () => {
-    const result = respondExchangeSchema.safeParse({ status: "MAYBE" });
-    expect(result.success).toBe(false);
-  });
-});
-
-// ========== Label Schemas ==========
-describe("Label Validation", () => {
-  it("accepts valid label creation", () => {
-    const result = createLabelSchema.safeParse({
-      name: "Bug",
-      color: "#ff0000",
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it("rejects label without name", () => {
-    const result = createLabelSchema.safeParse({ color: "#ff0000" });
-    expect(result.success).toBe(false);
-  });
-
-  it("accepts valid label update", () => {
-    const result = updateLabelSchema.safeParse({ name: "Feature" });
-    expect(result.success).toBe(true);
-  });
-
-  it("accepts valid addLabelToTask", () => {
-    const result = addLabelToTaskSchema.safeParse({ labelId: "label123" });
-    expect(result.success).toBe(true);
-  });
-});
 
 // ========== Saved Filter Schemas ==========
 describe("Saved Filter Validation", () => {

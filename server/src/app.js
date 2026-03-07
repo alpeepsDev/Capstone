@@ -9,13 +9,11 @@ import { fileURLToPath } from "url";
 import userRoutes from "./routes/admin/user.routes.js"; // User authentication routes
 import taskRoutes from "./routes/tasks/index.js";
 import projectRoutes from "./routes/projects/index.js";
-import exchangeRoutes from "./routes/exchanges/index.js";
 import notificationRoutes from "./routes/notifications/index.js";
 import adminRoutes from "./routes/admin/index.js";
 import workLogRoutes from "./routes/worklog/index.js";
 import budgetRoutes from "./routes/budget/index.js";
 import aiRoutes from "./routes/ai/index.js"; // AI includes assistant, insights, preferences
-import labelRoutes from "./routes/labels/index.js"; // Labels includes filters
 import searchRoutes from "./routes/search.routes.js";
 // Backward-compatible imports for direct access
 import assistantRoutes from "./routes/ai/assistantRoutes.js";
@@ -56,14 +54,7 @@ app.use(
 );
 
 // Middleware
-app.use(
-  helmet.contentSecurityPolicy({
-    directives: {
-      defaultSrc: ["'self'"],
-      connectSrc: ["'self'", "https://*.ngrok-free.app"],
-    },
-  }),
-);
+app.use(helmet());
 app.use(
   cors({
     origin: process.env.CLIENT_URL,
@@ -98,9 +89,7 @@ app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/tasks", taskRoutes); // Includes task, taskHistory, taskRelation, taskTemplate
 app.use("/api/v1/worklogs", workLogRoutes);
 app.use("/api/v1/budget", budgetRoutes);
-app.use("/api/v1/exchanges", exchangeRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
-app.use("/api/v1/labels", labelRoutes); // Includes labels and saved filters
 app.use("/api/v1/users", userRoutes); // User authentication (login, register, profile)
 app.use("/api/v1/admin", adminRoutes); // Admin operations
 app.use("/api/v1/ai", aiRoutes); // Includes assistant, insights, AI preferences

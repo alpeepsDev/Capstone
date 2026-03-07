@@ -57,14 +57,7 @@ async function main() {
       name: "Marcus Johnson",
       role: "MANAGER",
     },
-    // Moderators
-    {
-      username: "priya.sharma",
-      email: "priya.sharma@taskforge.io",
-      password: hashedPassword,
-      name: "Priya Sharma",
-      role: "MODERATOR",
-    },
+
     // Regular Users - Development Team
     {
       username: "alex.rivera",
@@ -183,7 +176,7 @@ async function main() {
   // Get users by role for easy reference
   const admin = createdUsers.find((u) => u.role === "ADMIN");
   const managers = createdUsers.filter((u) => u.role === "MANAGER");
-  const moderators = createdUsers.filter((u) => u.role === "MODERATOR");
+
   const users = createdUsers.filter((u) => u.role === "USER");
 
   // ==================== CREATE PROJECTS ====================
@@ -198,7 +191,7 @@ async function main() {
       budget: 150000,
       startDate: new Date("2026-01-15"),
       endDate: new Date("2026-06-30"),
-      members: [users[0], users[1], users[2], users[3], moderators[0]],
+      members: [users[0], users[1], users[2], users[3]],
     },
     {
       name: "Mobile App Development",
@@ -238,7 +231,7 @@ async function main() {
       budget: 120000,
       startDate: new Date("2026-01-05"),
       endDate: new Date("2026-05-30"),
-      members: [users[4], users[6], users[8], users[0], users[2]],
+      members: [users[4], users[6], users[8], users[0]],
     },
   ];
 
@@ -735,7 +728,7 @@ async function main() {
             "Run UAT sessions with sample employees and managers to verify functionality and usability.",
           status: "PENDING",
           priority: "HIGH",
-          assigneeIndex: 4,
+          assigneeIndex: 3,
           startDate: new Date("2026-03-01"),
           dueDate: new Date("2026-03-15"),
         },
@@ -751,7 +744,7 @@ async function main() {
 
     for (const taskData of projectTasks.tasks) {
       const assignee =
-        project.memberUsers[taskData.assigneeIndex] || project.memberUsers[0];
+        project.memberUsers[taskData.assigneeIndex] || project.manager;
 
       const task = await prisma.task.create({
         data: {
@@ -890,7 +883,7 @@ async function main() {
       data: {
         userId: user.id,
         enableProactiveNotifs: true,
-        enableAutoAssignment: user.role === "MANAGER",
+
         enableAutoEscalation: true,
         deadlineWarningDays: [1, 3, 7],
         preferredInsightTypes: [
@@ -1003,7 +996,7 @@ async function main() {
   const rateLimitConfigs = [
     { role: "ADMIN", limit: 10000, window: 3600 },
     { role: "MANAGER", limit: 5000, window: 3600 },
-    { role: "MODERATOR", limit: 3000, window: 3600 },
+
     { role: "USER", limit: 1000, window: 3600 },
   ];
 

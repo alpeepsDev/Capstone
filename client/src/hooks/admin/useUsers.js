@@ -43,15 +43,6 @@ const userAPI = {
         createdAt: "2025-07-10T08:00:00Z",
       },
       {
-        id: "mod1",
-        username: "sarah_moderator",
-        email: "sarah@company.com",
-        role: "MODERATOR",
-        status: "active",
-        lastLogin: "2025-09-23T11:30:00Z",
-        createdAt: "2025-06-15T14:00:00Z",
-      },
-      {
         id: "admin1",
         username: "admin_user",
         email: "admin@company.com",

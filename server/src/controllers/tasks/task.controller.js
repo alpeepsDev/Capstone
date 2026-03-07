@@ -34,7 +34,7 @@ export const getProjectTasks = asyncHandler(async (req, res) => {
 
   // Determine if user is manager or admin (can see all tasks)
   const isManager = project.managerId === req.user.id;
-  const isAdmin = req.user.role === "ADMIN" || req.user.role === "MODERATOR";
+  const isAdmin = req.user.role === "ADMIN";
   const canSeeAllTasks = isManager || isAdmin;
 
   // Build the where clause based on user role
@@ -80,7 +80,6 @@ export const getProjectTasks = asyncHandler(async (req, res) => {
       _count: {
         select: {
           comments: true,
-          exchanges: true,
         },
       },
     },
@@ -149,8 +148,7 @@ export const getTask = asyncHandler(async (req, res) => {
     task.project.managerId === req.user.id ||
     task.assigneeId === req.user.id ||
     task.createdById === req.user.id ||
-    req.user.role === "ADMIN" ||
-    req.user.role === "MODERATOR";
+    req.user.role === "ADMIN";
 
   if (!hasAccess) {
     return res.status(403).json({
@@ -252,6 +250,19 @@ export const createTask = asyncHandler(async (req, res) => {
   // Emit real-time event
   const io = req.app.get("io");
   emitTaskCreated(io, projectId, task);
+
+  // Send notification to assignee if task is assigned on creation
+  if (assigneeId && assigneeId !== req.user.id) {
+    await createNotification({
+      userId: assigneeId,
+      type: "TASK_ASSIGNED",
+      title: "New Task Assigned",
+      message: `You were assigned to a new task "${title}" in project "${project.name}"`,
+      taskId: task.id,
+      projectId: projectId,
+      io,
+    }).catch(err => console.error("Error creating task assignment notification:", err));
+  }
 });
 
 // Update task
@@ -543,6 +554,22 @@ export const assignTask = asyncHandler(async (req, res) => {
     message: "Task assigned successfully",
     data: updatedTask,
   });
+
+  const io = req.app.get("io");
+  
+  if (assigneeId && assigneeId !== req.user.id) {
+    await createNotification({
+      userId: assigneeId,
+      type: "TASK_ASSIGNED",
+      title: "Task Assigned",
+      message: `You were assigned to task "${task.title}" in project "${task.project.name}"`,
+      taskId: task.id,
+      projectId: task.projectId,
+      io,
+    }).catch(err => console.error("Error creating task assignment notification:", err));
+  }
+
+  emitTaskUpdated(io, task.projectId, updatedTask);
 });
 
 // Delete task

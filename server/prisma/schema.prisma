@@ -32,8 +32,6 @@ model User {
   managedProjects    Project[]          @relation("ProjectManager")
   savedFilters       SavedFilter[]
   taskComments       TaskComment[]
-  receivedExchanges  TaskExchange[]     @relation("ExchangeReceiver")
-  sentExchanges      TaskExchange[]     @relation("ExchangeRequester")
   taskHistory        TaskHistory[]
   taskRelations      TaskRelation[]
   taskTemplates      TaskTemplate[]
@@ -58,7 +56,6 @@ model Project {
   updatedAt        DateTime         @updatedAt
   totalBudget      Float            @default(0)
   budgetCategories BudgetCategory[]
-  labels           Label[]
   notifications    Notification[]
   novaInsights     NovaInsight[]
   members          ProjectMember[]
@@ -133,28 +130,10 @@ model Task {
   lastActivity      DateTime           @default(now())
   priorityScore     Int                @default(0)
   riskLevel         TaskRiskLevel      @default(LOW)
-  epicId            String?
-  estimatedHours    Float?
-  originalEstimate  Float?
-  parentTaskId      String?
-  storyPoints       Int?
-  taskType          TaskType           @default(TASK)
-  automationActions AutomationAction[]
-  notifications     Notification[]
-  novaInsights      NovaInsight[]
-  comments          TaskComment[]
-  exchanges         TaskExchange[]
-  history           TaskHistory[]
-  labels            TaskLabel[]
-  predictions       TaskPrediction[]
   sourceRelations   TaskRelation[]     @relation("SourceRelations")
   targetRelations   TaskRelation[]     @relation("TargetRelations")
   assignee          User?              @relation("TaskAssignee", fields: [assigneeId], references: [id])
   createdBy         User               @relation("TaskCreator", fields: [createdById], references: [id])
-  epic              Task?              @relation("EpicTasks", fields: [epicId], references: [id])
-  epicTasks         Task[]             @relation("EpicTasks")
-  parentTask        Task?              @relation("ParentChild", fields: [parentTaskId], references: [id])
-  subtasks          Task[]             @relation("ParentChild")
   project           Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
   workLogs          WorkLog[]
 
@@ -199,22 +178,6 @@ model TaskComment {
   @@map("task_comments")
 }
 
-model TaskExchange {
-  id           String         @id @default(cuid())
-  taskId       String
-  requesterId  String
-  receiverId   String
-  status       ExchangeStatus @default(PENDING)
-  requestNote  String?
-  responseNote String?
-  requestedAt  DateTime       @default(now())
-  respondedAt  DateTime?
-  receiver     User           @relation("ExchangeReceiver", fields: [receiverId], references: [id])
-  requester    User           @relation("ExchangeRequester", fields: [requesterId], references: [id])
-  task         Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
-
-  @@map("task_exchanges")
-}
 
 model Notification {
   id        String           @id @default(cuid())
@@ -322,31 +285,6 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-model Label {
-  id          String      @id @default(cuid())
-  name        String
-  color       String
-  description String?
-  projectId   String?
-  isGlobal    Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  project     Project?    @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tasks       TaskLabel[]
-
-  @@map("labels")
-}
-
-model TaskLabel {
-  taskId    String
-  labelId   String
-  createdAt DateTime @default(now())
-  label     Label    @relation(fields: [labelId], references: [id], onDelete: Cascade)
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-
-  @@id([taskId, labelId])
-  @@map("task_labels")
-}
 
 model TaskRelation {
   id           String           @id @default(cuid())
@@ -369,7 +307,6 @@ model TaskTemplate {
   id          String       @id @default(cuid())
   name        String
   description String?
-  taskType    TaskType
   projectId   String?
   priority    TaskPriority @default(MEDIUM)
   template    Json
@@ -443,7 +380,6 @@ model UserAIPreference {
   id                     String   @id @default(cuid())
   userId                 String   @unique
   enableProactiveNotifs  Boolean  @default(true)
-  enableAutoAssignment   Boolean  @default(false)
   enableAutoEscalation   Boolean  @default(true)
   deadlineWarningDays    Int[]    @default([1, 3, 7])
   preferredInsightTypes  String[] @default(["RISK_DETECTED", "DEADLINE_WARNING", "PATTERN_FOUND"])
@@ -498,7 +434,6 @@ model AutomationAction {
 enum UserRole {
   ADMIN
   MANAGER
-  MODERATOR
   USER
 }
 
@@ -517,12 +452,7 @@ enum TaskPriority {
   URGENT
 }
 
-enum ExchangeStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-  CANCELLED
-}
+
 
 enum TaskRiskLevel {
   LOW
@@ -531,13 +461,7 @@ enum TaskRiskLevel {
   CRITICAL
 }
 
-enum TaskType {
-  TASK
-  STORY
-  BUG
-  EPIC
-  SUBTASK
-}
+
 
 enum NotificationType {
   TASK_ASSIGNED
@@ -545,16 +469,12 @@ enum NotificationType {
   TASK_COMPLETED
   TASK_CHANGES_REQUESTED
   TASK_APPROVED
-  TASK_EXCHANGE_REQUESTED
-  TASK_EXCHANGE_ACCEPTED
-  TASK_EXCHANGE_REJECTED
   PROJECT_ASSIGNED
   MENTION
   AI_INSIGHT
   DEADLINE_WARNING
   RISK_ALERT
   WEEKLY_SUMMARY
-  AUTO_ASSIGNMENT
 }
 
 enum TaskRelationType {
@@ -578,7 +498,6 @@ enum InsightType {
 }
 
 enum AutoActionType {
-  AUTO_ASSIGN
   AUTO_ESCALATE
   AUTO_SUGGEST_SPLIT
   AUTO_PRIORITY_UPDATE

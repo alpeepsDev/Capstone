@@ -109,8 +109,8 @@ export const userController = {
   }),
 
   getAllUsers: asyncHandler(async (req, res) => {
-    // Only admins, moderators, and managers can view all users
-    if (!["ADMIN", "MODERATOR", "MANAGER"].includes(req.user.role)) {
+    // Only admins and managers can view all users
+    if (!["ADMIN", "MANAGER"].includes(req.user.role)) {
       return res.status(403).json({
         success: false,
         message: "Access denied",

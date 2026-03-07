@@ -45,9 +45,7 @@ export const updateTaskSchema = z.object({
   timeSpent: z.number().int().min(0).optional(),
   storyPoints: z.number().int().min(0).optional(),
   estimatedHours: z.number().min(0).optional(),
-  taskType: z.enum(["TASK", "STORY", "BUG", "EPIC", "SUBTASK"]).optional(),
-  parentTaskId: z.string().nullable().optional(),
-  epicId: z.string().nullable().optional(),
+  taskType: z.enum(["TASK", "STORY", "BUG"]).optional(),
   startDate: z.string().nullable().optional(),
 });
 

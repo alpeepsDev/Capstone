@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-const taskTypeEnum = z.enum(["TASK", "STORY", "BUG", "EPIC", "SUBTASK"], {
+const taskTypeEnum = z.enum(["TASK", "STORY", "BUG"], {
   errorMap: () => ({
-    message: "Invalid task type. Use: TASK, STORY, BUG, EPIC, or SUBTASK",
+    message: "Invalid task type. Use: TASK, STORY, or BUG",
   }),
 });
 

@@ -928,7 +928,6 @@ class AdminService {
       projectMembers,
       tasks,
       taskComments,
-      taskExchanges,
       notifications,
       apiLogs,
       rateLimitConfigs,
@@ -942,7 +941,6 @@ class AdminService {
       prisma.projectMember.findMany(),
       prisma.task.findMany(),
       prisma.taskComment.findMany(),
-      prisma.taskExchange.findMany(),
       prisma.notification.findMany(),
       prisma.apiLog.findMany(),
       prisma.rateLimitConfig.findMany(),
@@ -961,7 +959,6 @@ class AdminService {
         projectMembers,
         tasks,
         taskComments,
-        taskExchanges,
         notifications,
         admin: {
           apiLogs,

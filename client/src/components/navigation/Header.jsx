@@ -61,8 +61,6 @@ const Header = ({
     switch (role) {
       case "ADMIN":
         return "bg-red-100 text-red-800";
-      case "MODERATOR":
-        return "bg-yellow-100 text-yellow-800";
       case "MANAGER":
         return "bg-green-100 text-green-800";
       case "USER":
@@ -115,8 +113,6 @@ const Header = ({
     switch (role) {
       case "ADMIN":
         return "🧑‍💻";
-      case "MODERATOR":
-        return "🛡️";
       case "MANAGER":
         return "👨‍💼";
       case "USER":

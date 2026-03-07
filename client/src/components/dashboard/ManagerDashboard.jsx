@@ -408,13 +408,11 @@ const ManagerDashboard = ({
   const handleAddTaskSave = async (taskData) => {
     try {
       await tasksApi.createTask(taskData);
-      toast.success("Task created successfully!");
       refreshDashboard();
       if (taskData.projectId === selectedProjectId && fetchTasks) {
         await fetchTasks();
       }
     } catch (error) {
-      toast.error("Failed to create task");
       throw error;
     }
   };

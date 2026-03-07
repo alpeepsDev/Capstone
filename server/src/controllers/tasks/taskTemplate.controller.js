@@ -240,9 +240,6 @@ export const createTaskFromTemplate = async (req, res) => {
       include: {
         assignee: true,
         project: true,
-        labels: {
-          include: { label: true },
-        },
       },
     });
 

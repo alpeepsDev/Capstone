@@ -4,9 +4,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { useTheme } from "../../context";
 import { Badge } from "../ui";
 import { Lock } from "../ui/icons";
-import TaskTypeIcon from "./TaskTypeIcon";
-import LabelBadge from "../labels/LabelBadge";
-
 const TaskCard = ({
   task,
   onEdit,
@@ -68,12 +65,6 @@ const TaskCard = ({
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2 flex-1">
-          {task.taskType && (
-            <TaskTypeIcon
-              type={task.taskType}
-              className="w-4 h-4 flex-shrink-0"
-            />
-          )}
           <h4
             className={`font-semibold ${isDark ? "text-white" : "text-gray-900"} text-xs sm:text-sm flex-1 pointer-events-auto cursor-pointer leading-snug`}
             onClick={(e) => {
@@ -122,25 +113,6 @@ const TaskCard = ({
           )}
         </Badge>
       </div>
-
-      {/* Labels */}
-      {task.labels && task.labels.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2">
-          {task.labels.slice(0, 3).map((taskLabel) => (
-            <LabelBadge
-              key={taskLabel.labelId || taskLabel.label?.id}
-              label={taskLabel.label || taskLabel}
-            />
-          ))}
-          {task.labels.length > 3 && (
-            <span
-              className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
-            >
-              +{task.labels.length - 3}
-            </span>
-          )}
-        </div>
-      )}
 
       {task.assignee && (
         <div className="flex items-center gap-1.5 mb-2">

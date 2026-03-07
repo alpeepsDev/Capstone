@@ -23,6 +23,3 @@ export * from "./gantt";
 
 // Project Components
 export * from "./projects";
-
-// Exchange Components
-export * from "./exchanges";

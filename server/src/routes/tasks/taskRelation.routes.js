@@ -4,7 +4,6 @@ import {
   createTaskRelation,
   getTaskRelations,
   deleteTaskRelation,
-  getSubtasks,
   getTaskDependencies,
 } from "../../controllers/tasks/taskRelation.controller.js";
 import { validateRequest } from "../../middleware/validation.middleware.js";
@@ -24,8 +23,6 @@ router.post(
 router.get("/:taskId/relations", getTaskRelations);
 router.delete("/:taskId/relations/:relationId", deleteTaskRelation);
 
-// Subtasks
-router.get("/:taskId/subtasks", getSubtasks);
 
 // Dependencies
 router.get("/:taskId/dependencies", getTaskDependencies);

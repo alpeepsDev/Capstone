@@ -214,30 +214,6 @@ export const deleteTaskRelation = async (req, res) => {
   }
 };
 
-// Get subtasks
-export const getSubtasks = async (req, res) => {
-  try {
-    const { taskId } = req.params;
-
-    const subtasks = await prisma.task.findMany({
-      where: { parentTaskId: taskId },
-      include: {
-        assignee: {
-          select: { id: true, name: true, username: true },
-        },
-        labels: {
-          include: { label: true },
-        },
-      },
-      orderBy: { position: "asc" },
-    });
-
-    res.json(subtasks);
-  } catch (error) {
-    console.error("Error fetching subtasks:", error);
-    res.status(500).json({ error: "Failed to fetch subtasks" });
-  }
-};
 
 // Get blocking/blocked tasks
 export const getTaskDependencies = async (req, res) => {

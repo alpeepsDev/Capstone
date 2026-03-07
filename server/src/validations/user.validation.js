@@ -22,10 +22,7 @@ export const registerSchema = z.object({
     .min(2, "Name must be at least 2 characters")
     .max(50, "Name must be less than 50 characters")
     .optional(),
-  role: z
-    .enum(["USER", "ADMIN", "MODERATOR", "MANAGER"])
-    .default("USER")
-    .optional(),
+  role: z.enum(["USER", "ADMIN", "MANAGER"]).default("USER").optional(),
 });
 
 export const loginSchema = z.object({
@@ -34,9 +31,9 @@ export const loginSchema = z.object({
 });
 
 export const updateRoleSchema = z.object({
-  role: z.enum(["USER", "ADMIN", "MODERATOR", "MANAGER"], {
+  role: z.enum(["USER", "ADMIN", "MANAGER"], {
     errorMap: () => ({
-      message: "Role must be one of: USER, ADMIN, MODERATOR, MANAGER",
+      message: "Role must be one of: USER, ADMIN, MANAGER",
     }),
   }),
 });

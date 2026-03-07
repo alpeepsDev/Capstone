@@ -11,9 +11,6 @@ const Dashboards = {
   ManagerDashboard: React.lazy(
     () => import("../components/dashboard/ManagerDashboard"),
   ),
-  ModeratorDashboard: React.lazy(
-    () => import("../components/dashboard/ModeratorDashboard"),
-  ),
   AdminDashboard: React.lazy(
     () => import("../components/dashboard/AdminDashboard"),
   ),
@@ -81,8 +78,6 @@ const Dashboard = () => {
             onViewChange={handleViewChange}
           />
         );
-      case "MODERATOR":
-        return <Dashboards.ModeratorDashboard user={user} />;
       case "MANAGER":
         return (
           <Dashboards.ManagerDashboard

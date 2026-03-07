@@ -50,9 +50,7 @@ const TAB_TO_VIEW = {
   auditlogs: "admin-auditlogs",
   backup: "admin-backup",
 };
-
-const ROLES = ["ADMIN", "MANAGER", "MODERATOR", "USER"];
-
+const ROLES = ["ADMIN", "MANAGER", "USER"];
 // Helper: format relative time
 const timeAgo = (dateStr) => {
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);

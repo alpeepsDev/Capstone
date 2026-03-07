@@ -11,8 +11,7 @@ export const getProjects = asyncHandler(async (req, res) => {
 
   switch (userRole) {
     case "ADMIN":
-    case "MODERATOR":
-      // Admins and moderators can see all projects
+      // Admins can see all projects
       projects = await prisma.project.findMany({
         include: {
           manager: {
@@ -193,7 +192,6 @@ export const getProject = asyncHandler(async (req, res) => {
           _count: {
             select: {
               comments: true,
-              exchanges: true,
             },
           },
         },
@@ -217,8 +215,7 @@ export const getProject = asyncHandler(async (req, res) => {
   const hasAccess =
     project.managerId === userId ||
     project.members.some((member) => member.userId === userId) ||
-    req.user.role === "ADMIN" ||
-    req.user.role === "MODERATOR";
+    req.user.role === "ADMIN";
 
   if (!hasAccess) {
     return res.status(403).json({
@@ -453,8 +450,7 @@ export const getProjectMembers = asyncHandler(async (req, res) => {
   const hasAccess =
     project.managerId === req.user.id ||
     project.members.some((member) => member.userId === req.user.id) ||
-    req.user.role === "ADMIN" ||
-    req.user.role === "MODERATOR";
+    req.user.role === "ADMIN";
 
   if (!hasAccess) {
     return res.status(403).json({
