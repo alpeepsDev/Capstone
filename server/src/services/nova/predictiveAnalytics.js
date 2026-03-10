@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
-import { addDays, differenceInDays, differenceInHours } from "date-fns";
-
-const prisma = new PrismaClient();
+import prisma from "../../config/database.js";
+import { addDays, differenceInHours, differenceInDays } from "date-fns";
 
 /**
  * Nova Predictive Analytics Service

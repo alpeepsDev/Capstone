@@ -28,7 +28,11 @@ const apiLogger = async (req, res, next) => {
           ipAddress: req.ip || req.connection.remoteAddress || null,
         });
       } catch (error) {
-        console.error("API logging error:", error);
+        if (error.message?.includes("fetch failed")) {
+          console.error("API logging failed: Database connection unreachable");
+        } else {
+          console.error("API logging error:", error);
+        }
       }
     });
 

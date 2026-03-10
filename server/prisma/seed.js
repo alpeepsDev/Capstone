@@ -1,11 +1,14 @@
 // prisma/seed.js
+import "dotenv/config";
 import pkg from "@prisma/client";
 const { PrismaClient } = pkg;
 import bcrypt from "bcryptjs";
 import { encrypt } from "../src/utils/encryption.js";
 import { hash } from "../src/utils/hashing.js";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  accelerateUrl: process.env.DATABASE_URL,
+});
 
 async function main() {
   console.log("🌱 Starting database seeding with realistic data...\n");
@@ -141,6 +144,7 @@ async function main() {
       // Keep Admin PII plaintext for login
       finalUserData = {
         ...userData,
+        avatar: `https://api.dicebear.com/9.x/avataaars/svg?seed=${userData.username}`,
         emailHash: hash(userData.email),
         usernameHash: hash(userData.username),
       };
@@ -153,7 +157,7 @@ async function main() {
         username: encrypt(userData.username),
         name: encrypt(userData.name),
         email: encrypt(userData.email),
-        avatar: encrypt(`avatar_${userData.username}`),
+        avatar: `https://api.dicebear.com/9.x/avataaars/svg?seed=${userData.username}`,
         emailHash: hash(userData.email),
         usernameHash: hash(userData.username),
       };

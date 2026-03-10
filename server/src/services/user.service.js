@@ -31,6 +31,7 @@ export const userService = {
         password: hashedPassword,
         name: encrypt(name),
         role,
+        avatar: `https://api.dicebear.com/9.x/avataaars/svg?seed=${username}`,
         emailHash: hash(email),
         usernameHash: hash(username),
       },
@@ -40,7 +41,11 @@ export const userService = {
         email: true,
         name: true,
         role: true,
+        avatar: true,
         createdAt: true,
+      },
+      orderBy: {
+        createdAt: "desc",
       },
     });
   },
@@ -95,6 +100,7 @@ export const userService = {
         email: user.email,
         name: user.name,
         role: user.role,
+        avatar: user.avatar,
       },
       accessToken,
       refreshToken,
@@ -121,6 +127,7 @@ export const userService = {
           username: true,
           name: true,
           role: true,
+          avatar: true,
         },
       });
 
@@ -140,6 +147,9 @@ export const userService = {
         accessToken,
       };
     } catch (error) {
+      if (error.name?.includes("Prisma") || error.message?.includes("fetch failed")) {
+        throw new Error(`Database connection error: ${error.message}`);
+      }
       throw new Error("Invalid refresh token");
     }
   },
@@ -230,6 +240,7 @@ export const userService = {
         username: true,
         name: true,
         role: true,
+        avatar: true,
         createdAt: true,
       },
     });
@@ -272,6 +283,7 @@ export const userService = {
         email: true,
         name: true,
         role: true,
+        avatar: true,
         isActive: true,
         createdAt: true,
         lastLogin: true,

@@ -165,7 +165,7 @@ export const getTask = asyncHandler(async (req, res) => {
 
 // Create new task
 export const createTask = asyncHandler(async (req, res) => {
-  const { title, description, projectId, assigneeId, priority, dueDate } =
+  const { title, description, projectId, assigneeId, additionalAssigneeIds, priority, dueDate } =
     req.body;
 
   // Validate required fields
@@ -174,6 +174,17 @@ export const createTask = asyncHandler(async (req, res) => {
       success: false,
       message: "Title and project ID are required",
     });
+  }
+
+  // Validate HIGH priority requires at least 2 assignees total
+  if (priority === "HIGH" || priority === "URGENT") {
+    const totalAssignees = (assigneeId ? 1 : 0) + (additionalAssigneeIds?.length || 0);
+    if (totalAssignees < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "High priority tasks require at least 2 assignees",
+      });
+    }
   }
 
   // Check if user can create tasks in this project (must be manager or admin)
@@ -211,6 +222,7 @@ export const createTask = asyncHandler(async (req, res) => {
       projectId,
       createdById: req.user.id,
       assigneeId,
+      additionalAssigneeIds: additionalAssigneeIds || [],
       priority: priority || "MEDIUM",
       dueDate: dueDate ? new Date(dueDate) : null,
       position: (maxPosition._max.position || 0) + 1,
@@ -251,7 +263,7 @@ export const createTask = asyncHandler(async (req, res) => {
   const io = req.app.get("io");
   emitTaskCreated(io, projectId, task);
 
-  // Send notification to assignee if task is assigned on creation
+  // Send notification to primary assignee if task is assigned on creation
   if (assigneeId && assigneeId !== req.user.id) {
     await createNotification({
       userId: assigneeId,
@@ -262,6 +274,23 @@ export const createTask = asyncHandler(async (req, res) => {
       projectId: projectId,
       io,
     }).catch(err => console.error("Error creating task assignment notification:", err));
+  }
+
+  // Send notifications to additional assignees
+  if (additionalAssigneeIds && additionalAssigneeIds.length > 0) {
+    for (const additionalId of additionalAssigneeIds) {
+      if (additionalId !== req.user.id && additionalId !== assigneeId) {
+        await createNotification({
+          userId: additionalId,
+          type: "TASK_ASSIGNED",
+          title: "New Task Assigned",
+          message: `You were assigned to a new task "${title}" in project "${project.name}"`,
+          taskId: task.id,
+          projectId: projectId,
+          io,
+        }).catch(err => console.error("Error creating additional assignee notification:", err));
+      }
+    }
   }
 });
 
@@ -442,6 +471,25 @@ export const moveTask = asyncHandler(async (req, res) => {
     // Mark as completed if moving to COMPLETED
     if (status === "COMPLETED") {
       updateData.completedAt = new Date();
+    }
+
+    // Require proof for IN_REVIEW
+    if (status === "IN_REVIEW") {
+      const proofFiles = req.files || [];
+      const proofPaths = proofFiles.map(f => f.path.replace(/\\/g, "/"));
+
+      if (proofPaths.length === 0 && !task.proofAttachment && (!task.proofAttachments || task.proofAttachments.length === 0)) {
+        const error = new Error("At least 1 proof photo is required to move task to review");
+        error.status = 400;
+        throw error;
+      }
+
+      if (proofPaths.length > 0) {
+        // Set first as legacy single proof for backward compat
+        updateData.proofAttachment = proofPaths[0];
+        // Store all proofs in the array field
+        updateData.proofAttachments = [...(task.proofAttachments || []), ...proofPaths];
+      }
     }
 
     return await tx.task.update({

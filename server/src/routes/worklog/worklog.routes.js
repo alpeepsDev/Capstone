@@ -1,5 +1,5 @@
 import express from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/database.js";
 import { auth } from "../../middleware/auth.js";
 import { validateRequest } from "../../middleware/validation.middleware.js";
 import {
@@ -9,7 +9,6 @@ import {
 import { decryptUser } from "../../utils/encryption.js";
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Create a new work log
 router.post(

@@ -1,0 +1,549 @@
+Enum "UserRole" {
+  "ADMIN"
+  "MANAGER"
+  "USER"
+}
+
+Enum "TaskStatus" {
+  "PENDING"
+  "IN_PROGRESS"
+  "IN_REVIEW"
+  "COMPLETED"
+  "CANCELLED"
+}
+
+Enum "TaskPriority" {
+  "LOW"
+  "MEDIUM"
+  "HIGH"
+  "URGENT"
+}
+
+Enum "TaskRiskLevel" {
+  "LOW"
+  "MEDIUM"
+  "HIGH"
+  "CRITICAL"
+}
+
+Enum "NotificationType" {
+  "TASK_ASSIGNED"
+  "TASK_UPDATED"
+  "TASK_COMPLETED"
+  "TASK_CHANGES_REQUESTED"
+  "TASK_APPROVED"
+  "PROJECT_ASSIGNED"
+  "MENTION"
+  "AI_INSIGHT"
+  "DEADLINE_WARNING"
+  "RISK_ALERT"
+  "WEEKLY_SUMMARY"
+}
+
+Enum "TaskRelationType" {
+  "PARENT_CHILD"
+  "BLOCKS"
+  "BLOCKED_BY"
+  "RELATES_TO"
+  "DUPLICATES"
+  "DUPLICATE_OF"
+}
+
+Enum "InsightType" {
+  "RISK_DETECTED"
+  "DEADLINE_WARNING"
+  "PATTERN_FOUND"
+  "WORKLOAD_IMBALANCE"
+  "TASK_SUGGESTION"
+  "PRODUCTIVITY_TIP"
+  "COMPLETION_PREDICTION"
+  "BUDGET_ALERT"
+}
+
+Enum "AutoActionType" {
+  "AUTO_ESCALATE"
+  "AUTO_SUGGEST_SPLIT"
+  "AUTO_PRIORITY_UPDATE"
+  "AUTO_NOTIFICATION"
+}
+
+Table "users" {
+  "id" TEXT [not null]
+  "username" TEXT [not null]
+  "password" TEXT [not null]
+  "name" TEXT
+  "role" UserRole [not null, default: 'USER']
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+  "avatar" TEXT
+  "email" TEXT [not null]
+  "usernameHash" TEXT
+  "emailHash" TEXT
+  "isActive" BOOLEAN [not null, default: true]
+  "lastLogin" TIMESTAMP(3)
+  "resetPasswordOtp" TEXT
+  "resetPasswordExpires" TIMESTAMP(3)
+
+  Indexes {
+    id [pk, name: "users_pkey"]
+    username [unique, name: "users_username_key"]
+    email [unique, name: "users_email_key"]
+    usernameHash [unique, name: "users_usernameHash_key"]
+    emailHash [unique, name: "users_emailHash_key"]
+  }
+}
+
+Table "projects" {
+  "id" TEXT [not null]
+  "name" TEXT [not null]
+  "description" TEXT
+  "managerId" TEXT [not null]
+  "isActive" BOOLEAN [not null, default: true]
+  "startDate" TIMESTAMP(3)
+  "endDate" TIMESTAMP(3)
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+  "totalBudget" DOUBLEPRECISION [not null, default: 0]
+
+  Indexes {
+    id [pk, name: "projects_pkey"]
+    name [name: "projects_name_idx"]
+    description [name: "projects_description_idx"]
+  }
+}
+
+Table "budget_categories" {
+  "id" TEXT [not null]
+  "name" TEXT [not null]
+  "allocated" DOUBLEPRECISION [not null, default: 0]
+  "color" TEXT [not null]
+  "projectId" TEXT [not null]
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+
+  Indexes {
+    id [pk, name: "budget_categories_pkey"]
+  }
+}
+
+Table "budget_expenses" {
+  "id" TEXT [not null]
+  "description" TEXT [not null]
+  "amount" DOUBLEPRECISION [not null]
+  "date" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "categoryId" TEXT [not null]
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+
+  Indexes {
+    id [pk, name: "budget_expenses_pkey"]
+  }
+}
+
+Table "project_members" {
+  "id" TEXT [not null]
+  "projectId" TEXT [not null]
+  "userId" TEXT [not null]
+  "joinedAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    id [pk, name: "project_members_pkey"]
+    userId [name: "project_members_userId_idx"]
+    (projectId, userId) [unique, name: "project_members_projectId_userId_key"]
+  }
+}
+
+Table "tasks" {
+  "id" TEXT [not null]
+  "title" TEXT [not null]
+  "description" TEXT
+  "status" TaskStatus [not null, default: 'PENDING']
+  "priority" TaskPriority [not null, default: 'MEDIUM']
+  "projectId" TEXT [not null]
+  "createdById" TEXT [not null]
+  "assigneeId" TEXT
+  "dueDate" TIMESTAMP(3)
+  "completedAt" TIMESTAMP(3)
+  "position" INTEGER [not null, default: 0]
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+  "startDate" TIMESTAMP(3)
+  "timeRemaining" INTEGER
+  "timeSpent" INTEGER [not null, default: 0]
+  "isOverdue" BOOLEAN [not null, default: false]
+  "lastActivity" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "priorityScore" INTEGER [not null, default: 0]
+  "riskLevel" TaskRiskLevel [not null, default: 'LOW']
+
+  Indexes {
+    id [pk, name: "tasks_pkey"]
+    title [name: "tasks_title_idx"]
+    description [name: "tasks_description_idx"]
+    status [name: "tasks_status_idx"]
+    assigneeId [name: "tasks_assigneeId_idx"]
+    projectId [name: "tasks_projectId_idx"]
+    priority [name: "tasks_priority_idx"]
+    dueDate [name: "tasks_dueDate_idx"]
+  }
+}
+
+Table "work_logs" {
+  "id" TEXT [not null]
+  "timeSpent" INTEGER [not null]
+  "startedAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "description" TEXT
+  "taskId" TEXT [not null]
+  "userId" TEXT [not null]
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+
+  Indexes {
+    id [pk, name: "work_logs_pkey"]
+    taskId [name: "work_logs_taskId_idx"]
+    userId [name: "work_logs_userId_idx"]
+  }
+}
+
+Table "task_comments" {
+  "id" TEXT [not null]
+  "content" TEXT [not null]
+  "taskId" TEXT [not null]
+  "authorId" TEXT [not null]
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+
+  Indexes {
+    id [pk, name: "task_comments_pkey"]
+    taskId [name: "task_comments_taskId_idx"]
+  }
+}
+
+Table "notifications" {
+  "id" TEXT [not null]
+  "type" NotificationType [not null]
+  "title" TEXT [not null]
+  "message" TEXT [not null]
+  "userId" TEXT [not null]
+  "taskId" TEXT
+  "projectId" TEXT
+  "isRead" BOOLEAN [not null, default: false]
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+
+  Indexes {
+    id [pk, name: "notifications_pkey"]
+    (userId, isRead) [name: "notifications_userId_isRead_idx"]
+    userId [name: "notifications_userId_idx"]
+  }
+}
+
+Table "api_logs" {
+  "id" TEXT [not null]
+  "userId" TEXT
+  "username" TEXT
+  "endpoint" TEXT [not null]
+  "method" TEXT [not null]
+  "statusCode" INTEGER [not null]
+  "responseTime" INTEGER [not null]
+  "userAgent" TEXT
+  "ipAddress" TEXT
+  "timestamp" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    id [pk, name: "api_logs_pkey"]
+    userId [name: "api_logs_userId_idx"]
+    endpoint [name: "api_logs_endpoint_idx"]
+    timestamp [name: "api_logs_timestamp_idx"]
+  }
+}
+
+Table "rate_limit_configs" {
+  "id" TEXT [not null]
+  "role" UserRole [not null]
+  "limit" INTEGER [not null]
+  "window" INTEGER [not null, default: 3600]
+  "enabled" BOOLEAN [not null, default: true]
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+
+  Indexes {
+    id [pk, name: "rate_limit_configs_pkey"]
+    role [unique, name: "rate_limit_configs_role_key"]
+  }
+}
+
+Table "user_rate_limits" {
+  "id" TEXT [not null]
+  "userId" TEXT [not null]
+  "limit" INTEGER [not null]
+  "window" INTEGER [not null, default: 3600]
+  "enabled" BOOLEAN [not null, default: true]
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+
+  Indexes {
+    id [pk, name: "user_rate_limits_pkey"]
+    userId [unique, name: "user_rate_limits_userId_key"]
+  }
+}
+
+Table "endpoint_rate_limits" {
+  "id" TEXT [not null]
+  "endpoint" TEXT [not null]
+  "method" TEXT [not null]
+  "limit" INTEGER [not null]
+  "window" INTEGER [not null, default: 60]
+  "enabled" BOOLEAN [not null, default: true]
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+
+  Indexes {
+    id [pk, name: "endpoint_rate_limits_pkey"]
+    (endpoint, method) [unique, name: "endpoint_rate_limits_endpoint_method_key"]
+  }
+}
+
+Table "system_health_logs" {
+  "id" TEXT [not null]
+  "cpuUsage" DOUBLEPRECISION [not null]
+  "memoryUsage" DOUBLEPRECISION [not null]
+  "totalMemory" DOUBLEPRECISION [not null]
+  "freeMemory" DOUBLEPRECISION [not null]
+  "uptime" DOUBLEPRECISION [not null]
+  "activeConnections" INTEGER [not null]
+  "timestamp" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    id [pk, name: "system_health_logs_pkey"]
+    timestamp [name: "system_health_logs_timestamp_idx"]
+  }
+}
+
+Table "audit_logs" {
+  "id" TEXT [not null]
+  "adminId" TEXT [not null]
+  "action" TEXT [not null]
+  "targetId" TEXT
+  "details" JSONB
+  "timestamp" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    id [pk, name: "audit_logs_pkey"]
+    adminId [name: "audit_logs_adminId_idx"]
+    timestamp [name: "audit_logs_timestamp_idx"]
+  }
+}
+
+Table "task_relations" {
+  "id" TEXT [not null]
+  "sourceTaskId" TEXT [not null]
+  "targetTaskId" TEXT [not null]
+  "relationType" TaskRelationType [not null]
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "createdById" TEXT [not null]
+
+  Indexes {
+    id [pk, name: "task_relations_pkey"]
+    sourceTaskId [name: "task_relations_sourceTaskId_idx"]
+    targetTaskId [name: "task_relations_targetTaskId_idx"]
+    (sourceTaskId, targetTaskId, relationType) [unique, name: "task_relations_sourceTaskId_targetTaskId_relationType_key"]
+  }
+}
+
+Table "task_templates" {
+  "id" TEXT [not null]
+  "name" TEXT [not null]
+  "description" TEXT
+  "projectId" TEXT
+  "priority" TaskPriority [not null, default: 'MEDIUM']
+  "template" JSONB [not null]
+  "createdById" TEXT [not null]
+  "isDefault" BOOLEAN [not null, default: false]
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+
+  Indexes {
+    id [pk, name: "task_templates_pkey"]
+  }
+}
+
+Table "task_history" {
+  "id" TEXT [not null]
+  "taskId" TEXT [not null]
+  "userId" TEXT [not null]
+  "field" TEXT [not null]
+  "oldValue" TEXT
+  "newValue" TEXT
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    id [pk, name: "task_history_pkey"]
+    taskId [name: "task_history_taskId_idx"]
+    createdAt [name: "task_history_createdAt_idx"]
+  }
+}
+
+Table "saved_filters" {
+  "id" TEXT [not null]
+  "name" TEXT [not null]
+  "userId" TEXT [not null]
+  "projectId" TEXT
+  "criteria" JSONB [not null]
+  "isPublic" BOOLEAN [not null, default: false]
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+
+  Indexes {
+    id [pk, name: "saved_filters_pkey"]
+  }
+}
+
+Table "nova_insights" {
+  "id" TEXT [not null]
+  "userId" TEXT [not null]
+  "type" InsightType [not null]
+  "title" TEXT [not null]
+  "description" TEXT [not null]
+  "taskId" TEXT
+  "projectId" TEXT
+  "actionTaken" BOOLEAN [not null, default: false]
+  "dismissed" BOOLEAN [not null, default: false]
+  "confidence" DOUBLEPRECISION [not null]
+  "metadata" JSONB
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+
+  Indexes {
+    id [pk, name: "nova_insights_pkey"]
+    userId [name: "nova_insights_userId_idx"]
+    type [name: "nova_insights_type_idx"]
+    dismissed [name: "nova_insights_dismissed_idx"]
+    createdAt [name: "nova_insights_createdAt_idx"]
+  }
+}
+
+Table "user_ai_preferences" {
+  "id" TEXT [not null]
+  "userId" TEXT [not null]
+  "enableProactiveNotifs" BOOLEAN [not null, default: true]
+  "enableAutoEscalation" BOOLEAN [not null, default: true]
+  "deadlineWarningDays" "INTEGER[]" [default: `ARRAY[1,3,7]::INTEGER[]`]
+  "preferredInsightTypes" "TEXT[]" [default: `ARRAY['RISK_DETECTED','DEADLINE_WARNING','PATTERN_FOUND']::TEXT[]`]
+  "weeklyReportDay" INTEGER
+  "weeklyReportTime" TEXT
+  "notificationQuietHours" JSONB
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+
+  Indexes {
+    id [pk, name: "user_ai_preferences_pkey"]
+    userId [unique, name: "user_ai_preferences_userId_key"]
+  }
+}
+
+Table "task_predictions" {
+  "id" TEXT [not null]
+  "taskId" TEXT [not null]
+  "predictedCompletionAt" TIMESTAMP(3) [not null]
+  "actualCompletionAt" TIMESTAMP(3)
+  "confidence" DOUBLEPRECISION [not null]
+  "accuracyScore" DOUBLEPRECISION
+  "factors" JSONB [not null]
+  "basedOnSimilarTasks" INTEGER [not null, default: 0]
+  "userVelocityFactor" DOUBLEPRECISION
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+  "updatedAt" TIMESTAMP(3) [not null]
+
+  Indexes {
+    id [pk, name: "task_predictions_pkey"]
+    taskId [name: "task_predictions_taskId_idx"]
+    createdAt [name: "task_predictions_createdAt_idx"]
+  }
+}
+
+Table "automation_actions" {
+  "id" TEXT [not null]
+  "type" AutoActionType [not null]
+  "taskId" TEXT
+  "userId" TEXT
+  "description" TEXT [not null]
+  "success" BOOLEAN [not null]
+  "metadata" JSONB
+  "errorMessage" TEXT
+  "createdAt" TIMESTAMP(3) [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    id [pk, name: "automation_actions_pkey"]
+    type [name: "automation_actions_type_idx"]
+    success [name: "automation_actions_success_idx"]
+    createdAt [name: "automation_actions_createdAt_idx"]
+  }
+}
+
+Ref "projects_managerId_fkey":"users"."id" < "projects"."managerId" [update: cascade, delete: restrict]
+
+Ref "budget_categories_projectId_fkey":"projects"."id" < "budget_categories"."projectId" [update: cascade, delete: cascade]
+
+Ref "budget_expenses_categoryId_fkey":"budget_categories"."id" < "budget_expenses"."categoryId" [update: cascade, delete: cascade]
+
+Ref "project_members_projectId_fkey":"projects"."id" < "project_members"."projectId" [update: cascade, delete: cascade]
+
+Ref "project_members_userId_fkey":"users"."id" < "project_members"."userId" [update: cascade, delete: cascade]
+
+Ref "tasks_assigneeId_fkey":"users"."id" < "tasks"."assigneeId" [update: cascade, delete: set null]
+
+Ref "tasks_createdById_fkey":"users"."id" < "tasks"."createdById" [update: cascade, delete: restrict]
+
+Ref "tasks_projectId_fkey":"projects"."id" < "tasks"."projectId" [update: cascade, delete: cascade]
+
+Ref "work_logs_taskId_fkey":"tasks"."id" < "work_logs"."taskId" [update: cascade, delete: cascade]
+
+Ref "work_logs_userId_fkey":"users"."id" < "work_logs"."userId" [update: cascade, delete: restrict]
+
+Ref "task_comments_authorId_fkey":"users"."id" < "task_comments"."authorId" [update: cascade, delete: restrict]
+
+Ref "task_comments_taskId_fkey":"tasks"."id" < "task_comments"."taskId" [update: cascade, delete: cascade]
+
+Ref "notifications_projectId_fkey":"projects"."id" < "notifications"."projectId" [update: cascade, delete: cascade]
+
+Ref "notifications_taskId_fkey":"tasks"."id" < "notifications"."taskId" [update: cascade, delete: cascade]
+
+Ref "notifications_userId_fkey":"users"."id" < "notifications"."userId" [update: cascade, delete: cascade]
+
+Ref "api_logs_userId_fkey":"users"."id" < "api_logs"."userId" [update: cascade, delete: set null]
+
+Ref "user_rate_limits_userId_fkey":"users"."id" < "user_rate_limits"."userId" [update: cascade, delete: cascade]
+
+Ref "audit_logs_adminId_fkey":"users"."id" < "audit_logs"."adminId" [update: cascade, delete: cascade]
+
+Ref "task_relations_createdById_fkey":"users"."id" < "task_relations"."createdById" [update: cascade, delete: restrict]
+
+Ref "task_relations_sourceTaskId_fkey":"tasks"."id" < "task_relations"."sourceTaskId" [update: cascade, delete: cascade]
+
+Ref "task_relations_targetTaskId_fkey":"tasks"."id" < "task_relations"."targetTaskId" [update: cascade, delete: cascade]
+
+Ref "task_templates_createdById_fkey":"users"."id" < "task_templates"."createdById" [update: cascade, delete: restrict]
+
+Ref "task_templates_projectId_fkey":"projects"."id" < "task_templates"."projectId" [update: cascade, delete: cascade]
+
+Ref "task_history_taskId_fkey":"tasks"."id" < "task_history"."taskId" [update: cascade, delete: cascade]
+
+Ref "task_history_userId_fkey":"users"."id" < "task_history"."userId" [update: cascade, delete: restrict]
+
+Ref "saved_filters_projectId_fkey":"projects"."id" < "saved_filters"."projectId" [update: cascade, delete: cascade]
+
+Ref "saved_filters_userId_fkey":"users"."id" < "saved_filters"."userId" [update: cascade, delete: cascade]
+
+Ref "nova_insights_projectId_fkey":"projects"."id" < "nova_insights"."projectId" [update: cascade, delete: cascade]
+
+Ref "nova_insights_taskId_fkey":"tasks"."id" < "nova_insights"."taskId" [update: cascade, delete: cascade]
+
+Ref "nova_insights_userId_fkey":"users"."id" < "nova_insights"."userId" [update: cascade, delete: cascade]
+
+Ref "user_ai_preferences_userId_fkey":"users"."id" < "user_ai_preferences"."userId" [update: cascade, delete: cascade]
+
+Ref "task_predictions_taskId_fkey":"tasks"."id" < "task_predictions"."taskId" [update: cascade, delete: cascade]
+
+Ref "automation_actions_taskId_fkey":"tasks"."id" < "automation_actions"."taskId" [update: cascade, delete: cascade]
+
+Ref "automation_actions_userId_fkey":"users"."id" < "automation_actions"."userId" [update: cascade, delete: cascade]

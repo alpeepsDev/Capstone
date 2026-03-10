@@ -1,12 +1,10 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/database.js";
 import {
   getTopInsights,
   generateDailyInsights,
   dismissInsight,
   markActionTaken,
 } from "../../services/nova/insightGenerator.js";
-
-const prisma = new PrismaClient();
 
 /**
  * Nova Insights Controller

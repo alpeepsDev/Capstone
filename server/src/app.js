@@ -4,6 +4,7 @@ import helmet from "helmet";
 import compression from "compression";
 import dotenv from "dotenv";
 import path from "path";
+import prisma from "./config/database.js";
 import { fileURLToPath } from "url";
 
 import userRoutes from "./routes/admin/user.routes.js"; // User authentication routes
@@ -54,7 +55,11 @@ app.use(
 );
 
 // Middleware
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  }),
+);
 app.use(
   cors({
     origin: process.env.CLIENT_URL,
@@ -106,10 +111,20 @@ initScheduler().catch((err) => {
 });
 
 // Health check endpoint
-app.get("/api/health", (req, res) => {
+app.get("/api/health", async (req, res) => {
+  let dbStatus = "unknown";
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    dbStatus = "connected";
+  } catch (error) {
+    console.error("[Health Check] Database test failed:", error.message);
+    dbStatus = "disconnected";
+  }
+
   res.json({
     success: true,
     message: "TaskForge API is running",
+    database: dbStatus,
     timestamp: new Date().toISOString(),
   });
 });

@@ -27,8 +27,10 @@ router.put(
 router.delete("/:id", taskController.deleteTask);
 
 // Kanban board operations
+import { uploadProofs } from "../../middleware/upload.js";
 router.put(
   "/:id/move",
+  uploadProofs.array("proofs", 5),
   validateRequest(moveTaskSchema),
   taskController.moveTask,
 );

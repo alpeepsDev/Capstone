@@ -1,5 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import prisma from "../config/database.js";
 
 /**
  * Track a change to a task field in the task history

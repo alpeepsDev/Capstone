@@ -21,6 +21,7 @@ export const createTaskSchema = z.object({
     .min(1, "Project ID is required"),
   description: z.string().max(5000, "Description is too long").optional(),
   assigneeId: z.string().optional(),
+  additionalAssigneeIds: z.array(z.string()).optional(),
   priority: taskPriorityEnum.optional(),
   dueDate: z.string().optional(),
 });
@@ -39,6 +40,7 @@ export const updateTaskSchema = z.object({
   status: taskStatusEnum.optional(),
   priority: taskPriorityEnum.optional(),
   assigneeId: z.string().nullable().optional(),
+  additionalAssigneeIds: z.array(z.string()).optional(),
   dueDate: z.string().nullable().optional(),
   changeNote: z.string().max(500, "Change note is too long").optional(),
   timeRemaining: z.number().int().min(0).optional(),
@@ -51,7 +53,7 @@ export const updateTaskSchema = z.object({
 
 export const moveTaskSchema = z.object({
   status: taskStatusEnum,
-  position: z.number().int().min(0).nullable().optional(),
+  position: z.coerce.number().int().min(0).nullable().optional(),
 });
 
 export const assignTaskSchema = z.object({

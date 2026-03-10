@@ -29,6 +29,7 @@ export const getProjects = asyncHandler(async (req, res) => {
                   username: true,
                   name: true,
                   role: true,
+                  avatar: true,
                   _count: {
                     select: {
                       assignedTasks: true,
@@ -71,6 +72,7 @@ export const getProjects = asyncHandler(async (req, res) => {
                   username: true,
                   name: true,
                   role: true,
+                  avatar: true,
                   _count: {
                     select: {
                       assignedTasks: true,
@@ -116,6 +118,7 @@ export const getProjects = asyncHandler(async (req, res) => {
                   username: true,
                   name: true,
                   role: true,
+                  avatar: true,
                   _count: {
                     select: {
                       assignedTasks: true,

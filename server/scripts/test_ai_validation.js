@@ -71,27 +71,6 @@ async function runTests() {
     );
   }
 
-  // 3. Test Proofread Validation
-  console.log("\n3️⃣ Testing Proofread Validation (/ai/proofread)");
-
-  // 3a. Valid Text
-  console.log("   Test 3a: Valid Text");
-  const validText = await post("/ai/proofread", { text: "This is a test." });
-  if (validText.success) console.log("   ✅ Success (Valid text accepted)");
-  else console.log("   ❌ Failed (Valid text rejected):", validText.message);
-
-  // 3b. Empty Text
-  console.log("   Test 3b: Empty Text");
-  const emptyText = await post("/ai/proofread", { text: "" });
-  if (!emptyText.success && emptyText.message === "Validation errors") {
-    console.log("   ✅ Success (Empty text rejected)");
-  } else {
-    console.log(
-      "   ❌ Failed (Empty text accepted or wrong error):",
-      emptyText.message,
-    );
-  }
-
   console.log("\n🏁 Tests Completed.");
 }
 

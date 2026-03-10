@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/database.js";
 import {
   addDays,
   format,
@@ -7,7 +7,6 @@ import {
   isWithinInterval,
 } from "date-fns";
 
-const prisma = new PrismaClient();
 
 /**
  * Nova Proactive Notification Scheduler

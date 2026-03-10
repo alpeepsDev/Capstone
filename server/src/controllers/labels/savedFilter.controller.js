@@ -1,5 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import prisma from "../../config/database.js";
 
 // Get savedfilters (user's own + public filters)
 export const getSavedFilters = async (req, res) => {

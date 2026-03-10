@@ -1,3 +1,4 @@
+import "dotenv/config";
 import pkg from "@prisma/client";
 const { PrismaClient } = pkg;
 import { decrypt } from "../utils/encryption.js";
@@ -117,29 +118,38 @@ const MUTATION_ACTIONS = new Set([
 // Models that we care about for admin dashboard realtime updates
 const ADMIN_WATCHED_MODELS = new Set(["User", "Project", "Task"]);
 
-const basePrisma = new PrismaClient();
+const basePrisma = new PrismaClient({
+  accelerateUrl: process.env.DATABASE_URL,
+});
 
 const prisma = basePrisma.$extends({
   query: {
     $allOperations: async ({ model, operation, args, query }) => {
-      const result = await query(args);
+      try {
+        const result = await query(args);
 
-      if (DECRYPT_ACTIONS.has(operation)) {
-        decryptUserFields(result);
-        decryptProjectFields(result);
+        if (DECRYPT_ACTIONS.has(operation)) {
+          decryptUserFields(result);
+          decryptProjectFields(result);
+        }
+
+        if (
+          model &&
+          MUTATION_ACTIONS.has(operation) &&
+          ADMIN_WATCHED_MODELS.has(model)
+        ) {
+          // Broadcast the update immediately after the DB finishes the query
+          // Fire-and-forget
+          emitAdminUpdate(model, operation);
+        }
+
+        return result;
+      } catch (error) {
+        if (error.message?.includes("fetch failed")) {
+          console.error(`[Prisma Service] Connection failed during ${model}.${operation}: Check internet or Accelerate status.`);
+        }
+        throw error;
       }
-
-      if (
-        model &&
-        MUTATION_ACTIONS.has(operation) &&
-        ADMIN_WATCHED_MODELS.has(model)
-      ) {
-        // Broadcast the update immediately after the DB finishes the query
-        // Fire-and-forget
-        emitAdminUpdate(model, operation);
-      }
-
-      return result;
     },
   },
 });

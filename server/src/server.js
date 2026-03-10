@@ -11,8 +11,8 @@ async function testDatabaseConnection() {
     await prisma.$connect();
     console.log("✅ Database connected successfully");
   } catch (error) {
-    console.error("❌ Database connection failed:", error);
-    process.exit(1);
+    console.error("⚠️ Database connection failed on startup. Server will run in degraded mode:", error.message);
+    // Do not exit, allow server to serve static files and health check
   }
 }
 

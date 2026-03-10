@@ -2,42 +2,56 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-// Ensure uploads directory exists
-const uploadDir = "uploads/avatars";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Ensure directories exist
+const ensureDir = (dir) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+};
 
-// Configure storage
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    // Create unique filename: user-{userId}-{timestamp}.ext
-    // We might not have userId in req.user yet if auth middleware runs after,
-    // but usually auth runs before. We'll use timestamp + random for safety.
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(
-      null,
-      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname),
-    );
-  },
-});
+// Configure storage factory
+const createStorage = (directory) => {
+  ensureDir(directory);
+  return multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, directory);
+    },
+    filename: function (req, file, cb) {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      cb(
+        null,
+        file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname),
+      );
+    },
+  });
+};
 
-// File filter
+// File filter for images
 const fileFilter = (req, file, cb) => {
-  // Accept images only
   if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
     return cb(new Error("Only image files are allowed!"), false);
   }
   cb(null, true);
 };
 
+// Avatar upload middleware
 export const upload = multer({
-  storage: storage,
+  storage: createStorage("uploads/avatars"),
   fileFilter: fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-  },
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
+
+// Task proof upload middleware (single - kept for backward compat)
+export const uploadProof = multer({
+  storage: createStorage("uploads/proofs"),
+  fileFilter: fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit for proofs
+});
+
+// Task proof upload middleware (multiple - up to 5 files)
+export const uploadProofs = multer({
+  storage: createStorage("uploads/proofs"),
+  fileFilter: fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB per file
+});
+

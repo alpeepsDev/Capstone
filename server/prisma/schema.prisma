@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -136,6 +135,16 @@ model Task {
   createdBy         User               @relation("TaskCreator", fields: [createdById], references: [id])
   project           Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
   workLogs          WorkLog[]
+  comments          TaskComment[]
+  notifications     Notification[]
+  history           TaskHistory[]
+  insights          NovaInsight[]
+  predictions       TaskPrediction[]
+  automationActions AutomationAction[]
+  proofAttachment       String?
+  proofAttachments      String[]  @default([])
+  additionalAssigneeIds String[]  @default([])
+
 
   @@index([title])
   @@index([description])

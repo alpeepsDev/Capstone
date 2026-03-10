@@ -134,25 +134,14 @@ export const askNova = async (req, res) => {
       lowerQuery.includes("review") ||
       lowerQuery.includes("progress");
 
-    // Chart Intent: Does the user want a visualization?
-    const hasVisualKeyword =
+    // Chart Intent: Only trigger on EXPLICIT chart/graph keywords
+    const isChartQuery =
       lowerQuery.includes("chart") ||
       lowerQuery.includes("graph") ||
+      lowerQuery.includes("pie") ||
       lowerQuery.includes("visual") ||
-      lowerQuery.includes("show") ||
-      lowerQuery.includes("display") ||
-      lowerQuery.includes("stat") || // matches stats, statistics
       lowerQuery.includes("breakdown") ||
       lowerQuery.includes("distribution");
-
-    const hasTextOnlyKeyword =
-      lowerQuery.includes("list") ||
-      lowerQuery.includes("tell me") ||
-      lowerQuery.includes("what are") ||
-      lowerQuery.includes("give me");
-
-    // Only show charts if visual keywords present AND not explicitly asking for a list
-    const isChartQuery = hasVisualKeyword && !hasTextOnlyKeyword;
 
     // --- CONTEXT LOADING (CONDITIONAL) ---
     let contextData = {};
@@ -245,37 +234,74 @@ export const askNova = async (req, res) => {
               .join(", ")
           : "None";
 
-      // Construct OPTIMIZED Prompt (Only include what exists)
-      prompt = `You are Nova, a project management AI assistant.
+      const currentDate = new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
+      const totalTasks = allUserTasks.length;
+      const activeTasks = allUserTasks.filter(
+        (t) => t.status !== "COMPLETED",
+      ).length;
+
+      const formatSection = (tasks, label) => {
+        const content = listTasks(tasks, label);
+        return content || `\n=== ${label} (0) ===\n(none)`;
+      };
+
+      prompt = `[SYSTEM IDENTITY]
+You are Nova, the built-in AI assistant for this project management application. You answer questions about the user's tasks, deadlines, risks, and workload using ONLY the data provided below. You have no access to the internet, external tools, or any information outside of the data block.
+
+[TODAY'S DATE]
+${currentDate}
+
+[USER QUERY]
+"${query}"
+
+[BEGIN DATA — This is the ONLY source of truth]
+Total tasks assigned to this user: ${totalTasks}
+Active (non-completed) tasks: ${activeTasks}
+${formatSection(contextData.overdue, "OVERDUE")}
+${formatSection(contextData.highRisk, "HIGH RISK")}
+${formatSection(contextData.topPriority, "TOP PRIORITY")}
+${formatSection(contextData.inProgress, "IN PROGRESS")}
+${formatSection(contextData.inReview, "IN REVIEW")}
+${formatSection(contextData.todo, "TODO / PENDING")}
+${formatSection(contextData.completed, "RECENTLY COMPLETED")}
+
+STATUS COUNTS: ${listStats(contextData.statusBreakdown)}
+RISK COUNTS: ${listStats(contextData.stats)}
+[END DATA]
+
+[RULES — Violating any rule is a critical failure]
+1. GROUNDING: Every claim you make MUST map to a specific task or number from [BEGIN DATA] to [END DATA]. If a task name, date, or number is not explicitly listed above, you MUST NOT mention it.
+2. ZERO FABRICATION: Do NOT invent task names, due dates, percentages, priorities, team members, or any detail not present in the data. If asked about something not in the data, respond exactly: "I don't have that information in your current task data."
+3. COUNTS ARE FINAL: The total task count is ${totalTasks} and active count is ${activeTasks}. Do not state any other totals.
+4. NO FOLLOW-UP QUESTIONS: Never ask the user for clarification, more details, or follow-up. Answer with what you have and stop.
+5. NO FILLER: Do not use greetings ("Hi!", "Hello!"), sign-offs ("Let me know if you need anything"), or conversational padding. Start directly with the answer.
+6. SCOPE BOUNDARY: You can ONLY discuss tasks, projects, deadlines, risks, priorities, and workload. For anything else (weather, jokes, coding help, general knowledge), respond exactly: "I can only help with your project tasks and workload. Try asking about your tasks, deadlines, or risks."
+7. CHART QUERIES: If the user asked for a chart, graph, pie, breakdown, or distribution, respond ONLY with: "Here is the chart you requested." — the chart is rendered separately by the application.
+
+[OUTPUT FORMAT]
+- Plain text only. No markdown formatting (no **, *, #, ## etc.).
+- Use numbered lists (1. 2. 3.) when listing multiple items.
+- Use one blank line between distinct points.
+- Always reference task names exactly as they appear in the data using quotes, e.g. "Task Name Here".`;
+    }
+
+    // --- FALLBACK PROMPT for general/off-topic queries ---
+    if (!prompt) {
+      prompt = `You are Nova, the built-in AI assistant for a project management application. You can ONLY help with tasks, deadlines, risks, priorities, and workload.
 
 USER QUERY: "${query}"
 
-CONTEXT (User's Assigned Tasks):
-${listTasks(contextData.overdue, "OVERDUE")}
-${listTasks(contextData.highRisk, "HIGH RISK")}
-${listTasks(contextData.topPriority, "TOP PRIORITY")}
-${listTasks(contextData.inProgress, "IN PROGRESS")}
-${listTasks(contextData.inReview, "IN REVIEW")}
-${listTasks(contextData.todo, "TODO")}
-${listTasks(contextData.completed, "RECENTLY COMPLETED")}
-
-STATS:
-- Status: ${listStats(contextData.statusBreakdown)}
-- Risk: ${listStats(contextData.stats)}
-
-GUIDELINES:
-1. Answer strictly based on the provided context.
-2. Be concise and professional.
-3. If the user asks for a chart/visualization, say "Here is the chart you requested." and I will render it.
-4. If no tasks match the query, say so clearly.
-5. If listing items, use plain text numbers (1., 2., etc.). Do NOT use markdown symbols like **, *, _, or #. Output plain text.`;
-    } else {
-      // General Conversation (No Context)
-      console.log("[Nova AI] General intent detected. Skipping context fetch.");
-      prompt = `You are Nova, an AI assistant for a project management app.
-User: "${query}"
-Respond helpfully and concisely. If they ask about tasks/projects, ask them to be specific (e.g., "Show my overdue tasks").
-If listing items, use plain text numbers (1., 2., etc.). Do NOT use markdown symbols like **, *, _, or #. Output plain text.`;
+RULES:
+1. If the query is a greeting (hi, hello, hey), respond with a single short sentence introducing yourself and suggest the user ask about their tasks, risks, or deadlines.
+2. For ANY other topic (weather, jokes, coding, general knowledge, etc.), respond exactly: "I can only help with your project tasks and workload. Try asking about your tasks, deadlines, or risks."
+3. No markdown formatting. Plain text only.
+4. Do not ask follow-up questions.`;
     }
 
     // --- SSE Setup ---
@@ -324,7 +350,7 @@ If listing items, use plain text numbers (1., 2., etc.). Do NOT use markdown sym
     // --- CHART GENERATION (Targeted) ---
     let chartData = null;
 
-    if (isChartQuery && isProjectQuery) {
+    if (isChartQuery) {
       if (lowerQuery.includes("risk") || lowerQuery.includes("critical")) {
         chartData = {
           type: "risk",
@@ -404,71 +430,5 @@ If listing items, use plain text numbers (1., 2., etc.). Do NOT use markdown sym
     res.write(`data: [DONE]\n\n`);
     if (typeof res.flush === "function") res.flush();
     res.end();
-  }
-};
-
-/**
- * Proofread text using Nova AI
- * Improves grammar, clarity, and professional tone
- */
-export const proofreadText = async (req, res) => {
-  try {
-    const { text } = req.body;
-
-    console.log(`[Nova AI Proofread] Received text for proofreading`);
-
-    if (!text || !text.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Text is required for proofreading.",
-      });
-    }
-
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(503).json({
-        success: false,
-        message: "Nova AI is offline (Missing API Key).",
-      });
-    }
-
-    // Construct proofreading prompt
-    const prompt = `System: You are a professional editor.
-User Text: """${text}"""
-Task: Rewrite the text to fix grammar, improve clarity, and ensure a professional yet friendly tone.
-Rules:
-- Output ONLY the improved text. No explanations or markdown.
-- Keep original meaning.
-- Do not change technical terms.`;
-
-    // Generate improved text with timeout
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Request timed out")), 8000),
-    );
-
-    const result = await Promise.race([
-      model.generateContent(prompt),
-      timeoutPromise,
-    ]);
-    const improvedText = result.response.text().trim();
-
-    console.log("[Nova AI Proofread] Text improved successfully");
-
-    res.json({
-      success: true,
-      original: text,
-      improved: improvedText,
-      message: "Text proofread successfully",
-    });
-  } catch (error) {
-    console.error("[Nova AI Proofread] Error:", error.message);
-
-    res.status(500).json({
-      success: false,
-      message:
-        error.message === "Request timed out"
-          ? "Nova AI is taking too long to respond. Please try again."
-          : "Failed to proofread text. Please try again.",
-      error: error.message,
-    });
   }
 };

@@ -1,5 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import prisma from "../../config/database.js";
 
 // Get all templates (optionally filtered by project)
 export const getTemplates = async (req, res) => {
