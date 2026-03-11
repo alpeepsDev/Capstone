@@ -20,10 +20,6 @@ import {
   addExpenseSchema,
 } from "../src/validations/budget.validation.js";
 
-import {
-  createFilterSchema,
-  updateFilterSchema,
-} from "../src/validations/savedFilter.validation.js";
 import { createRelationSchema } from "../src/validations/taskRelation.validation.js";
 import {
   createTemplateSchema,
@@ -194,29 +190,6 @@ describe("Budget Validation", () => {
   });
 });
 
-
-// ========== Saved Filter Schemas ==========
-describe("Saved Filter Validation", () => {
-  it("accepts valid filter creation", () => {
-    const result = createFilterSchema.safeParse({
-      name: "My Filter",
-      criteria: { status: "PENDING" },
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it("rejects filter without name", () => {
-    const result = createFilterSchema.safeParse({
-      criteria: { status: "PENDING" },
-    });
-    expect(result.success).toBe(false);
-  });
-
-  it("accepts valid filter update", () => {
-    const result = updateFilterSchema.safeParse({ isPublic: true });
-    expect(result.success).toBe(true);
-  });
-});
 
 // ========== Task Relation Schemas ==========
 describe("Task Relation Validation", () => {

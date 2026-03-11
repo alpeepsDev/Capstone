@@ -17,6 +17,7 @@ router.use(auth);
 // Project CRUD operations
 router.get("/", projectController.getProjects);
 router.get("/:id", projectController.getProject);
+router.get("/:id/analytics", projectController.getProjectAnalytics);
 router.post(
   "/",
   validateRequest(createProjectSchema),

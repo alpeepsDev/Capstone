@@ -4,6 +4,7 @@ import { useTheme } from "../../context";
 import { Header, Sidebar } from "../navigation";
 import { ThemeToggle } from "../ui";
 import NovaAssistant from "../assistant/NovaAssistant";
+import AIPreferencesSettings from "../dashboard/AIPreferencesSettings";
 
 const Layout = ({
   user,
@@ -398,6 +399,28 @@ const Layout = ({
                   </div>
                   <ThemeToggle />
                 </div>
+              </div>
+            </div>
+
+            {/* AI Preferences */}
+            <div className="mb-8">
+              <h3
+                className={`text-lg font-semibold ${
+                  isDark ? "text-gray-200" : "text-gray-800"
+                } mb-4`}
+              >
+                AI Preferences
+              </h3>
+              <div
+                className={`${
+                  isDark
+                    ? "bg-gray-700 border-gray-600"
+                    : "bg-gray-50 border-gray-200"
+                } border rounded-lg p-6`}
+              >
+              {(user?.role === "MANAGER" || user?.role === "ADMIN") && (
+                <AIPreferencesSettings isDark={isDark} />
+              )}
               </div>
             </div>
           </div>

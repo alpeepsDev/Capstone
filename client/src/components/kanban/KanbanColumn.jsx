@@ -1,4 +1,5 @@
 import React from "react";
+import { ListTodo } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -108,7 +109,9 @@ const KanbanColumn = ({
             <div
               className={`text-center py-6 ${isDark ? "text-gray-500" : "text-gray-400"}`}
             >
-              <div className="text-2xl mb-2">📋</div>
+              <div className="flex justify-center mb-2">
+                <ListTodo className="w-8 h-8 opacity-50" />
+              </div>
               <p className="text-xs font-medium">No tasks in this column</p>
               {canAddTask() && (
                 <p className="text-[11px] mt-1 opacity-75">

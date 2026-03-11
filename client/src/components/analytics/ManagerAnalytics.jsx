@@ -1,6 +1,7 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Card } from "../ui";
 import { useTheme } from "../../context";
+import api from "../../api/index.js";
 import {
   BarChart,
   Bar,
@@ -24,6 +25,35 @@ const ManagerAnalytics = ({
   tasksAwaitingApproval = [],
 }) => {
   const { isDark } = useTheme();
+
+  const [projectAnalytics, setProjectAnalytics] = useState({});
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+
+  // Fetch predictive analytics for all projects
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      if (projects.length === 0) return;
+      setLoadingAnalytics(true);
+      try {
+        const analyticsData = {};
+        // Note: In a production app, this might be optimized to a batch endpoint
+        await Promise.all(
+          projects.map(async (project) => {
+            const { data } = await api.get(`/projects/${project.id}/analytics`);
+            if (data.success) {
+              analyticsData[project.id] = data.data;
+            }
+          }),
+        );
+        setProjectAnalytics(analyticsData);
+      } catch (error) {
+        console.error("Error fetching project analytics:", error);
+      } finally {
+        setLoadingAnalytics(false);
+      }
+    };
+    fetchAnalytics();
+  }, [projects]);
 
   // Team performance metrics
   const totalTasks = tasks.length;
@@ -321,70 +351,139 @@ const ManagerAnalytics = ({
 
         {/* Management Insights - Text based */}
         <Card
-          title="Management Insights"
-          subtitle="Key metrics and recommendations"
-          className={`${isDark ? "bg-gray-800/50" : "bg-white"} backdrop-blur`}
+          title="Predictive Insights"
+          subtitle="Nova ML-driven metrics and predictions"
+          className={`${isDark ? "bg-gray-800/50" : "bg-white"} backdrop-blur overflow-y-auto max-h-96`}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
             <div>
               <h4
-                className={`font-medium mb-3 ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`font-medium mb-3 flex items-center ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                <BarChart3 className="w-4 h-4 inline mr-2" /> Key Metrics
+                <BarChart3 className="w-4 h-4 mr-2 text-blue-500" /> System
+                Health Scores
               </h4>
-              <div className="space-y-2">
-                <div
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-                >
-                  • Average approval time: {avgApprovalTime}
-                </div>
-                <div
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-                >
-                  • Active projects: {projects.length}
-                </div>
-                <div
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-                >
-                  • Total team members: {teamMembers.length}
-                </div>
+              <div className="space-y-4">
+                {projects.length === 0 ? (
+                  <div
+                    className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                  >
+                    No active projects to analyze.
+                  </div>
+                ) : loadingAnalytics ? (
+                  <div className="animate-pulse space-y-2">
+                    <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                  </div>
+                ) : (
+                  projects.map((project) => {
+                    const health = projectAnalytics[project.id]?.health;
+                    if (!health) return null;
+
+                    let statusColor = "text-green-500";
+                    if (health.status === "AT_RISK")
+                      statusColor = "text-orange-500";
+                    if (health.status === "CRITICAL")
+                      statusColor = "text-red-500";
+                    if (health.status === "UNKNOWN" || health.score === 50)
+                      statusColor = "text-gray-500";
+
+                    return (
+                      <div
+                        key={`health-${project.id}`}
+                        className="border-b border-gray-100 dark:border-gray-700 pb-2"
+                      >
+                        <div
+                          className={`text-sm font-medium ${isDark ? "text-gray-200" : "text-gray-700"}`}
+                        >
+                          {project.name}
+                        </div>
+                        <div
+                          className={`text-xs flex justify-between mt-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                        >
+                          <span>
+                            Score:{" "}
+                            <span className={`font-semibold ${statusColor}`}>
+                              {health.score}/100
+                            </span>
+                          </span>
+                          <span>{health.status.replace("_", " ")}</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 
             <div>
               <h4
-                className={`font-medium mb-3 ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`font-medium mb-3 flex items-center ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                <Lightbulb className="w-4 h-4 inline mr-2" /> Recommendations
+                <Lightbulb className="w-4 h-4 mr-2 text-yellow-500" /> Predicted
+                Risks
               </h4>
-              <div className="space-y-2">
-                {approvalsPending > 5 && (
+              <div className="space-y-3">
+                {projects.length === 0 ? (
                   <div
-                    className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                    className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
                   >
-                    • Review pending approvals to maintain team momentum
+                    Start managing projects to see predictions.
                   </div>
-                )}
-                {overallCompletionRate < 70 && (
-                  <div
-                    className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-                  >
-                    • Focus on improving team completion rates
+                ) : loadingAnalytics ? (
+                  <div className="animate-pulse space-y-2">
+                    <div className="h-8 bg-gray-300 rounded w-full mb-2"></div>
+                    <div className="h-8 bg-gray-300 rounded w-full"></div>
                   </div>
-                )}
-                {projects.length === 0 && (
-                  <div
-                    className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-                  >
-                    • Create a new project to get started
-                  </div>
-                )}
-                {overallCompletionRate >= 90 && (
-                  <div
-                    className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
-                  >
-                    • Excellent team performance! Consider taking on more tasks.
-                  </div>
+                ) : (
+                  (() => {
+                    // Flatten all risks from all projects
+                    const allRisks = projects.flatMap((p) => {
+                      const risks =
+                        projectAnalytics[p.id]?.predictions?.risks || [];
+                      return risks.map((r) => ({ ...r, projectName: p.name }));
+                    });
+
+                    if (allRisks.length === 0) {
+                      return (
+                        <div
+                          className={`text-sm flex items-center p-3 rounded-lg ${isDark ? "bg-green-900/20 text-green-400 border border-green-800" : "bg-green-50 text-green-700 border border-green-200"}`}
+                        >
+                          <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+                          No future risks detected across active projects. Great
+                          work!
+                        </div>
+                      );
+                    }
+
+                    return allRisks.map((risk, idx) => {
+                      const isHigh = risk.severity === "HIGH";
+                      return (
+                        <div
+                          key={`risk-${idx}`}
+                          className={`p-3 rounded-md text-sm border-l-4 ${
+                            isHigh
+                              ? isDark
+                                ? "bg-red-900/20 border-red-500 text-red-100"
+                                : "bg-red-50 border-red-500 text-red-900"
+                              : isDark
+                                ? "bg-orange-900/20 border-orange-500 text-orange-100"
+                                : "bg-orange-50 border-orange-500 text-orange-900"
+                          }`}
+                        >
+                          <div className="font-semibold">
+                            {risk.title}{" "}
+                            <span className="opacity-70 text-xs font-normal">
+                              ({risk.projectName})
+                            </span>
+                          </div>
+                          <div className="mt-1 opacity-90 text-xs">
+                            {risk.description}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()
                 )}
               </div>
             </div>

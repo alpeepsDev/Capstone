@@ -9,22 +9,48 @@ export const getAIPreferences = async (req, res) => {
       where: { userId },
     });
 
+    // If no preferences found, and the user is a regular USER, 
+    // try to fetch the global preferences (from an Admin or Manager)
+    if (!preferences && req.user.role === "USER") {
+      const globalManagerPrefs = await prisma.userAIPreference.findFirst({
+        where: {
+          user: {
+            role: { in: ["ADMIN", "MANAGER"] }
+          }
+        }
+      });
+      
+      if (globalManagerPrefs) {
+        return res.json({
+          success: true,
+          data: globalManagerPrefs,
+        });
+      }
+    }
+
     // Create default preferences if they don't exist
     if (!preferences) {
-      preferences = await prisma.userAIPreference.create({
-        data: {
-          userId,
-          enableProactiveNotifs: true,
-          enableAutoAssignment: false, // Opt-in
-          enableAutoEscalation: true,
-          deadlineWarningDays: [1, 3, 7],
-          preferredInsightTypes: [
-            "RISK_DETECTED",
-            "DEADLINE_WARNING",
-            "PATTERN_FOUND",
-          ],
-        },
-      });
+      const defaultData = {
+        userId,
+        enableProactiveNotifs: true,
+        enableAutoAssignment: false, // Opt-in
+        enableAutoEscalation: true,
+        deadlineWarningDays: [1, 3, 7],
+        preferredInsightTypes: [
+          "RISK_DETECTED",
+          "DEADLINE_WARNING",
+          "PATTERN_FOUND",
+        ],
+      };
+
+      // Only save to DB if they are a MANAGER/ADMIN. Regular users just get the defaults in-memory.
+      if (req.user.role === "ADMIN" || req.user.role === "MANAGER") {
+        preferences = await prisma.userAIPreference.create({
+          data: defaultData,
+        });
+      } else {
+        preferences = defaultData;
+      }
     }
 
     res.json({
@@ -94,33 +120,27 @@ export const resetAIPreferences = async (req, res) => {
   try {
     const userId = req.user.id;
 
+    const defaultData = {
+      enableProactiveNotifs: true,
+      enableAutoAssignment: false,
+      enableAutoEscalation: true,
+      deadlineWarningDays: [1, 3, 7],
+      preferredInsightTypes: [
+        "RISK_DETECTED",
+        "DEADLINE_WARNING",
+        "PATTERN_FOUND",
+      ],
+      weeklyReportDay: null,
+      weeklyReportTime: null,
+      notificationQuietHours: null,
+    };
+
     const preferences = await prisma.userAIPreference.upsert({
       where: { userId },
-      update: {
-        enableProactiveNotifs: true,
-        enableAutoAssignment: false,
-        enableAutoEscalation: true,
-        deadlineWarningDays: [1, 3, 7],
-        preferredInsightTypes: [
-          "RISK_DETECTED",
-          "DEADLINE_WARNING",
-          "PATTERN_FOUND",
-        ],
-        weeklyReportDay: null,
-        weeklyReportTime: null,
-        notificationQuietHours: null,
-      },
+      update: defaultData,
       create: {
         userId,
-        enableProactiveNotifs: true,
-        enableAutoAssignment: false,
-        enableAutoEscalation: true,
-        deadlineWarningDays: [1, 3, 7],
-        preferredInsightTypes: [
-          "RISK_DETECTED",
-          "DEADLINE_WARNING",
-          "PATTERN_FOUND",
-        ],
+        ...defaultData
       },
     });
 

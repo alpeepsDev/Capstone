@@ -58,6 +58,7 @@ app.use(
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
+    contentSecurityPolicy: false,
   }),
 );
 app.use(
@@ -99,8 +100,6 @@ app.use("/api/v1/users", userRoutes); // User authentication (login, register, p
 app.use("/api/v1/admin", adminRoutes); // Admin operations
 app.use("/api/v1/ai", aiRoutes); // Includes assistant, insights, AI preferences
 app.use("/api/v1/search", searchRoutes); // Global search
-
-// Backward-compatible routes for legacy frontend code
 app.use("/api/v1/assistant", assistantRoutes); // Maps to ai/assistant/*
 app.use("/api/v1/insights", insightRoutes); // Maps to ai/insights/*
 app.use("/api/v1/ai-preferences", aiPreferenceRoutes); // Maps to ai/preferences/*

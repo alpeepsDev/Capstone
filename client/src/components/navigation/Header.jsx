@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import { useTheme } from "../../context";
 import { NotificationBell } from "../notifications";
 import webSocketService from "../../services/websocket.service";
@@ -28,6 +29,7 @@ const Header = ({
     webSocketService.getConnectionStatus().isConnected,
   );
   const [isUploading, setIsUploading] = useState(false);
+  const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false);
   const fileInputRef = useRef(null);
   const dropdownRef = useRef(null);
   const { isDark } = useTheme();
@@ -56,6 +58,17 @@ const Header = ({
     });
     return unsubscribe;
   }, []);
+
+  // Close avatar preview on Escape key
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") setIsAvatarPreviewOpen(false);
+    };
+    if (isAvatarPreviewOpen) {
+      document.addEventListener("keydown", handleEsc);
+    }
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [isAvatarPreviewOpen]);
 
   const getRoleColor = (role) => {
     switch (role) {
@@ -264,7 +277,7 @@ const Header = ({
                 <div
                   className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
                 >
-                  {user?.role || "USER"}
+                  {user?.role === "USER" ? "EMPLOYEE" : user?.role || "EMPLOYEE"}
                 </div>
               </div>
               <ChevronDown
@@ -282,7 +295,14 @@ const Header = ({
                   className={`px-4 py-3 border-b ${isDark ? "border-gray-700" : "border-gray-100"}`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500">
+                    <div
+                      className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 cursor-pointer hover:ring-2 hover:ring-purple-400 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsAvatarPreviewOpen(true);
+                        setIsDropdownOpen(false);
+                      }}
+                    >
                       {user?.avatar ? (
                         <img
                           src={getAvatarUrl(user.avatar)}
@@ -309,7 +329,7 @@ const Header = ({
                       <div
                         className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-1 ${getRoleColor(user?.role)}`}
                       >
-                        {getRoleIcon(user?.role)} {user?.role || "USER"}
+                        {user?.role === "USER" ? "EMPLOYEE" : user?.role || "EMPLOYEE"}
                       </div>
                     </div>
                   </div>
@@ -341,6 +361,47 @@ const Header = ({
               </div>
             )}
           </div>
+
+          {/* Avatar Preview Modal - rendered via portal */}
+          {isAvatarPreviewOpen &&
+            ReactDOM.createPortal(
+              <div
+                className="fixed inset-0 z-[9999] flex items-center justify-center"
+                onClick={() => setIsAvatarPreviewOpen(false)}
+              >
+                {/* Glassmorphism Backdrop */}
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-lg" />
+
+                {/* Close Button - upper right of screen */}
+                <button
+                  className="absolute top-6 right-6 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-gray-900/80 text-white hover:bg-gray-700 transition-colors ring-2 ring-white/20"
+                  onClick={() => setIsAvatarPreviewOpen(false)}
+                >
+                  <X size={20} />
+                </button>
+
+                {/* Enlarged Avatar */}
+                <div
+                  className="relative z-10 w-48 h-48 rounded-full overflow-hidden ring-4 ring-white/20 shadow-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500">
+                    {user?.avatar ? (
+                      <img
+                        src={getAvatarUrl(user.avatar)}
+                        alt={user.username}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-white font-bold text-5xl">
+                        {user?.username?.charAt(0)?.toUpperCase() || "U"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>,
+              document.body
+            )}
         </div>
       </div>
     </header>

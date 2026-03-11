@@ -35,9 +35,12 @@ export const generateDailyInsights = async (userId) => {
       },
     });
 
-    if (!user) return [];
+    // Fetch the global manager/admin preferences to use as fallback
+    const globalManagerPrefs = await prisma.userAIPreference.findFirst({
+        where: { user: { role: { in: ["ADMIN", "MANAGER"] } } }
+    });
 
-    const preferences = user.aiPreference || {
+    const preferences = user.aiPreference || globalManagerPrefs || {
       preferredInsightTypes: [
         "RISK_DETECTED",
         "DEADLINE_WARNING",

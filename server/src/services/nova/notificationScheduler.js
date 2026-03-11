@@ -39,8 +39,13 @@ export const sendDeadlineWarnings = async () => {
     const now = new Date();
     let notificationCount = 0;
 
+    // Fetch the global manager/admin preferences to use as fallback
+    const globalManagerPrefs = await prisma.userAIPreference.findFirst({
+        where: { user: { role: { in: ["ADMIN", "MANAGER"] } } }
+    });
+
     for (const user of users) {
-      const preferences = user.aiPreference || {
+      const preferences = user.aiPreference || globalManagerPrefs || {
         enableProactiveNotifs: true,
         deadlineWarningDays: [1, 3, 7],
       };
@@ -104,13 +109,24 @@ export const generateWeeklySummaries = async () => {
     const now = new Date();
     const currentDay = now.getDay(); // 0=Sunday, 1=Monday, etc.
 
-    // Get users who want weekly reports on this day
+    // To handle global preferences for weekly summaries, we need to first check if there's a global preference for this day
+    const globalPrefs = await prisma.userAIPreference.findFirst({
+      where: {
+        user: { role: { in: ["ADMIN", "MANAGER"] } },
+      }
+    });
+
+    const isGlobalReportDay = globalPrefs?.weeklyReportDay === currentDay;
+
+    // Get users who want weekly reports on this day (either explicitly, or implicitly via global preferences)
     const users = await prisma.user.findMany({
       where: {
         isActive: true,
-        aiPreference: {
-          weeklyReportDay: currentDay,
-        },
+        OR: [
+          { aiPreference: { weeklyReportDay: currentDay } },
+          // If the global setting matches today, include users who don't have personal aiPreferences defined
+          ...(isGlobalReportDay ? [{ aiPreference: null }] : [])
+        ]
       },
       include: {
         aiPreference: true,

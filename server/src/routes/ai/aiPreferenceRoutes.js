@@ -4,7 +4,7 @@ import {
   updateAIPreferences,
   resetAIPreferences,
 } from "../../controllers/ai/aiPreferenceController.js";
-import { authenticateToken } from "../../middleware/auth.js";
+import { authenticateToken, requireManagerOrHigher } from "../../middleware/auth.js";
 import { validateRequest } from "../../middleware/validation.middleware.js";
 import { updatePreferencesSchema } from "../../validations/aiPreference.validation.js";
 
@@ -15,9 +15,10 @@ router.get("/", authenticateToken, getAIPreferences);
 router.put(
   "/",
   authenticateToken,
+  requireManagerOrHigher,
   validateRequest(updatePreferencesSchema),
   updateAIPreferences,
 );
-router.post("/reset", authenticateToken, resetAIPreferences);
+router.post("/reset", authenticateToken, requireManagerOrHigher, resetAIPreferences);
 
 export default router;

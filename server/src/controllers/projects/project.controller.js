@@ -1,6 +1,7 @@
 import prisma from "../../config/database.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { encrypt, decrypt } from "../../utils/encryption.js";
+import { calculateProjectHealth, predictFutureRisks } from "../../services/nova/predictiveAnalytics.js";
 
 // Get all projects for current user
 export const getProjects = asyncHandler(async (req, res) => {
@@ -610,5 +611,45 @@ export const removeProjectMember = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: "Member removed successfully",
+  });
+});
+
+// Get project analytics (health score, factors, and predicted risks)
+export const getProjectAnalytics = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const project = await prisma.project.findUnique({
+    where: { id },
+  });
+
+  if (!project) {
+    return res.status(404).json({
+      success: false,
+      message: "Project not found",
+    });
+  }
+
+  // Only project managers and admins can view project analytics
+  const canViewAnalytics =
+    project.managerId === req.user.id || req.user.role === "ADMIN";
+
+  if (!canViewAnalytics) {
+    return res.status(403).json({
+      success: false,
+      message: "Only project managers can view project analytics",
+    });
+  }
+
+  const [healthData, risksData] = await Promise.all([
+    calculateProjectHealth(id),
+    predictFutureRisks(id)
+  ]);
+
+  res.json({
+    success: true,
+    data: {
+      health: healthData,
+      predictions: risksData
+    }
   });
 });

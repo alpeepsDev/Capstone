@@ -49,7 +49,6 @@ const CalendarView = React.lazy(() =>
 const BudgetAllocation = React.lazy(() =>
   import("./BudgetAllocation").then((module) => ({ default: module.default })),
 );
-const LabelManagement = React.lazy(() => import("../../pages/LabelManagement"));
 
 // Loading component
 const ViewLoadingSpinner = () => (
@@ -678,7 +677,6 @@ const ManagerDashboard = ({
                   },
                   { id: "project-analytics", label: "Analytics", icon: Zap },
                   { id: "budget", label: "Budget", icon: DollarSign },
-                  { id: "labels", label: "Labels", icon: Tag },
                 ].map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}
@@ -920,14 +918,6 @@ const ManagerDashboard = ({
                   <Suspense fallback={<ViewLoadingSpinner />}>
                     <div className="flex-1 overflow-y-auto">
                       <BudgetAllocation projectId={selectedProjectId} />
-                    </div>
-                  </Suspense>
-                )}
-
-                {activeView === "labels" && (
-                  <Suspense fallback={<ViewLoadingSpinner />}>
-                    <div className="flex-1 overflow-y-auto">
-                      <LabelManagement />
                     </div>
                   </Suspense>
                 )}
