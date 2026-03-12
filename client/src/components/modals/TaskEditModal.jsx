@@ -10,6 +10,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, users = [] }) => {
     title: "",
     description: "",
     assigneeId: "",
+    additionalAssigneeIds: [],
     priority: "MEDIUM",
     status: "PENDING",
     dueDate: "",
@@ -23,6 +24,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, users = [] }) => {
         title: task.title || "",
         description: task.description || "",
         assigneeId: task.assigneeId || "",
+        additionalAssigneeIds: task.additionalAssigneeIds || [],
         priority: task.priority || "MEDIUM",
         status: task.status || "PENDING",
         dueDate: task.dueDate ? task.dueDate.split("T")[0] : "",
@@ -42,6 +44,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, users = [] }) => {
     if (!formData.changeNote.trim()) {
       toast.error("Please explain what changes are needed");
       return;
+    }
+
+    if (formData.priority === "HIGH" || formData.priority === "URGENT") {
+      const totalAssignees = (formData.assigneeId ? 1 : 0) + formData.additionalAssigneeIds.length;
+      if (totalAssignees < 2) {
+        toast.error("High priority tasks require at least 2 assignees");
+        return;
+      }
     }
 
     setLoading(true);
@@ -162,43 +172,101 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, users = [] }) => {
               />
             </div>
 
-            {/* Assignee */}
-            <div>
-              <label
-                className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
-              >
-                Assignee
-              </label>
-              <select
-                name="assigneeId"
-                value={formData.assigneeId}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  isDark
-                    ? "bg-gray-700 border-gray-600 text-white"
-                    : "bg-white border-gray-300 text-gray-900"
-                }`}
-              >
-                <option value="">Unassigned</option>
-                {users.length === 0 ? (
-                  <option disabled>No users available</option>
-                ) : (
-                  users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.username} - {user.name}
-                    </option>
-                  ))
-                )}
-              </select>
-              {users.length === 0 && (
-                <p
-                  className={`text-sm ${isDark ? "text-red-400" : "text-red-600"} mt-1`}
+            {/* Assignees UI */}
+            {(formData.priority === "HIGH" || formData.priority === "URGENT") ? (
+              <div>
+                <label
+                  className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
                 >
-                  No users available for assignment. Please refresh the page or
-                  contact your administrator.
-                </p>
-              )}
-            </div>
+                  Assignees (Select at least 2) *
+                </label>
+                <div
+                  className={`w-full px-3 py-2 border rounded-md max-h-[150px] overflow-y-auto space-y-2 ${
+                    isDark
+                      ? "bg-gray-700 border-gray-600 text-white"
+                      : "bg-white border-gray-300 text-gray-900"
+                  }`}
+                >
+                  {users.length === 0 ? (
+                    <p className={`text-sm italic ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                      No members available.
+                    </p>
+                  ) : (
+                    users.map((user) => {
+                      const allSelected = [formData.assigneeId, ...formData.additionalAssigneeIds].filter(Boolean);
+                      const isChecked = allSelected.includes(user.id);
+
+                      return (
+                        <label key={user.id} className="flex items-center space-x-2 cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                          <input
+                            type="checkbox"
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              let newSelected = [...allSelected];
+                              if (e.target.checked) {
+                                if (!newSelected.includes(user.id)) newSelected.push(user.id);
+                              } else {
+                                newSelected = newSelected.filter(id => id !== user.id);
+                              }
+                              
+                              setFormData(prev => ({
+                                ...prev,
+                                assigneeId: newSelected[0] || "",
+                                additionalAssigneeIds: newSelected.slice(1)
+                              }));
+                            }}
+                          />
+                          <span className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                            {user.username} - {user.name}
+                          </span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label
+                  className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
+                >
+                  Assignee
+                </label>
+                <select
+                  name="assigneeId"
+                  value={formData.assigneeId}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData(prev => ({ ...prev, assigneeId: val, additionalAssigneeIds: [] }));
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    isDark
+                      ? "bg-gray-700 border-gray-600 text-white"
+                      : "bg-white border-gray-300 text-gray-900"
+                  }`}
+                >
+                  <option value="">Unassigned</option>
+                  {users.length === 0 ? (
+                    <option disabled>No users available</option>
+                  ) : (
+                    users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.username} - {user.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+                {users.length === 0 && (
+                  <p
+                    className={`text-sm ${isDark ? "text-red-400" : "text-red-600"} mt-1`}
+                  >
+                    No users available for assignment. Please refresh the page or
+                    contact your administrator.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Priority */}
             <div>

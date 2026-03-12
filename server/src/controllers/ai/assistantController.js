@@ -134,14 +134,24 @@ export const askNova = async (req, res) => {
       lowerQuery.includes("review") ||
       lowerQuery.includes("progress");
 
-    // Chart Intent: Only trigger on EXPLICIT chart/graph keywords
-    const isChartQuery =
+    // Chart Intent: Detect if the user wants purely text or a visualization
+    const hasExplicitChartWord =
       lowerQuery.includes("chart") ||
       lowerQuery.includes("graph") ||
       lowerQuery.includes("pie") ||
       lowerQuery.includes("visual") ||
       lowerQuery.includes("breakdown") ||
       lowerQuery.includes("distribution");
+
+    const hasShowWord =
+      lowerQuery.includes("show") ||
+      lowerQuery.includes("display") ||
+      lowerQuery.includes("stat");
+
+    const hasListWord = lowerQuery.includes("list");
+
+    // Trigger chart if explicitly requested, OR if using "show" without "list"
+    const isChartQuery = hasExplicitChartWord || (hasShowWord && !hasListWord);
 
     // --- CONTEXT LOADING (CONDITIONAL) ---
     let contextData = {};

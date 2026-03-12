@@ -17,6 +17,7 @@ const AddTaskModal = ({
     description: "",
     projectId: selectedProject?.id || "",
     assigneeId: "",
+    additionalAssigneeIds: [],
     priority: "MEDIUM",
     status: "PENDING",
     dueDate: "",
@@ -62,6 +63,13 @@ const AddTaskModal = ({
     if (!formData.projectId) {
       errors.projectId = "Please select a project";
     }
+    if (formData.priority === "HIGH" || formData.priority === "URGENT") {
+      const totalAssignees = (formData.assigneeId ? 1 : 0) + formData.additionalAssigneeIds.length;
+      if (totalAssignees < 2) {
+        errors.assigneeId = "High priority tasks require at least 2 assignees";
+      }
+    }
+    
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
@@ -83,6 +91,7 @@ const AddTaskModal = ({
         description: "",
         projectId: selectedProject?.id || "",
         assigneeId: "",
+        additionalAssigneeIds: [],
         priority: "MEDIUM",
         status: "PENDING",
         dueDate: "",
@@ -342,56 +351,128 @@ const AddTaskModal = ({
               />
             </div>
 
-            {/* Assignee */}
-            <div>
-              <label
-                htmlFor="add-task-assignee"
-                className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
-              >
-                Assignee (Project Members Only)
-              </label>
-              <select
-                id="add-task-assignee"
-                name="assigneeId"
-                value={formData.assigneeId}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  isDark
-                    ? "bg-gray-700 border-gray-600 text-white"
-                    : "bg-white border-gray-300 text-gray-900"
-                }`}
-              >
-                <option value="">Unassigned</option>
-                {getProjectUsers().map((member) => {
-                  const user = member.user || member;
-                  const userId = member.userId || member.id;
-                  const displayName =
-                    user.name || user.username || "Unknown User";
-                  const username = user.username || "";
-                  const taskCount = member.taskCount || 0;
-
-                  return (
-                    <option key={userId} value={userId}>
-                      {username ? `${username} - ${displayName}` : displayName}{" "}
-                      ({taskCount} tasks)
-                    </option>
-                  );
-                })}
-              </select>
-              {formData.projectId && getProjectUsers().length === 0 && (
-                <p className="text-xs text-red-500 mt-1">
-                  No team members found in selected project
-                </p>
-              )}
-              {getProjectUsers().length > 0 && (
-                <p
-                  className={`text-xs ${isDark ? "text-green-400" : "text-green-600"} mt-1`}
+            {/* Assignees UI */}
+            {(formData.priority === "HIGH" || formData.priority === "URGENT") ? (
+              <div>
+                <label
+                  className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
                 >
-                  {getProjectUsers().length} project member(s) available (sorted
-                  by workload)
-                </p>
-              )}
-            </div>
+                  Assignees (Select at least 2) *
+                </label>
+                <div
+                  className={`w-full px-3 py-2 border rounded-md max-h-[150px] overflow-y-auto space-y-2 ${
+                    isDark
+                      ? "bg-gray-700 border-gray-600 text-white"
+                      : "bg-white border-gray-300 text-gray-900"
+                  }`}
+                >
+                  {getProjectUsers().length === 0 ? (
+                    <p className={`text-sm italic ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                      No members available.
+                    </p>
+                  ) : (
+                    getProjectUsers().map((member) => {
+                      const user = member.user || member;
+                      const userId = member.userId || member.id;
+                      
+                      const displayName = user.name || user.username || "Unknown User";
+                      const username = user.username || "";
+                      const taskCount = member.taskCount || 0;
+                      
+                      const allSelected = [formData.assigneeId, ...formData.additionalAssigneeIds].filter(Boolean);
+                      const isChecked = allSelected.includes(userId);
+
+                      return (
+                        <label key={userId} className="flex items-center space-x-2 cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                          <input
+                            type="checkbox"
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              let newSelected = [...allSelected];
+                              if (e.target.checked) {
+                                if (!newSelected.includes(userId)) newSelected.push(userId);
+                              } else {
+                                newSelected = newSelected.filter(id => id !== userId);
+                              }
+                              
+                              setFormData(prev => ({
+                                ...prev,
+                                assigneeId: newSelected[0] || "",
+                                additionalAssigneeIds: newSelected.slice(1)
+                              }));
+                              
+                              if (fieldErrors.assigneeId) {
+                                setFieldErrors(prev => ({ ...prev, assigneeId: undefined }));
+                              }
+                            }}
+                          />
+                          <span className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                            {username ? `${username} - ${displayName}` : displayName} ({taskCount} tasks)
+                          </span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+                {fieldErrors.assigneeId && (
+                  <p className="mt-1 text-sm text-red-500" role="alert">
+                    {fieldErrors.assigneeId}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div>
+                <label
+                  htmlFor="add-task-assignee"
+                  className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
+                >
+                  Assignee (Project Members Only)
+                </label>
+                <select
+                  id="add-task-assignee"
+                  name="assigneeId"
+                  value={formData.assigneeId}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData(prev => ({ ...prev, assigneeId: val, additionalAssigneeIds: [] }));
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    isDark
+                      ? "bg-gray-700 border-gray-600 text-white"
+                      : "bg-white border-gray-300 text-gray-900"
+                  }`}
+                >
+                  <option value="">Unassigned</option>
+                  {getProjectUsers().map((member) => {
+                    const user = member.user || member;
+                    const userId = member.userId || member.id;
+                    const displayName = user.name || user.username || "Unknown User";
+                    const username = user.username || "";
+                    const taskCount = member.taskCount || 0;
+
+                    return (
+                      <option key={userId} value={userId}>
+                        {username ? `${username} - ${displayName}` : displayName} ({taskCount} tasks)
+                      </option>
+                    );
+                  })}
+                </select>
+                {formData.projectId && getProjectUsers().length === 0 && (
+                  <p className="text-xs text-red-500 mt-1">
+                    No team members found in selected project
+                  </p>
+                )}
+                {getProjectUsers().length > 0 && (
+                  <p
+                    className={`text-xs ${isDark ? "text-green-400" : "text-green-600"} mt-1`}
+                  >
+                    {getProjectUsers().length} project member(s) available (sorted
+                    by workload)
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Priority */}
             <div>

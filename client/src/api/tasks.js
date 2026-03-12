@@ -26,13 +26,30 @@ export const tasksApi = {
   },
 
   // Move task (for Kanban board)
-  moveTask: async (taskId, { status, position }) => {
+  moveTask: async (taskId, { status, position }, proofFile = null) => {
     try {
-      console.log("Moving task:", { taskId, status, position });
-      const response = await api.put(`/tasks/${taskId}/move`, {
-        status,
-        position,
-      });
+      console.log("Moving task:", { taskId, status, position, hasProof: !!proofFile });
+      
+      let payload;
+      let config = {};
+
+      if (proofFile) {
+        payload = new FormData();
+        payload.append("status", status);
+        if (position !== null && position !== undefined) {
+          payload.append("position", position);
+        }
+        payload.append("proofs", proofFile);
+        config = {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        };
+      } else {
+        payload = { status, position };
+      }
+
+      const response = await api.put(`/tasks/${taskId}/move`, payload, config);
       console.log("Move task response:", response.data);
       return response.data;
     } catch (error) {

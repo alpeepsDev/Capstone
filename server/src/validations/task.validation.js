@@ -24,6 +24,17 @@ export const createTaskSchema = z.object({
   additionalAssigneeIds: z.array(z.string()).optional(),
   priority: taskPriorityEnum.optional(),
   dueDate: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.priority === "HIGH" || data.priority === "URGENT") {
+    const totalAssignees = (data.assigneeId ? 1 : 0) + (data.additionalAssigneeIds?.length || 0);
+    if (totalAssignees < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "High priority tasks require at least 2 assignees",
+        path: ["priority"],
+      });
+    }
+  }
 });
 
 export const updateTaskSchema = z.object({

@@ -17,6 +17,7 @@ import { TableView } from "./TableView";
 import { NoFavorites, NoProjects } from "./DashboardEmptyStates";
 
 import TaskDetailModal from "../modals/TaskDetailModal";
+import TaskProofModal from "../modals/TaskProofModal";
 
 import { UserAnalytics } from "../analytics";
 import { useTasks } from "../../hooks";
@@ -87,6 +88,13 @@ const UserDashboard = ({
   // Removed local state for sidebar, projects, activeView, selectedProjectId
   const [taskDetailModal, setTaskDetailModal] = useState({
     isOpen: false,
+    task: null,
+  });
+
+  const [proofModalConfig, setProofModalConfig] = useState({
+    isOpen: false,
+    taskId: null,
+    newStatus: null,
     task: null,
   });
 
@@ -317,6 +325,17 @@ const UserDashboard = ({
         return; // Silent return for same-column moves
       }
 
+      // If moving to IN_REVIEW and user is USER, require proof photo
+      if (user?.role === "USER" && newStatus === "IN_REVIEW") {
+        setProofModalConfig({
+          isOpen: true,
+          taskId,
+          newStatus,
+          task: currentTask || tasks.find((t) => t.id === taskId),
+        });
+        return; // Wait for the modal submit
+      }
+
       await updateTaskStatus(taskId, newStatus);
 
       // Special message for users moving tasks to IN_REVIEW
@@ -335,6 +354,25 @@ const UserDashboard = ({
     } catch (error) {
       console.error("Failed to move task:", error);
       toast.error("Failed to move task");
+    }
+  };
+
+  const handleProofSubmit = async (file) => {
+    try {
+      const { taskId, newStatus } = proofModalConfig;
+      await updateTaskStatus(taskId, newStatus, null, file);
+      
+      setProofModalConfig({ isOpen: false, taskId: null, newStatus: null, task: null });
+
+      toast.success(
+        "Task moved to In Review! Your manager will review and approve when complete.",
+        {
+          duration: 4000,
+        },
+      );
+    } catch (error) {
+      console.error("Failed to move task:", error);
+      toast.error("Failed to move task and upload proof");
     }
   };
 
@@ -745,6 +783,13 @@ const UserDashboard = ({
         task={taskDetailModal.task}
         onClose={handleTaskDetailClose}
         onTaskUpdate={handleTaskMove}
+      />
+      
+      <TaskProofModal
+        isOpen={proofModalConfig.isOpen}
+        task={proofModalConfig.task}
+        onClose={() => setProofModalConfig({ isOpen: false, taskId: null, newStatus: null, task: null })}
+        onConfirm={handleProofSubmit}
       />
     </div>
   );

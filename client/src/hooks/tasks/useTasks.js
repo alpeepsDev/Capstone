@@ -87,7 +87,7 @@ export const useTasks = (projectId = null) => {
     }
   };
 
-  const updateTaskStatus = async (taskId, newStatus, position = null) => {
+  const updateTaskStatus = async (taskId, newStatus, position = null, proofFile = null) => {
     // Optimistic update - update UI immediately
     const originalTasks = Array.isArray(tasks) ? tasks : [];
     const optimisticTasks = originalTasks.map((task) =>
@@ -102,7 +102,7 @@ export const useTasks = (projectId = null) => {
       const response = await tasksApi.moveTask(taskId, {
         status: newStatus,
         position,
-      });
+      }, proofFile);
       const updatedTask = response.data || response; // Handle both response formats
 
       // Update with actual server response
