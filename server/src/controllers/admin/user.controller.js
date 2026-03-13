@@ -71,14 +71,6 @@ export const userController = {
     const { userId } = req.params;
     const { role } = req.body;
 
-    // Check if current user has permission to update roles (only ADMIN)
-    if (req.user.role !== "ADMIN") {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. Only administrators can update user roles.",
-      });
-    }
-
     const user = await userService.updateUserRole(userId, role);
 
     res.json({
@@ -96,10 +88,7 @@ export const userController = {
       });
     }
 
-    // Normalize path separators to forward slashes for URL compatibility
-    const avatarPath = req.file.path.replace(/\\/g, "/");
-
-    const user = await userService.updateAvatar(req.user.id, avatarPath);
+    const user = await userService.updateAvatar(req.user.id, req.file.path);
 
     res.json({
       success: true,
@@ -109,14 +98,6 @@ export const userController = {
   }),
 
   getAllUsers: asyncHandler(async (req, res) => {
-    // Only admins and managers can view all users
-    if (!["ADMIN", "MANAGER"].includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied",
-      });
-    }
-
     const users = await userService.getAllUsers();
 
     res.json({

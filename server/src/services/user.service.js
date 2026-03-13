@@ -261,9 +261,11 @@ export const userService = {
   },
 
   async updateAvatar(userId, avatarPath) {
+    // Normalize path separators to forward slashes for URL compatibility
+    const normalizedPath = avatarPath.replace(/\\/g, "/");
     return await prisma.user.update({
       where: { id: userId },
-      data: { avatar: avatarPath },
+      data: { avatar: normalizedPath },
       select: {
         id: true,
         username: true,

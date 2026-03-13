@@ -1,0 +1,12 @@
+node_modules
+.env
+dist
+uploads
+output.svg
+schema.dbml
+migration_baseline.sql
+tests
+scripts
+server.log
+Dockerfile
+.dockerignore

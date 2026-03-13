@@ -38,7 +38,7 @@ router.post(
 
 // Protected routes
 router.get("/profile", auth, userController.getProfile);
-router.get("/", auth, userController.getAllUsers);
+router.get("/", auth, requireManagerOrHigher, userController.getAllUsers);
 router.post(
   "/avatar",
   auth,
