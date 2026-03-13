@@ -12,6 +12,9 @@ Capstone Documentation.pdf
 git_changes.txt
 pdf_py_text.txt
 install.cmd
+docs/
+ARCHITECTURE.md
+scripts/
 
 
 # Node modules
