@@ -1,4 +1,5 @@
 import prisma from "../config/database.js";
+import logger from "../utils/logger.js";
 
 /**
  * Track a change to a task field in the task history
@@ -37,7 +38,7 @@ export const trackTaskChange = async (
       },
     });
   } catch (error) {
-    console.error("Error tracking task change:", error);
+    logger.error("Error tracking task change:", error);
     // Don't throw error - history tracking failure shouldn't break the main operation
   }
 };
@@ -87,7 +88,7 @@ export const trackTaskChanges = async (
       });
     }
   } catch (error) {
-    console.error("Error tracking task changes:", error);
+    logger.error("Error tracking task changes:", error);
     // Don't throw error - history tracking failure shouldn't break the main operation
   }
 };
@@ -148,7 +149,8 @@ export const getTaskHistory = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching task history:", error);
+    logger.error("Error fetching task history:", error);
     res.status(500).json({ error: "Failed to fetch task history" });
   }
 };
+

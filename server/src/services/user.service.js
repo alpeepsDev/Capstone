@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import prisma from "../config/database.js";
 import { hash } from "../utils/hashing.js";
 import { encrypt } from "../utils/encryption.js";
+import AppError from "../utils/AppError.js";
+import logger from "../utils/logger.js";
 
 export const userService = {
   async createUser(userData) {
@@ -16,7 +18,9 @@ export const userService = {
     });
 
     if (existingUser) {
-      throw new Error("User with this username or email already exists");
+      throw new AppError("User with this username or email already exists", {
+        status: 409,
+      });
     }
 
     // Hash password
@@ -58,14 +62,14 @@ export const userService = {
     });
 
     if (!user) {
-      throw new Error("Invalid credentials");
+      throw new AppError("Invalid credentials", { status: 401 });
     }
 
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      throw new Error("Invalid credentials");
+      throw new AppError("Invalid credentials", { status: 401 });
     }
 
     // Update last login
@@ -116,7 +120,7 @@ export const userService = {
       );
 
       if (decoded.type !== "refresh") {
-        throw new Error("Invalid token type");
+        throw new AppError("Invalid refresh token", { status: 401 });
       }
 
       // Get user from database (auto-decrypted by middleware)
@@ -132,7 +136,7 @@ export const userService = {
       });
 
       if (!user) {
-        throw new Error("User not found");
+        throw new AppError("User not found", { status: 401 });
       }
 
       // Generate new access token
@@ -147,10 +151,21 @@ export const userService = {
         accessToken,
       };
     } catch (error) {
-      if (error.name?.includes("Prisma") || error.message?.includes("fetch failed")) {
-        throw new Error(`Database connection error: ${error.message}`);
+      if (
+        error?.name?.includes("Prisma") ||
+        error?.message?.includes("fetch failed")
+      ) {
+        logger.error("[Auth] Refresh token failed due to database connectivity", {
+          message: error?.message,
+          name: error?.name,
+          stack: error?.stack,
+        });
+        throw new AppError("Service temporarily unavailable. Please try again.", {
+          status: 503,
+        });
       }
-      throw new Error("Invalid refresh token");
+
+      throw new AppError("Invalid refresh token", { status: 401 });
     }
   },
 
@@ -198,22 +213,22 @@ export const userService = {
     });
 
     if (!user) {
-      throw new Error("Invalid request");
+      throw new AppError("Invalid request", { status: 400 });
     }
 
     // Verify OTP exists and hasn't expired
     if (!user.resetPasswordOtp || !user.resetPasswordExpires) {
-      throw new Error("Invalid or expired reset code");
+      throw new AppError("Invalid or expired reset code", { status: 400 });
     }
 
     if (new Date() > user.resetPasswordExpires) {
-      throw new Error("Reset code has expired");
+      throw new AppError("Reset code has expired", { status: 400 });
     }
 
     // Verify OTP matches hash
     const isOtpValid = await bcrypt.compare(otp, user.resetPasswordOtp);
     if (!isOtpValid) {
-      throw new Error("Invalid reset code");
+      throw new AppError("Invalid reset code", { status: 400 });
     }
 
     // Hash the new password

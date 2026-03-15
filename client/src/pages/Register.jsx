@@ -13,15 +13,13 @@ const Register = () => {
 
   return (
     <div
-      className={`min-h-screen ${isDark ? "bg-gray-900" : "bg-white"} flex items-center justify-center px-4 sm:px-6 lg:px-8`}
+      className={`min-h-screen ${isDark ? "bg-gray-900" : "bg-white"} flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8 overflow-y-auto`}
     >
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-md w-full space-y-6">
         {/* Header */}
         <div className="text-center">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <div className="p-2 bg-blue-600 rounded-lg">
-              <BarChart3 className="w-6 h-6 text-white" />
-            </div>
+            <img src="/logo.svg" alt="TaskForge" className="w-8 h-8" />
             <h1
               className={`text-4xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
             >
@@ -29,7 +27,7 @@ const Register = () => {
             </h1>
           </div>
           <p
-            className={`text-lg ${isDark ? "text-gray-300" : "text-gray-600"} mb-8`}
+            className={`text-lg ${isDark ? "text-gray-300" : "text-gray-600"} mb-4`}
           >
             Shape ideas into results.
           </p>
@@ -37,9 +35,9 @@ const Register = () => {
 
         {/* Registration Form */}
         <div
-          className={`${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} shadow-lg rounded-lg border p-8`}
+          className={`${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} shadow-lg rounded-lg border p-6`}
         >
-          <div className="mb-6">
+          <div className="mb-4">
             <h2
               className={`text-2xl font-semibold ${isDark ? "text-white" : "text-gray-900"} text-center`}
             >
@@ -76,11 +74,11 @@ const Register = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label
                 htmlFor="username"
-                className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-2`}
+                className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
               >
                 Username
               </label>
@@ -105,7 +103,7 @@ const Register = () => {
             <div>
               <label
                 htmlFor="name"
-                className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-2`}
+                className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
               >
                 Full Name
               </label>
@@ -130,7 +128,7 @@ const Register = () => {
             <div>
               <label
                 htmlFor="email"
-                className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-2`}
+                className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
               >
                 Email address
               </label>
@@ -155,7 +153,7 @@ const Register = () => {
             <div>
               <label
                 htmlFor="password"
-                className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-2`}
+                className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
               >
                 Password
               </label>
@@ -180,7 +178,7 @@ const Register = () => {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-2`}
+                className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-1`}
               >
                 Confirm Password
               </label>
@@ -215,7 +213,7 @@ const Register = () => {
             </button>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-4">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div
@@ -231,7 +229,7 @@ const Register = () => {
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-4">
               <button
                 onClick={() => navigate("/login")}
                 className={`w-full flex justify-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors ${

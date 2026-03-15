@@ -2,6 +2,8 @@ import prisma from "../../config/database.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { createNotification } from "../notifications/notification.controller.js";
 import { hash } from "../../utils/hashing.js";
+import logger from "../../utils/logger.js";
+import AppError from "../../utils/AppError.js";
 import {
   emitTaskCreated,
   emitTaskUpdated,
@@ -165,8 +167,15 @@ export const getTask = asyncHandler(async (req, res) => {
 
 // Create new task
 export const createTask = asyncHandler(async (req, res) => {
-  const { title, description, projectId, assigneeId, additionalAssigneeIds, priority, dueDate } =
-    req.body;
+  const {
+    title,
+    description,
+    projectId,
+    assigneeId,
+    additionalAssigneeIds,
+    priority,
+    dueDate,
+  } = req.body;
 
   // Validate required fields
   if (!title || !projectId) {
@@ -178,7 +187,8 @@ export const createTask = asyncHandler(async (req, res) => {
 
   // Validate HIGH priority requires at least 2 assignees total
   if (priority === "HIGH" || priority === "URGENT") {
-    const totalAssignees = (assigneeId ? 1 : 0) + (additionalAssigneeIds?.length || 0);
+    const totalAssignees =
+      (assigneeId ? 1 : 0) + (additionalAssigneeIds?.length || 0);
     if (totalAssignees < 2) {
       return res.status(400).json({
         success: false,
@@ -273,7 +283,12 @@ export const createTask = asyncHandler(async (req, res) => {
       taskId: task.id,
       projectId: projectId,
       io,
-    }).catch(err => console.error("Error creating task assignment notification:", err));
+    }).catch((err) =>
+      logger.warn("Task assignment notification failed", {
+        err,
+        taskId: task.id,
+      }),
+    );
   }
 
   // Send notifications to additional assignees
@@ -288,7 +303,13 @@ export const createTask = asyncHandler(async (req, res) => {
           taskId: task.id,
           projectId: projectId,
           io,
-        }).catch(err => console.error("Error creating additional assignee notification:", err));
+        }).catch((err) =>
+          logger.warn("Additional assignee notification failed", {
+            err,
+            taskId: task.id,
+            userId: additionalId,
+          }),
+        );
       }
     }
   }
@@ -336,10 +357,18 @@ export const updateTask = asyncHandler(async (req, res) => {
   // Validate HIGH priority requires at least 2 assignees total
   const newPriority = taskUpdates.priority || task.priority;
   if (newPriority === "HIGH" || newPriority === "URGENT") {
-    const finalAssigneeId = taskUpdates.assigneeId !== undefined ? taskUpdates.assigneeId : task.assigneeId;
-    const finalAdditionalAssignees = taskUpdates.additionalAssigneeIds !== undefined ? taskUpdates.additionalAssigneeIds : task.additionalAssigneeIds;
+    const finalAssigneeId =
+      taskUpdates.assigneeId !== undefined
+        ? taskUpdates.assigneeId
+        : task.assigneeId;
+    const finalAdditionalAssignees =
+      taskUpdates.additionalAssigneeIds !== undefined
+        ? taskUpdates.additionalAssigneeIds
+        : task.additionalAssigneeIds;
 
-    const totalAssignees = (finalAssigneeId && finalAssigneeId !== null ? 1 : 0) + (finalAdditionalAssignees?.length || 0);
+    const totalAssignees =
+      (finalAssigneeId && finalAssigneeId !== null ? 1 : 0) +
+      (finalAdditionalAssignees?.length || 0);
     if (totalAssignees < 2) {
       return res.status(400).json({
         success: false,
@@ -347,7 +376,7 @@ export const updateTask = asyncHandler(async (req, res) => {
       });
     }
   }
-    task.project.managerId === req.user.id ||
+  task.project.managerId === req.user.id ||
     task.assigneeId === req.user.id ||
     req.user.role === "ADMIN";
 
@@ -360,9 +389,11 @@ export const updateTask = asyncHandler(async (req, res) => {
 
   // Log change note if provided (for future audit trail)
   if (changeNote) {
-    console.log(
-      `📝 Change requested for task ${id} by ${req.user.username}: ${changeNote}`,
-    );
+    logger.info("[Task] Change requested", {
+      taskId: id,
+      requestedByUserId: req.user?.id || null,
+      changeNote,
+    });
   }
 
   const updatedTask = await prisma.task.update({
@@ -463,7 +494,7 @@ export const moveTask = asyncHandler(async (req, res) => {
     });
 
     if (!task) {
-      throw new Error("Task not found");
+      throw new AppError("Task not found", { status: 404 });
     }
 
     // Check move permissions based on role and task ownership
@@ -482,9 +513,9 @@ export const moveTask = asyncHandler(async (req, res) => {
     };
 
     if (!canMove()) {
-      const error = new Error("Permission denied to move this task");
-      error.code = "PERMISSION_DENIED";
-      throw error;
+      throw new AppError("Permission denied to move this task", {
+        status: 403,
+      });
     }
 
     // Update task status and position
@@ -501,19 +532,29 @@ export const moveTask = asyncHandler(async (req, res) => {
     // Require proof for IN_REVIEW
     if (status === "IN_REVIEW") {
       const proofFiles = req.files || [];
-      const proofPaths = proofFiles.map(f => f.path.replace(/\\/g, "/"));
+      const proofPaths = proofFiles.map(
+        (f) => "/" + f.path.replace(/\\/g, "/"),
+      );
 
-      if (proofPaths.length === 0 && !task.proofAttachment && (!task.proofAttachments || task.proofAttachments.length === 0)) {
-        const error = new Error("At least 1 proof photo is required to move task to review");
-        error.status = 400;
-        throw error;
+      if (
+        proofPaths.length === 0 &&
+        !task.proofAttachment &&
+        (!task.proofAttachments || task.proofAttachments.length === 0)
+      ) {
+        throw new AppError(
+          "At least 1 proof photo is required to move task to review",
+          { status: 400 },
+        );
       }
 
       if (proofPaths.length > 0) {
         // Set first as legacy single proof for backward compat
         updateData.proofAttachment = proofPaths[0];
         // Store all proofs in the array field
-        updateData.proofAttachments = [...(task.proofAttachments || []), ...proofPaths];
+        updateData.proofAttachments = [
+          ...(task.proofAttachments || []),
+          ...proofPaths,
+        ];
       }
     }
 
@@ -629,7 +670,7 @@ export const assignTask = asyncHandler(async (req, res) => {
   });
 
   const io = req.app.get("io");
-  
+
   if (assigneeId && assigneeId !== req.user.id) {
     await createNotification({
       userId: assigneeId,
@@ -639,7 +680,12 @@ export const assignTask = asyncHandler(async (req, res) => {
       taskId: task.id,
       projectId: task.projectId,
       io,
-    }).catch(err => console.error("Error creating task assignment notification:", err));
+    }).catch((err) =>
+      logger.warn("Task assignment notification failed", {
+        err,
+        taskId: task.id,
+      }),
+    );
   }
 
   emitTaskUpdated(io, task.projectId, updatedTask);
@@ -722,9 +768,7 @@ export const addTaskComment = asyncHandler(async (req, res) => {
   const { content } = req.body;
 
   const requestId = Math.random().toString(36).substring(7);
-  console.log(
-    `[${new Date().toISOString()}] addTaskComment called. RequestID: ${requestId}, TaskID: ${id}`,
-  );
+  logger.debug("[Task] addTaskComment called", { requestId, taskId: id });
 
   const task = await prisma.task.findUnique({
     where: { id },
@@ -784,9 +828,10 @@ export const addTaskComment = asyncHandler(async (req, res) => {
   const mentionRegex = /@([\w.-]+)/g; // also supporting dash in usernames just in case
   const mentions = [...cleanContent.matchAll(mentionRegex)];
 
-  console.log("💬 NEW COMMENT ADDED:", {
-    originalContent: content,
-    cleanContent,
+  logger.debug("[Task] Comment added", {
+    taskId: id,
+    requestId,
+    contentLength: typeof content === "string" ? content.length : null,
     mentionsFound: mentions.map((m) => m[1]),
   });
 
@@ -829,9 +874,11 @@ export const addTaskComment = asyncHandler(async (req, res) => {
           });
 
           if (!existingNotification) {
-            console.log(
-              `📢 Creating MENTION notification for user ${user.username} (${user.id}) on task ${id}, io available: ${!!io}`,
-            );
+            logger.debug("[Task] Creating mention notification", {
+              taskId: id,
+              mentionedUserId: user.id,
+              ioAvailable: !!io,
+            });
 
             // Background the real-time notification creation to not block the event loop entirely
             createNotification({
@@ -843,18 +890,20 @@ export const addTaskComment = asyncHandler(async (req, res) => {
               projectId: task.projectId,
               io,
             }).catch((err) =>
-              console.error(
-                "Error creating mention notification in background:",
+              logger.warn("Mention notification creation failed (background)", {
                 err,
-              ),
+                taskId: id,
+                mentionedUserId: user.id,
+              }),
             );
           } else {
-            console.log(
-              `Skipping duplicate mention notification for user ${user.username} on task ${id}`,
-            );
+            logger.debug("[Task] Skipping duplicate mention notification", {
+              taskId: id,
+              mentionedUserId: user.id,
+            });
           }
         } catch (error) {
-          console.error("Error processing mention notification:", error);
+          logger.error("Error processing mention notification:", error);
         }
       }
     }

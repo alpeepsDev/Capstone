@@ -4,7 +4,12 @@ import { userService } from "../services/user.service.js";
 export const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
+    let token = authHeader && authHeader.split(" ")[1];
+
+    // Also check for token in query or body (for uploads)
+    if (!token) {
+      token = req.query?.token || req.body?.token;
+    }
 
     if (!token) {
       return res.status(401).json({

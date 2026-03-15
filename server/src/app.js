@@ -6,6 +6,8 @@ import dotenv from "dotenv";
 import path from "path";
 import prisma from "./config/database.js";
 import { fileURLToPath } from "url";
+import morgan from "morgan";
+import logger from "./utils/logger.js";
 
 import userRoutes from "./routes/admin/user.routes.js"; // User authentication routes
 import taskRoutes from "./routes/tasks/index.js";
@@ -16,6 +18,8 @@ import workLogRoutes from "./routes/worklog/index.js";
 import budgetRoutes from "./routes/budget/index.js";
 import aiRoutes from "./routes/ai/index.js"; // AI includes assistant, insights, preferences
 import searchRoutes from "./routes/search.routes.js";
+import reportRoutes from "./routes/report.routes.js";
+import logsRoutes from "./routes/logs.routes.js";
 // Backward-compatible imports for direct access
 import assistantRoutes from "./routes/ai/assistantRoutes.js";
 import insightRoutes from "./routes/ai/insightRoutes.js";
@@ -70,6 +74,16 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// HTTP request logging
+app.use(
+  morgan(":method :url :status :res[content-length] - :response-time ms", {
+    skip: (req) => (req.originalUrl || req.url || "").startsWith("/api/v1/logs/"),
+    stream: {
+      write: (message) => logger.http(message.trim()),
+    },
+  }),
+);
+
 // Serve uploaded files
 app.use("/uploads", express.static("uploads"));
 
@@ -84,13 +98,12 @@ app.use(optionalAuth);
 if (process.env.RATE_LIMITING_ENABLED !== "false") {
   app.use(rateLimit);
 } else {
-  console.info(
+  logger.info(
     "Rate limiting is disabled. Set RATE_LIMITING_ENABLED=true (or unset) to enable enforcement.",
   );
 }
 
-// Routes - Organized by Feature
-
+// Routes
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/tasks", taskRoutes); // Includes task, taskHistory, taskRelation, taskTemplate
 app.use("/api/v1/worklogs", workLogRoutes);
@@ -100,13 +113,15 @@ app.use("/api/v1/users", userRoutes); // User authentication (login, register, p
 app.use("/api/v1/admin", adminRoutes); // Admin operations
 app.use("/api/v1/ai", aiRoutes); // Includes assistant, insights, AI preferences
 app.use("/api/v1/search", searchRoutes); // Global search
+app.use("/api/v1/reports", reportRoutes); // Report generation
+app.use("/api/v1/logs", logsRoutes); // Dev-only client log forwarding
 app.use("/api/v1/assistant", assistantRoutes); // Maps to ai/assistant/*
 app.use("/api/v1/insights", insightRoutes); // Maps to ai/insights/*
 app.use("/api/v1/ai-preferences", aiPreferenceRoutes); // Maps to ai/preferences/*
 
 // Initialize Nova Automation Scheduler (BullMQ)
 initScheduler().catch((err) => {
-  console.error("[Nova Scheduler] Failed to initialize:", err);
+  logger.error("[Nova Scheduler] Failed to initialize:", err);
 });
 
 // Health check endpoint
@@ -116,7 +131,7 @@ app.get("/api/health", async (req, res) => {
     await prisma.$queryRaw`SELECT 1`;
     dbStatus = "connected";
   } catch (error) {
-    console.error("[Health Check] Database test failed:", error.message);
+    logger.error("[Health Check] Database test failed:", error.message);
     dbStatus = "disconnected";
   }
 

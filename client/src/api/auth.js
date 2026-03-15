@@ -1,4 +1,43 @@
 import api from "./index.js";
+import logger from "../utils/logger.js";
+
+const toServiceError = (
+  error,
+  fallbackMessage,
+  networkMessage = "Network error. Please check your connection and ensure the server is running.",
+) => {
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    "status" in error &&
+    !error.response &&
+    !error.request
+  ) {
+    return error;
+  }
+
+  if (error?.response) {
+    const data = error.response.data;
+    const base = data && typeof data === "object" ? data : {};
+    const message =
+      base?.message ||
+      (typeof data === "string" ? data : undefined) ||
+      fallbackMessage;
+
+    return {
+      ...base,
+      message,
+      status: error.response.status,
+    };
+  }
+
+  if (error?.request) {
+    return { message: networkMessage };
+  }
+
+  return { message: error?.message || fallbackMessage };
+};
 
 export const authService = {
   // Storage helper methods
@@ -7,24 +46,21 @@ export const authService = {
   },
 
   setTokens(accessToken, refreshToken, persistent = true) {
-    const storage = this.getStorage(persistent);
-    const otherStorage = this.getStorage(!persistent);
+    // Always use localStorage for tokens to ensure multi-tab synchronization
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+    localStorage.setItem("persistent", persistent.toString());
 
-    // Clear tokens from the other storage type
-    otherStorage.removeItem("accessToken");
-    otherStorage.removeItem("refreshToken");
-    otherStorage.removeItem("user");
-    otherStorage.removeItem("persistent");
-
-    // Set tokens in the chosen storage
-    storage.setItem("accessToken", accessToken);
-    storage.setItem("refreshToken", refreshToken);
-    storage.setItem("persistent", persistent.toString());
+    // Clean up sessionStorage to avoid conflicts/stale data
+    sessionStorage.removeItem("accessToken");
+    sessionStorage.removeItem("refreshToken");
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("persistent");
   },
 
   setCurrentUser(user, persistent = true) {
-    const storage = this.getStorage(persistent);
-    storage.setItem("user", JSON.stringify(user));
+    // Always use localStorage for user data for multi-tab sync
+    localStorage.setItem("user", JSON.stringify(user));
   },
 
   isPersistent() {
@@ -59,21 +95,7 @@ export const authService = {
 
       return response.data;
     } catch (error) {
-      // Improved error handling
-      if (error.response) {
-        // Server responded with error status
-        const errorData = error.response.data;
-        throw errorData || { message: "Login failed" };
-      } else if (error.request) {
-        // Request was made but no response received
-        throw {
-          message:
-            "Network error. Please check your connection and ensure the server is running.",
-        };
-      } else {
-        // Something else happened
-        throw { message: error.message || "Login failed" };
-      }
+      throw toServiceError(error, "Login failed");
     }
   },
 
@@ -135,11 +157,7 @@ export const authService = {
       const response = await api.get("/users/profile");
       return response.data;
     } catch (error) {
-      if (error.response) {
-        throw error.response.data || { message: "Failed to fetch profile" };
-      } else {
-        throw { message: "Failed to fetch profile" };
-      }
+      throw toServiceError(error, "Failed to fetch profile", "Failed to fetch profile");
     }
   },
 
@@ -175,6 +193,12 @@ export const authService = {
 
   async uploadAvatar(formData) {
     try {
+      // Add token to form data to satisfy the new backend requirement
+      const token = this.getAccessToken();
+      if (token) {
+        formData.append("token", token);
+      }
+
       const response = await api.post("/users/avatar", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -199,16 +223,23 @@ export const authService = {
     }
   },
 
-  logout() {
-    // Clear tokens from both storage types
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
-    localStorage.removeItem("persistent");
-    sessionStorage.removeItem("accessToken");
-    sessionStorage.removeItem("refreshToken");
-    sessionStorage.removeItem("user");
-    sessionStorage.removeItem("persistent");
+  async logout() {
+    try {
+      // Notify the backend to invalidate the session/token
+      await api.post("/users/logout");
+    } catch (error) {
+      logger.warn("Backend logout failed, continuing with client-side cleanup", error);
+    } finally {
+      // Clear tokens from both storage types
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      localStorage.removeItem("persistent");
+      sessionStorage.removeItem("accessToken");
+      sessionStorage.removeItem("refreshToken");
+      sessionStorage.removeItem("user");
+      sessionStorage.removeItem("persistent");
+    }
   },
 
   getCurrentUser() {

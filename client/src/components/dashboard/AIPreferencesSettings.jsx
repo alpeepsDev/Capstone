@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { getAIPreferences, updateAIPreferences } from "../../api/aiPreferences";
 import { Loader2 } from "lucide-react";
+import logger from "../../utils/logger.js";
 
 /**
  * AI Preferences Settings Component
@@ -24,7 +25,7 @@ const AIPreferencesSettings = ({ isDark }) => {
       const response = await getAIPreferences();
       setPrefs(response.data);
     } catch (error) {
-      console.error("Failed to fetch preferences:", error);
+      logger.error("Failed to fetch preferences:", error);
       toast.error("Could not load AI preferences");
     } finally {
       setLoading(false);
@@ -45,7 +46,7 @@ const AIPreferencesSettings = ({ isDark }) => {
       await updateAIPreferences({ [key]: newValue });
       toast.success("Preference updated");
     } catch (error) {
-      console.error("Failed to update preference:", error);
+      logger.error("Failed to update preference:", error);
       toast.error("Failed to save changes");
       // Revert on error
       setPrefs(oldPrefs);
@@ -68,7 +69,7 @@ const AIPreferencesSettings = ({ isDark }) => {
       await updateAIPreferences({ deadlineWarningDays: newDays });
       toast.success("Deadline warnings updated");
     } catch (error) {
-      console.error("Failed to update deadline warnings:", error);
+      logger.error("Failed to update deadline warnings:", error);
       toast.error("Failed to save changes");
       setPrefs(oldPrefs);
     }

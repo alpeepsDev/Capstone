@@ -1,10 +1,11 @@
 import React from "react";
 import { Toaster } from "react-hot-toast";
 import { useTheme } from "../../context/useTheme";
+import logger from "../../utils/logger.js";
 
 export const ThemedToaster = () => {
   const { isDark } = useTheme();
-  console.log("ThemedToaster isDark:", isDark);
+  logger.info("ThemedToaster isDark:", isDark);
 
   return (
     <Toaster

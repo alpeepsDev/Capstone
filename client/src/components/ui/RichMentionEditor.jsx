@@ -3,6 +3,7 @@ import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { useTheme } from "../../context";
 import { authService } from "../../api/auth";
+import logger from "../../utils/logger.js";
 
 const RichMentionEditor = ({
   value,
@@ -99,7 +100,7 @@ const RichMentionEditor = ({
         setShowDiffModal(true);
       }
     } catch (error) {
-      console.error("Proofreading error:", error);
+      logger.error("Proofreading error:", error);
     } finally {
       setIsProofreading(false);
     }
@@ -141,160 +142,7 @@ const RichMentionEditor = ({
       // Check if button already exists
       const existingButton = toolbarRef.current.querySelector(".nova-ai-btn");
       if (!existingButton) {
-        // Create separator
-        const separator = document.createElement("span");
-        separator.className = "ql-formats nova-separator";
-        separator.style.cssText = `
-          border-left: ${isDark ? "1px solid #374151" : "1px solid #e5e7eb"};
-          height: 20px;
-          margin: 0 4px;
-          display: inline-block;
-        `;
-
-        // Create language selector
-        const langContainer = document.createElement("span");
-        langContainer.className = "ql-formats";
-        const langSelect = document.createElement("select");
-        langSelect.className = "nova-lang-select";
-        langSelect.value = selectedLanguage;
-        langSelect.style.cssText = `
-          background: ${isDark ? "#374151" : "#f9fafb"};
-          border: 1px solid ${isDark ? "#4b5563" : "#d1d5db"};
-          border-radius: 4px;
-          padding: 2px 6px;
-          font-size: 13px;
-          color: ${isDark ? "#e5e7eb" : "#374151"};
-          cursor: pointer;
-        `;
-        ["en", "es", "fr", "de", "it", "pt", "zh", "ja"].forEach((lang) => {
-          const option = document.createElement("option");
-          option.value = lang;
-          option.textContent = lang.toUpperCase();
-          langSelect.appendChild(option);
-        });
-        langSelect.addEventListener("change", (e) =>
-          setSelectedLanguage(e.target.value),
-        );
-        langContainer.appendChild(langSelect);
-
-        // Create undo/redo buttons
-        const historyContainer = document.createElement("span");
-        historyContainer.className = "ql-formats";
-
-        const undoBtn = document.createElement("button");
-        undoBtn.className = "ql-undo nova-undo-btn";
-        undoBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/></svg>`;
-        undoBtn.title = "Undo (Ctrl+Z)";
-        undoBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          handleUndo();
-        });
-
-        const redoBtn = document.createElement("button");
-        redoBtn.className = "ql-redo nova-redo-btn";
-        redoBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6M3 17a9 9 0 019-9 9 9 0 016 2.3L21 13"/></svg>`;
-        redoBtn.title = "Redo (Ctrl+Y)";
-        redoBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          handleRedo();
-        });
-
-        historyContainer.appendChild(undoBtn);
-        historyContainer.appendChild(redoBtn);
-
-        // Create Nova AI button
-        const novaContainer = document.createElement("span");
-        novaContainer.className = "ql-formats";
-        const novaButton = document.createElement("button");
-        novaButton.className = "ql-nova-ai nova-ai-btn";
-        novaButton.type = "button"; // Prevent form submission
-        novaButton.title = "Nova Writing Assistant";
-        novaButton.innerHTML = `
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/>
-          </svg>
-        `;
-        novaButton.setAttribute("data-handler", "nova-proofread");
-        novaContainer.appendChild(novaButton);
-
-        // Append all to toolbar
-        toolbarRef.current.appendChild(separator);
-        toolbarRef.current.appendChild(langContainer);
-        toolbarRef.current.appendChild(historyContainer);
-        toolbarRef.current.appendChild(novaContainer);
-      }
-
-      // Update button states and attach fresh handlers
-      const undoBtn = toolbarRef.current.querySelector(".nova-undo-btn");
-      const redoBtn = toolbarRef.current.querySelector(".nova-redo-btn");
-      const novaBtn = toolbarRef.current.querySelector(".nova-ai-btn");
-
-      // Remove old event listeners and add fresh ones with current closure
-      if (undoBtn) {
-        const newUndoBtn = undoBtn.cloneNode(true);
-        undoBtn.parentNode.replaceChild(newUndoBtn, undoBtn);
-        newUndoBtn.disabled = historyIndex <= 0;
-        newUndoBtn.style.opacity = historyIndex <= 0 ? "0.5" : "1";
-        newUndoBtn.style.cursor = historyIndex <= 0 ? "not-allowed" : "pointer";
-        newUndoBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          handleUndo();
-        });
-      }
-
-      if (redoBtn) {
-        const newRedoBtn = redoBtn.cloneNode(true);
-        redoBtn.parentNode.replaceChild(newRedoBtn, redoBtn);
-        newRedoBtn.disabled = historyIndex >= history.length - 1;
-        newRedoBtn.style.opacity =
-          historyIndex >= history.length - 1 ? "0.5" : "1";
-        newRedoBtn.style.cursor =
-          historyIndex >= history.length - 1 ? "not-allowed" : "pointer";
-        newRedoBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          handleRedo();
-        });
-      }
-
-      if (novaBtn) {
-        const newNovaBtn = novaBtn.cloneNode(true);
-        novaBtn.parentNode.replaceChild(newNovaBtn, novaBtn);
-
-        // Don't disable, just style differently
-        const hasText = value && value.trim() && value !== "<p><br></p>";
-        newNovaBtn.style.background = isProofreading
-          ? "#8b5cf6"
-          : "transparent";
-        newNovaBtn.style.opacity = !hasText ? "0.5" : "1";
-        newNovaBtn.style.cursor =
-          isProofreading || !hasText ? "not-allowed" : "pointer";
-        newNovaBtn.style.borderRadius = "4px";
-        newNovaBtn.style.padding = "3px 5px";
-
-        const svg = newNovaBtn.querySelector("svg");
-        if (svg) {
-          svg.style.stroke = isProofreading
-            ? "#fff"
-            : isDark
-              ? "#d1d5db"
-              : "#4b5563";
-          svg.style.animation = isProofreading
-            ? "pulse 1.5s ease-in-out infinite"
-            : "none";
-        }
-
-        newNovaBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log("Nova button clicked!", {
-            hasText,
-            isProofreading,
-            value,
-          });
-          if (!isProofreading && hasText) {
-            handleProofread();
-          }
-        });
+        // No extra toolbar buttons needed
       }
     }
   }, [

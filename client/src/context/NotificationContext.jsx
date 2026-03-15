@@ -8,6 +8,7 @@ import React, {
 import { getNotifications } from "../api/notifications.js";
 import { useAuth } from "./AuthContext.jsx";
 import webSocketService from "../services/websocket.service.js";
+import logger from "../utils/logger.js";
 
 const NotificationContext = createContext();
 
@@ -38,7 +39,7 @@ export const NotificationProvider = ({ children }) => {
   const fetchNotifications = useCallback(
     async (params = {}) => {
       if (!user || authLoading) {
-        console.log(
+        logger.info(
           "NotificationContext: No user found or auth still loading, skipping notification fetch",
         );
         return;
@@ -83,10 +84,10 @@ export const NotificationProvider = ({ children }) => {
 
         setNotifications(deduped);
       } catch (error) {
-        console.error("Failed to fetch notifications:", error);
+        logger.error("Failed to fetch notifications:", error);
         // If it's an authentication error, clear tokens and force re-login
         if (error.response?.status === 401 || error.response?.status === 403) {
-          console.log(
+          logger.info(
             "Authentication error - tokens may be expired. Clearing tokens...",
           );
 
@@ -189,7 +190,7 @@ export const NotificationProvider = ({ children }) => {
         sessionStorage.getItem("accessToken");
 
       if (accessToken) {
-        console.log("🔌 Initializing WebSocket connection for user:", user.id);
+        logger.info("🔌 Initializing WebSocket connection for user:", user.id);
 
         // Connect to WebSocket
         webSocketService.connect(accessToken);
@@ -200,7 +201,7 @@ export const NotificationProvider = ({ children }) => {
         // Request notification permission if not already granted
         if (Notification.permission === "default") {
           Notification.requestPermission().then((permission) => {
-            console.log("Notification permission:", permission);
+            logger.info("Notification permission:", permission);
           });
         }
 
@@ -208,14 +209,14 @@ export const NotificationProvider = ({ children }) => {
         fetchNotifications();
 
         return () => {
-          console.log("🔌 Cleaning up WebSocket listeners for user:", user.id);
+          logger.info("🔌 Cleaning up WebSocket listeners for user:", user.id);
           // Cleanup WebSocket listeners
           webSocketService.offNotification(handleRealtimeNotification);
         };
       }
     } else if (!user) {
       // Disconnect WebSocket when user logs out
-      console.log("🔌 Disconnecting WebSocket - user logged out");
+      logger.info("🔌 Disconnecting WebSocket - user logged out");
       webSocketService.disconnect();
     }
   }, [user, authLoading]); // Removed the callback dependencies to prevent reconnection loops
@@ -233,7 +234,7 @@ export const NotificationProvider = ({ children }) => {
       // Check if notification already exists (exact duplicate)
       const existingNotification = prev.find((n) => n.id === notification.id);
       if (existingNotification) {
-        console.log(
+        logger.info(
           "🔄 Notification already exists in addNotification, skipping duplicate:",
           notification.id,
         );
@@ -258,7 +259,7 @@ export const NotificationProvider = ({ children }) => {
 
         // If we removed something, it means we are replacing/updating
         if (filtered.length < updatedNotifications.length) {
-          console.log(
+          logger.info(
             "🔄 Removed existing notification(s) for same task in addNotification to prevent duplicates:",
             taskId,
           );

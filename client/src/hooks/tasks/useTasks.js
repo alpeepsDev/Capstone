@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { tasksApi } from "../../api/tasks.js";
 import webSocketService from "../../services/websocket.service.js";
+import logger from "../../utils/logger.js";
 
 export const useTasks = (projectId = null) => {
   const [tasks, setTasks] = useState([]);
@@ -18,7 +19,7 @@ export const useTasks = (projectId = null) => {
       setTasks(Array.isArray(fetchedTasks) ? fetchedTasks : []);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
-      console.error("Failed to fetch tasks:", err);
+      logger.error("Failed to fetch tasks:", err);
     } finally {
       setLoading(false);
     }

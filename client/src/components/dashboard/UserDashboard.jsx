@@ -39,6 +39,7 @@ import {
 import { useSearchParams } from "react-router-dom"; // Add import
 import { Star } from "lucide-react";
 import InsightsWidget from "../insights/InsightsWidget";
+import logger from "../../utils/logger.js";
 
 // Loading component for lazy-loaded views
 const ViewLoadingSpinner = () => (
@@ -138,7 +139,7 @@ const UserDashboard = ({
             const response = await tasksApi.getTask(taskId);
             if (response.data) taskToOpen = response.data;
           } catch (error) {
-            console.error("Failed to fetch task from API:", error);
+            logger.error("Failed to fetch task from API:", error);
           }
         }
 
@@ -173,7 +174,7 @@ const UserDashboard = ({
               const response = await tasksApi.getTask(taskId);
               if (response.data) taskToOpen = response.data;
             } catch (error) {
-              console.error("Failed to fetch task from API:", error);
+              logger.error("Failed to fetch task from API:", error);
             }
           }
 
@@ -325,8 +326,8 @@ const UserDashboard = ({
         return; // Silent return for same-column moves
       }
 
-      // If moving to IN_REVIEW and user is USER, require proof photo
-      if (user?.role === "USER" && newStatus === "IN_REVIEW") {
+      // If moving to IN_REVIEW, require proof photo
+      if (newStatus === "IN_REVIEW") {
         setProofModalConfig({
           isOpen: true,
           taskId,
@@ -352,7 +353,7 @@ const UserDashboard = ({
         );
       }
     } catch (error) {
-      console.error("Failed to move task:", error);
+      logger.error("Failed to move task:", error);
       toast.error("Failed to move task");
     }
   };
@@ -361,8 +362,13 @@ const UserDashboard = ({
     try {
       const { taskId, newStatus } = proofModalConfig;
       await updateTaskStatus(taskId, newStatus, null, file);
-      
-      setProofModalConfig({ isOpen: false, taskId: null, newStatus: null, task: null });
+
+      setProofModalConfig({
+        isOpen: false,
+        taskId: null,
+        newStatus: null,
+        task: null,
+      });
 
       toast.success(
         "Task moved to In Review! Your manager will review and approve when complete.",
@@ -371,7 +377,7 @@ const UserDashboard = ({
         },
       );
     } catch (error) {
-      console.error("Failed to move task:", error);
+      logger.error("Failed to move task:", error);
       toast.error("Failed to move task and upload proof");
     }
   };
@@ -381,7 +387,7 @@ const UserDashboard = ({
       await deleteTask(taskId);
       toast.success("Task deleted successfully");
     } catch (error) {
-      console.error("Failed to delete task:", error);
+      logger.error("Failed to delete task:", error);
       toast.error("Failed to delete task");
     }
   };
@@ -396,19 +402,15 @@ const UserDashboard = ({
 
   return (
     <div
-      className={`flex ${activeView === "budget" || activeView === "project-analytics" ? "h-auto min-h-full" : "h-full"} ${isDark ? "bg-gray-900" : "bg-gray-50"}`}
+      className={`flex min-h-full h-auto ${isDark ? "bg-gray-900" : "bg-gray-50"}`}
     >
-      <div
-        className={`flex-1 flex flex-col ${activeView === "budget" || activeView === "project-analytics" ? "overflow-visible" : "overflow-hidden"}`}
-      >
+      <div className={`flex-1 flex flex-col`}>
         {/* Content Area */}
-        <div
-          className={`flex-1 ${activeView === "budget" || activeView === "project-analytics" ? "overflow-visible" : "overflow-hidden"}`}
-        >
+        <div className={`flex-1 flex flex-col`}>
           {!selectedProjectId ? (
             // Empty state
             // Project Selection Grid
-            <div className="h-full overflow-y-auto p-6">
+            <div className="h-full overflow-y-auto px-4 lg:px-6 py-6">
               <div className="max-w-7xl mx-auto">
                 {/* Nova Insights Widget - Hide on favorites view */}
                 {activeView !== "favorites" && (
@@ -531,87 +533,63 @@ const UserDashboard = ({
                       </div>
                     </motion.div>
                   ))}
-
-                  {/* Create New Project Card (Optional placeholder) */}
-                  <motion.div
-                    variants={{
-                      hidden: { opacity: 0, y: 20 },
-                      show: { opacity: 1, y: 0 },
-                    }}
-                    className={`rounded-xl border-2 border-dashed flex flex-col items-center justify-center p-6 text-center transition-colors ${
-                      isDark
-                        ? "border-gray-700 hover:border-gray-600 hover:bg-gray-800/50"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    <div
-                      className={`p-3 rounded-full mb-3 ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
-                    >
-                      <Plus
-                        className={`w-6 h-6 ${isDark ? "text-gray-400" : "text-gray-500"}`}
-                      />
-                    </div>
-                    <p
-                      className={`font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}
-                    >
-                      Create New Project
-                    </p>
-                    <p
-                      className={`text-xs mt-1 ${isDark ? "text-gray-500" : "text-gray-500"}`}
-                    >
-                      Contact your admin to create a new project
-                    </p>
-                  </motion.div>
                 </motion.div>
               </div>
             </div>
           ) : (
-            <div
-              className={`flex-1 flex flex-col min-h-0 space-y-1 ${activeView === "budget" || activeView === "project-analytics" ? "overflow-visible h-auto" : "overflow-hidden"}`}
-            >
+            <div className={`flex-1 flex flex-col min-h-0 space-y-1`}>
               {/* View Tabs */}
               <div
-                className={`flex gap-1.5 p-1 rounded-md ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+                className={`sticky top-0 z-30 ${isDark ? "bg-gray-900/95" : "bg-gray-50/95"} backdrop-blur-sm px-4 lg:px-6 py-4 transition-colors duration-300`}
               >
-                {[
-                  { id: "table", label: "Table", icon: List },
-                  { id: "gantt", label: "Timeline", icon: BarChart3 },
-                  { id: "kanban", label: "Board", icon: Grid3X3 },
-                  { id: "calendar", label: "Calendar", icon: Calendar },
-                  { id: "project-analytics", label: "Analytics", icon: Zap },
-                  { id: "budget", label: "Budget", icon: DollarSign },
-                ].map((view) => (
-                  <button
-                    key={view.id}
-                    onClick={() => handleViewChange(view.id)}
-                    className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors z-10 ${
-                      activeView === view.id
-                        ? isDark
-                          ? "text-white"
-                          : "text-white"
-                        : isDark
-                          ? "text-gray-400 hover:text-white"
-                          : "text-gray-600 hover:text-gray-900"
-                    }`}
-                  >
-                    {activeView === view.id && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute inset-0 bg-blue-600 rounded-md -z-10"
-                        transition={{
-                          type: "spring",
-                          stiffness: 500,
-                          damping: 30,
-                        }}
-                      />
-                    )}
-                    <view.icon className="w-3.5 h-3.5" />
-                    {view.label}
-                  </button>
-                ))}
+                <div
+                  className={`flex gap-1.5 p-1 rounded-md max-w-fit ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+                >
+                  {[
+                    { id: "table", label: "Table", icon: List },
+                    { id: "gantt", label: "Gannt Chart", icon: BarChart3 },
+                    { id: "kanban", label: "Board", icon: Grid3X3 },
+                    { id: "calendar", label: "Calendar", icon: Calendar },
+                    { id: "project-analytics", label: "Analytics", icon: Zap },
+                    (user?.role === "MANAGER" || user?.role === "ADMIN") && {
+                      id: "budget",
+                      label: "Budget",
+                      icon: DollarSign,
+                    },
+                  ]
+                    .filter(Boolean)
+                    .map((view) => (
+                      <button
+                        key={view.id}
+                        onClick={() => handleViewChange(view.id)}
+                        className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors z-10 ${
+                          activeView === view.id
+                            ? isDark
+                              ? "text-white"
+                              : "text-white"
+                            : isDark
+                              ? "text-gray-400 hover:text-white"
+                              : "text-gray-600 hover:text-gray-900"
+                        }`}
+                      >
+                        {activeView === view.id && (
+                          <motion.div
+                            layoutId="activeTab"
+                            className="absolute inset-0 bg-blue-600 rounded-md -z-10"
+                            transition={{
+                              type: "spring",
+                              stiffness: 500,
+                              damping: 30,
+                            }}
+                          />
+                        )}
+                        <view.icon className="w-3.5 h-3.5" />
+                        {view.label}
+                      </button>
+                    ))}
+                </div>
               </div>
 
-              {/* Views */}
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeView}
@@ -619,157 +597,155 @@ const UserDashboard = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className={`flex-1 min-h-0 flex flex-col ${activeView === "budget" || activeView === "project-analytics" ? "h-auto overflow-visible" : "h-full overflow-hidden"}`}
+                  className={`flex-1 flex flex-col min-h-0`}
                 >
-                  {(activeView === "table" || activeView === "dashboard") && (
-                    <TableView
-                      tasks={myTasks}
-                      loading={tasksLoading}
-                      user={user}
-                      isDark={isDark}
-                      onTaskClick={handleTaskClick}
-                      onStatusChange={handleTaskMove}
-                    />
-                  )}
+                  <div className="px-4 lg:px-6 pb-6">
+                    {(activeView === "table" || activeView === "dashboard") && (
+                      <TableView
+                        tasks={myTasks}
+                        loading={tasksLoading}
+                        user={user}
+                        isDark={isDark}
+                        onTaskClick={handleTaskClick}
+                        onStatusChange={handleTaskMove}
+                      />
+                    )}
 
-                  {activeView === "gantt" && (
-                    <Suspense
-                      fallback={
-                        <div
-                          className={`flex-1 rounded-lg border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
-                        >
-                          <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {[1, 2, 3, 4, 5].map((i) => (
-                              <div
-                                key={i}
-                                className="grid border-b border-gray-200 dark:border-gray-700"
-                                style={{ gridTemplateColumns: `150px 1fr` }}
-                              >
-                                <div className="p-2 border-r border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                                  <Skeleton className="w-1.5 h-1.5 rounded-full" />
-                                  <div className="flex-1">
-                                    <Skeleton className="h-3 w-3/4 mb-1 rounded" />
-                                    <Skeleton className="h-2 w-1/2 rounded" />
+                    {activeView === "gantt" && (
+                      <Suspense
+                        fallback={
+                          <div
+                            className={`flex-1 rounded-lg border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
+                          >
+                            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                              {[1, 2, 3, 4, 5].map((i) => (
+                                <div
+                                  key={i}
+                                  className="grid border-b border-gray-200 dark:border-gray-700"
+                                  style={{ gridTemplateColumns: `150px 1fr` }}
+                                >
+                                  <div className="p-2 border-r border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                                    <Skeleton className="w-1.5 h-1.5 rounded-full" />
+                                    <div className="flex-1">
+                                      <Skeleton className="h-3 w-3/4 mb-1 rounded" />
+                                      <Skeleton className="h-2 w-1/2 rounded" />
+                                    </div>
+                                  </div>
+                                  <div className="relative h-12 flex items-center px-4">
+                                    <Skeleton className="h-6 w-1/3 rounded" />
                                   </div>
                                 </div>
-                                <div className="relative h-12 flex items-center px-4">
-                                  <Skeleton className="h-6 w-1/3 rounded" />
-                                </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      }
-                    >
-                      <div
-                        className={`flex-1 rounded-lg border ${
-                          isDark
-                            ? "bg-gray-800 border-gray-700"
-                            : "bg-white border-gray-200"
-                        } overflow-hidden`}
+                        }
                       >
-                        <ModernGanttChart
-                          tasks={myTasks}
-                          loading={tasksLoading}
-                          onTaskClick={handleTaskClick}
-                        />
-                      </div>
-                    </Suspense>
-                  )}
-
-                  {activeView === "kanban" && (
-                    <Suspense
-                      fallback={
-                        <div className="flex-1 h-full overflow-hidden">
-                          <div className="grid grid-cols-4 gap-2.5 xl:gap-3 h-full">
-                            {[1, 2, 3, 4].map((i) => (
-                              <div
-                                key={i}
-                                className={`h-full rounded-xl flex flex-col ${isDark ? "bg-gray-800/50" : "bg-gray-100"}`}
-                              >
-                                <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                                  <Skeleton className="h-6 w-1/2 rounded" />
-                                </div>
-                                <div className="p-3 space-y-3 flex-1">
-                                  <Skeleton className="h-24 w-full rounded-lg" />
-                                  <Skeleton className="h-24 w-full rounded-lg" />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      }
-                    >
-                      <div className="flex-1 overflow-hidden min-h-0">
-                        <KanbanBoard
-                          tasks={myTasks}
-                          loading={tasksLoading}
-                          onTaskMove={handleTaskMove}
-                          onTaskClick={handleTaskClick}
-                          onTaskDelete={handleTaskDelete}
-                          hideHeader={true}
-                          projectId={selectedProjectId}
-                          userRole="USER"
-                          currentUserId={user?.id}
-                        />
-                      </div>
-                    </Suspense>
-                  )}
-
-                  {activeView === "calendar" && (
-                    <Suspense
-                      fallback={
                         <div
-                          className={`flex-1 rounded-lg border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
+                          className={`flex-1 min-h-0 flex flex-col rounded-lg border ${
+                            isDark
+                              ? "bg-gray-800 border-gray-700"
+                              : "bg-white border-gray-200"
+                          } overflow-hidden`}
                         >
-                          <div className="grid grid-cols-7 gap-[3px] p-2">
-                            {[...Array(35)].map((_, i) => (
-                              <div
-                                key={i}
-                                className={`min-h-[60px] p-1.5 rounded border ${isDark ? "bg-gray-800/50 border-gray-700" : "bg-gray-50 border-gray-200"}`}
-                              >
-                                <div className="flex justify-between mb-1">
-                                  <Skeleton className="h-3 w-4 rounded" />
-                                </div>
-                                <div className="space-y-1">
-                                  <Skeleton className="h-2 w-full rounded" />
-                                  <Skeleton className="h-2 w-3/4 rounded" />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+                          <ModernGanttChart
+                            tasks={myTasks}
+                            loading={tasksLoading}
+                            onTaskClick={handleTaskClick}
+                          />
                         </div>
-                      }
-                    >
-                      <div
-                        className={`flex-1 overflow-hidden rounded-lg border ${
-                          isDark
-                            ? "bg-gray-800 border-gray-700"
-                            : "bg-white border-gray-200"
-                        } overflow-hidden`}
+                      </Suspense>
+                    )}
+
+                    {activeView === "kanban" && (
+                      <Suspense
+                        fallback={
+                          <div className="flex-1 h-full overflow-hidden mt-4">
+                            <div className="grid grid-cols-4 gap-2.5 xl:gap-3 h-full">
+                              {[1, 2, 3, 4].map((i) => (
+                                <div
+                                  key={i}
+                                  className={`h-full rounded-xl flex flex-col ${isDark ? "bg-gray-800/50" : "bg-gray-100"}`}
+                                >
+                                  <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                                    <Skeleton className="h-6 w-1/2 rounded" />
+                                  </div>
+                                  <div className="p-3 space-y-3 flex-1">
+                                    <Skeleton className="h-24 w-full rounded-lg" />
+                                    <Skeleton className="h-24 w-full rounded-lg" />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        }
                       >
-                        <CalendarView
-                          tasks={myTasks}
-                          loading={tasksLoading}
-                          onTaskClick={handleTaskClick}
-                        />
-                      </div>
-                    </Suspense>
-                  )}
+                        <div className="flex-1 overflow-hidden min-h-0 mt-4">
+                          <KanbanBoard
+                            tasks={myTasks}
+                            loading={tasksLoading}
+                            onTaskMove={handleTaskMove}
+                            onTaskClick={handleTaskClick}
+                            onTaskDelete={handleTaskDelete}
+                            hideHeader={true}
+                            projectId={selectedProjectId}
+                            userRole="USER"
+                            currentUserId={user?.id}
+                          />
+                        </div>
+                      </Suspense>
+                    )}
 
-                  {activeView === "project-analytics" && (
-                    <div className="flex-1 h-full overflow-y-auto">
+                    {activeView === "calendar" && (
+                      <Suspense
+                        fallback={
+                          <div
+                            className={`flex-1 rounded-lg border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
+                          >
+                            <div className="grid grid-cols-7 gap-[3px] p-2">
+                              {[...Array(35)].map((_, i) => (
+                                <div
+                                  key={i}
+                                  className={`min-h-[60px] p-1.5 rounded border ${isDark ? "bg-gray-800/50 border-gray-700" : "bg-gray-50 border-gray-200"}`}
+                                >
+                                  <div className="flex justify-between mb-1">
+                                    <Skeleton className="h-3 w-4 rounded" />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Skeleton className="h-2 w-full rounded" />
+                                    <Skeleton className="h-2 w-3/4 rounded" />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        }
+                      >
+                        <div
+                          className={`flex-1 overflow-hidden rounded-lg border ${
+                            isDark
+                              ? "bg-gray-800 border-gray-700"
+                              : "bg-white border-gray-200"
+                          } overflow-hidden`}
+                        >
+                          <CalendarView
+                            tasks={myTasks}
+                            loading={tasksLoading}
+                            onTaskClick={handleTaskClick}
+                          />
+                        </div>
+                      </Suspense>
+                    )}
+
+                    {activeView === "project-analytics" && (
                       <UserAnalytics tasks={myTasks} user={user} />
-                    </div>
-                  )}
+                    )}
 
-                  {activeView === "budget" && (
-                    <Suspense fallback={<ViewLoadingSpinner />}>
-                      <div className="flex-1 h-auto overflow-visible">
+                    {activeView === "budget" && (
+                      <Suspense fallback={<ViewLoadingSpinner />}>
                         <BudgetAllocation projectId={selectedProjectId} />
-                      </div>
-                    </Suspense>
-                  )}
+                      </Suspense>
+                    )}
+                  </div>
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -784,11 +760,18 @@ const UserDashboard = ({
         onClose={handleTaskDetailClose}
         onTaskUpdate={handleTaskMove}
       />
-      
+
       <TaskProofModal
         isOpen={proofModalConfig.isOpen}
         task={proofModalConfig.task}
-        onClose={() => setProofModalConfig({ isOpen: false, taskId: null, newStatus: null, task: null })}
+        onClose={() =>
+          setProofModalConfig({
+            isOpen: false,
+            taskId: null,
+            newStatus: null,
+            task: null,
+          })
+        }
         onConfirm={handleProofSubmit}
       />
     </div>

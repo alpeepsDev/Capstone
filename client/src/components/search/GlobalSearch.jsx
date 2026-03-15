@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { searchApi } from "../../api/search";
 import { useTheme } from "../../context";
 import { Search, Loader2, FileText, Layout, X } from "lucide-react";
+import logger from "../../utils/logger.js";
 
 // Hook for debouncing
 function useDebounce(value, delay) {
@@ -45,7 +46,7 @@ const GlobalSearch = ({ className = "" }) => {
         setResults(data);
         setIsOpen(true);
       } catch (error) {
-        console.error("Search failed:", error);
+        logger.error("Search failed:", error);
       } finally {
         setLoading(false);
       }

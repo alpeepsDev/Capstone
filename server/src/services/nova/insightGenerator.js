@@ -4,6 +4,7 @@ import {
   calculateProjectHealth,
   predictFutureRisks,
 } from "./predictiveAnalytics.js";
+import logger from "../../utils/logger.js";
 
 /**
  * Nova Insight Generator
@@ -15,7 +16,7 @@ import {
  * Creates personalized recommendations based on current tasks and patterns
  */
 export const generateDailyInsights = async (userId) => {
-  console.log(
+  logger.info(
     `[Nova Insights] Generating daily insights for user ${userId}...`,
   );
 
@@ -204,12 +205,12 @@ export const generateDailyInsights = async (userId) => {
       createdInsights.push(created);
     }
 
-    console.log(
+    logger.info(
       `[Nova Insights] Created ${createdInsights.length} insights for user ${userId}`,
     );
     return createdInsights;
   } catch (error) {
-    console.error("[Nova Insights] Error generating insights:", error);
+    logger.error("[Nova Insights] Error generating insights:", error);
     return [];
   }
 };
@@ -278,7 +279,7 @@ export const getTopInsights = async (userId, limit = 5) => {
 
     return insights;
   } catch (error) {
-    console.error("[Nova Insights] Error fetching top insights:", error);
+    logger.error("[Nova Insights] Error fetching top insights:", error);
     return [];
   }
 };
@@ -294,10 +295,10 @@ export const dismissInsight = async (insightId) => {
       data: { dismissed: true },
     });
 
-    console.log(`[Nova Insights] Dismissed insight ${insightId}`);
+    logger.info(`[Nova Insights] Dismissed insight ${insightId}`);
     return insight;
   } catch (error) {
-    console.error("[Nova Insights] Error dismissing insight:", error);
+    logger.error("[Nova Insights] Error dismissing insight:", error);
     return null;
   }
 };
@@ -313,10 +314,10 @@ export const markActionTaken = async (insightId) => {
       data: { actionTaken: true },
     });
 
-    console.log(`[Nova Insights] Marked action taken for insight ${insightId}`);
+    logger.info(`[Nova Insights] Marked action taken for insight ${insightId}`);
     return insight;
   } catch (error) {
-    console.error("[Nova Insights] Error marking action:", error);
+    logger.error("[Nova Insights] Error marking action:", error);
     return null;
   }
 };
@@ -326,7 +327,7 @@ export const markActionTaken = async (insightId) => {
  * Called by scheduler
  */
 export const generateInsightsForAllUsers = async () => {
-  console.log("[Nova Insights] Generating insights for all active users...");
+  logger.info("[Nova Insights] Generating insights for all active users...");
 
   try {
     const activeUsers = await prisma.user.findMany({
@@ -343,10 +344,11 @@ export const generateInsightsForAllUsers = async () => {
       await generateDailyInsights(user.id);
     }
 
-    console.log(
+    logger.info(
       `[Nova Insights] Generated insights for ${activeUsers.length} users`,
     );
   } catch (error) {
-    console.error("[Nova Insights] Error in batch insight generation:", error);
+    logger.error("[Nova Insights] Error in batch insight generation:", error);
   }
 };
+

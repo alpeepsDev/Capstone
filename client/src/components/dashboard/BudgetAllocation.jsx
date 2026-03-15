@@ -26,6 +26,7 @@ import { useTheme } from "../../context";
 import { budgetApi } from "../../api/budget";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import logger from "../../utils/logger.js";
 
 const BudgetAllocation = ({ projectId }) => {
   const { isDark } = useTheme();
@@ -57,7 +58,7 @@ const BudgetAllocation = ({ projectId }) => {
         setCategories(response.data.categories);
       }
     } catch (error) {
-      console.error("Failed to fetch budget:", error);
+      logger.error("Failed to fetch budget:", error);
       toast.error("Failed to load budget data");
     } finally {
       setLoading(false);
@@ -216,9 +217,9 @@ const BudgetAllocation = ({ projectId }) => {
     const budget = parseFloat(setupBudget);
     if (budget >= 0) {
       try {
-        console.log("Updating budget:", { projectId, budget });
+        logger.info("Updating budget:", { projectId, budget });
         const response = await budgetApi.updateTotalBudget(projectId, budget);
-        console.log("Budget update response:", response);
+        logger.info("Budget update response:", response);
 
         if (response.success) {
           setTotalBudget(response.data.totalBudget);
@@ -228,7 +229,7 @@ const BudgetAllocation = ({ projectId }) => {
           throw new Error(response.message || "Failed to update budget");
         }
       } catch (error) {
-        console.error("Budget update error:", error);
+        logger.error("Budget update error:", error);
         toast.error(error.message || "Failed to update budget");
       }
     } else {

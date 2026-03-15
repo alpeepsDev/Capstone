@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { toast } from "react-hot-toast";
 import {
   DndContext,
@@ -20,6 +20,7 @@ import { Skeleton } from "../ui";
 import KanbanColumn from "./KanbanColumn";
 import TaskCard from "./TaskCard";
 import webSocketService from "../../services/websocket.service";
+import { sortTasksByPriorityAndStatus } from "../../utils/taskSorting.js";
 
 const KanbanBoard = ({
   tasks,
@@ -51,6 +52,10 @@ const KanbanBoard = ({
   // Real-time updates handled by useTasks hook now
   // Use tasks prop directly without duplication
   const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const sortedTasks = useMemo(
+    () => sortTasksByPriorityAndStatus(safeTasks),
+    [safeTasks],
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -85,7 +90,7 @@ const KanbanBoard = ({
 
   // Filter tasks by status for each column
   const getTasksByStatus = (status) => {
-    return safeTasks.filter((task) => {
+    return sortedTasks.filter((task) => {
       // Role-based filtering
       switch (userRole) {
         case "USER":
@@ -105,7 +110,7 @@ const KanbanBoard = ({
 
   const handleDragStart = (event) => {
     const { active } = event;
-    const task = tasks.find((t) => t.id === active.id);
+    const task = sortedTasks.find((t) => t.id === active.id);
     setActiveTask(task);
   };
 
@@ -120,7 +125,7 @@ const KanbanBoard = ({
 
     // Add visual feedback classes for smooth animations
     if (isOverTask) {
-      const overTask = safeTasks.find((t) => t.id === over.id);
+    const overTask = sortedTasks.find((t) => t.id === over.id);
     }
   };
 
@@ -136,7 +141,7 @@ const KanbanBoard = ({
     const overId = over.id;
 
     // Find the active task
-    const activeTask = safeTasks.find((t) => t.id === activeId);
+    const activeTask = sortedTasks.find((t) => t.id === activeId);
     if (!activeTask) {
       return;
     }
@@ -152,7 +157,7 @@ const KanbanBoard = ({
       }
     } else {
       // Dropping on a task - either reorder or change status
-      const overTask = safeTasks.find((t) => t.id === overId);
+      const overTask = sortedTasks.find((t) => t.id === overId);
 
       if (!overTask) {
         return;
@@ -202,18 +207,10 @@ const KanbanBoard = ({
     };
 
     if (canMoveTask()) {
-      // Special message for users moving tasks to IN_REVIEW
-      if (userRole === "USER" && newStatus === "IN_REVIEW") {
-        toast.success(
-          "Task moved to In Review! Your manager will review and approve when complete.",
-          {
-            duration: 4000,
-            icon: "✅",
-          },
-        );
-      }
+      // Status change logic is now handled by parents (Dashboards)
+      // which might require proof or show specific messages.
       // Special message for managers approving tasks
-      else if (
+      if (
         userRole === "MANAGER" &&
         task.status === "IN_REVIEW" &&
         newStatus === "COMPLETED"
@@ -376,7 +373,7 @@ const KanbanBoard = ({
             </DndContext>
 
             {/* Empty State */}
-            {safeTasks.length === 0 && (
+            {sortedTasks.length === 0 && (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📋</div>
                 <h3

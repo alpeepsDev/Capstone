@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import logger from "./logger.js";
 
 /**
  * Configure Nodemailer for Gmail SMTP
@@ -8,7 +9,7 @@ let transporter;
 
 const createTransporter = async () => {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn(
+    logger.warn(
       "⚠️ SMTP credentials missing! Please add SMTP_USER and SMTP_PASS (App Password) to your .env file.",
     );
   }
@@ -59,17 +60,17 @@ export const sendPasswordResetEmail = async (to, otp) => {
 
     const info = await transporter.sendMail(mailOptions);
 
-    console.log(`Password reset email sent to ${to}`);
-    
+    logger.info(`Password reset email sent to ${to}`);
+
     if (info.messageId && nodemailer.getTestMessageUrl(info)) {
-      console.log(
+      logger.info(
         `Preview your email at: ${nodemailer.getTestMessageUrl(info)}`,
       );
     }
 
     return true;
   } catch (error) {
-    console.error("❌ Error sending email:", error);
+    logger.error("❌ Error sending email:", error);
     return false;
   }
 };

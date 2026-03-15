@@ -1,29 +1,56 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { authService } from "../api/auth.js";
+import logger from "../utils/logger.js";
 
 const AuthContext = createContext();
 
 export { AuthContext };
 
 const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => authService.getCurrentUser());
+  const [loading, setLoading] = useState(() => !authService.getAccessToken());
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    const initializeAuth = () => {
-      const accessToken = authService.getAccessToken();
-      const userData = authService.getCurrentUser();
-      if (accessToken && userData) {
-        setUser(userData);
+    const initializeAuth = async () => {
+      try {
+        const accessToken = authService.getAccessToken();
+
+        if (accessToken) {
+          // If we already have a user from sync state, we can skip showing a full-screen spinner
+          // while we verify in the background, making it feel "instant".
+          const response = await authService.getProfile();
+          if (response && response.success && response.data) {
+            setUser(response.data);
+            // Sync verified data back to storage
+            const persistent = authService.isPersistent();
+            authService.setCurrentUser(response.data, persistent);
+          } else {
+            // Invalid data or structure, clear session
+            authService.logout();
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        logger.error("Auth initialization failed:", error);
+        // If it's an auth error (401/403), log out. Otherwise, keep current state (might be network error)
+        const status = error?.status || error?.response?.status;
+        if (status === 401 || status === 403) {
+          authService.logout();
+          setUser(null);
+        }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     initializeAuth();
   }, []);
 
   const login = async (credentials) => {
     const response = await authService.login(credentials);
-    setUser(response.data.user);
+    setUser(response?.data?.user || null);
     return response;
   };
 
@@ -32,10 +59,49 @@ const AuthProvider = ({ children }) => {
     return response;
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
+  const logout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await authService.logout();
+      setUser(null);
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
+
+  // Listen for storage changes across tabs (e.g., logout/login in another tab)
+  useEffect(() => {
+    const handleStorageChange = (event) => {
+      // If accessToken is removed, it means user logged out in another tab
+      if (event.key === "accessToken" && !event.newValue) {
+        setUser(null);
+        return;
+      }
+      
+      // If accessToken changes (login in another tab), re-verify to stay in sync
+      // We ONLY sync tokens, not the 'user' object, to prevent local tampering propagation
+      if (event.key === "accessToken" && event.newValue) {
+        // Re-run initialization to get fresh, verified data from server
+        // This is safe even if called multiple times
+        const syncAuth = async () => {
+          try {
+            const response = await authService.getProfile();
+            if (response && response.success && response.data) {
+              setUser(response.data);
+              authService.setCurrentUser(response.data);
+            }
+          } catch (err) {
+            logger.error("Failed to sync auth in new tab:", err);
+            setUser(null);
+          }
+        };
+        syncAuth();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const value = {
     user,
@@ -43,6 +109,7 @@ const AuthProvider = ({ children }) => {
     register,
     logout,
     loading,
+    isLoggingOut,
     isAuthenticated: !!user,
   };
 

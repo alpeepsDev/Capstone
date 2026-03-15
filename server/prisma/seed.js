@@ -998,10 +998,9 @@ async function main() {
   console.log("\n⚙️  Creating rate limit configurations...");
 
   const rateLimitConfigs = [
-    { role: "ADMIN", limit: 10000, window: 3600 },
-    { role: "MANAGER", limit: 5000, window: 3600 },
-
-    { role: "USER", limit: 1000, window: 3600 },
+    { role: "ADMIN", limit: 100000, window: 3600 },
+    { role: "MANAGER", limit: 50000, window: 3600 },
+    { role: "USER", limit: 10000, window: 3600 },
   ];
 
   for (const config of rateLimitConfigs) {

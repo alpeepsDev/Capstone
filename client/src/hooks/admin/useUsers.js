@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import logger from "../../utils/logger.js";
 
 // Mock API service for users
 const userAPI = {
@@ -69,25 +70,25 @@ const userAPI = {
 
   async updateUser(userId, userData) {
     await new Promise((resolve) => setTimeout(resolve, 300));
-    console.log("Updating user:", userId, userData);
+    logger.info("Updating user:", userId, userData);
     return { id: userId, ...userData };
   },
 
   async updateUserRole(userId, newRole) {
     await new Promise((resolve) => setTimeout(resolve, 300));
-    console.log("Updating user role:", userId, newRole);
+    logger.info("Updating user role:", userId, newRole);
     return { id: userId, role: newRole };
   },
 
   async deactivateUser(userId) {
     await new Promise((resolve) => setTimeout(resolve, 300));
-    console.log("Deactivating user:", userId);
+    logger.info("Deactivating user:", userId);
     return { id: userId, status: "inactive" };
   },
 
   async deleteUser(userId) {
     await new Promise((resolve) => setTimeout(resolve, 300));
-    console.log("Deleting user:", userId);
+    logger.info("Deleting user:", userId);
     return { success: true };
   },
 };
@@ -105,7 +106,7 @@ export const useUsers = (role = null) => {
       setUsers(fetchedUsers);
     } catch (err) {
       setError(err.message);
-      console.error("Failed to fetch users:", err);
+      logger.error("Failed to fetch users:", err);
     } finally {
       setLoading(false);
     }

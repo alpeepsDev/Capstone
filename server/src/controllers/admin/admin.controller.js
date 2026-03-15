@@ -3,6 +3,7 @@ import archiver from "archiver";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import logger from "../../utils/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,11 +58,14 @@ class AdminController {
   async getUserActivity(req, res, next) {
     try {
       const { limit = 10 } = req.query;
-      const activity = await adminService.getUserActivity(parseInt(limit));
+      const { rows, meta } = await adminService.getUserActivity(
+        parseInt(limit),
+      );
 
       res.status(200).json({
         success: true,
-        data: activity,
+        data: rows,
+        meta,
       });
     } catch (error) {
       next(error);
@@ -74,11 +78,12 @@ class AdminController {
    */
   async getRateLimits(req, res, next) {
     try {
-      const configs = await adminService.getRateLimitConfigs();
+      const { configs, meta } = await adminService.getRateLimitConfigs();
 
       res.status(200).json({
         success: true,
         data: configs,
+        meta,
       });
     } catch (error) {
       next(error);
@@ -651,7 +656,7 @@ class AdminController {
       if (!res.headersSent) {
         next(error);
       } else {
-        console.error("Error during zip streaming:", error);
+        logger.error("Error during zip streaming:", error);
       }
     }
   }

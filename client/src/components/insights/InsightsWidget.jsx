@@ -18,6 +18,7 @@ import {
 } from "../../api/insights";
 import { useTheme } from "../../context";
 import { toast } from "react-hot-toast";
+import logger from "../../utils/logger.js";
 
 const InsightsWidget = () => {
   const { isDark } = useTheme();
@@ -36,7 +37,7 @@ const InsightsWidget = () => {
       const response = await getInsights(3); // Get top 3 insights
       setInsights(response.data || []);
     } catch (error) {
-      console.error("Failed to fetch insights:", error);
+      logger.error("Failed to fetch insights:", error);
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ const InsightsWidget = () => {
       // Call API in background
       await dismissInsight(insightId);
     } catch (error) {
-      console.error("Failed to dismiss insight:", error);
+      logger.error("Failed to dismiss insight:", error);
       // Revert on error - refetch insights
       fetchInsights();
       toast.error("Failed to dismiss insight");
@@ -65,7 +66,7 @@ const InsightsWidget = () => {
       await fetchInsights();
       toast.success("New insights generated!");
     } catch (error) {
-      console.error("Failed to generate insights:", error);
+      logger.error("Failed to generate insights:", error);
       toast.error("Failed to generate insights");
     } finally {
       setGenerating(false);

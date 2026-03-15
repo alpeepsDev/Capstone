@@ -35,8 +35,11 @@ import {
   CreateProjectModal,
   DeleteConfirmationModal,
   TaskRejectModal,
+  TaskProofModal,
 } from "../modals";
 import { ManagerAnalytics } from "../analytics";
+import InsightsWidget from "../insights/InsightsWidget";
+import logger from "../../utils/logger.js";
 
 // Lazy load heavy view components
 const KanbanBoard = React.lazy(() => import("../kanban/KanbanBoard"));
@@ -119,6 +122,12 @@ const ManagerDashboard = ({
     isOpen: false,
     task: null,
   });
+  const [proofModalConfig, setProofModalConfig] = useState({
+    isOpen: false,
+    taskId: null,
+    newStatus: null,
+    task: null,
+  });
   const [approvingTaskId, setApprovingTaskId] = useState(null);
 
   // Hook data
@@ -187,7 +196,7 @@ const ManagerDashboard = ({
             const response = await tasksApi.getTask(taskId);
             if (response.data) taskToOpen = response.data;
           } catch (error) {
-            console.error("Failed to fetch task from API:", error);
+            logger.error("Failed to fetch task from API:", error);
           }
         }
 
@@ -225,7 +234,7 @@ const ManagerDashboard = ({
               const response = await tasksApi.getTask(taskId);
               if (response.data) taskToOpen = response.data;
             } catch (error) {
-              console.error("Failed to fetch task from API:", error);
+              logger.error("Failed to fetch task from API:", error);
             }
           }
 
@@ -252,7 +261,7 @@ const ManagerDashboard = ({
         const response = await projectsApi.getAllUsers();
         setAllUsers(response.data || []);
       } catch (error) {
-        console.error("Failed to fetch users:", error);
+        logger.error("Failed to fetch users:", error);
       }
     };
     fetchUsers();
@@ -287,6 +296,18 @@ const ManagerDashboard = ({
       return;
     }
 
+    // Role check: If moving to IN_REVIEW, require proof photo
+    // Even managers/admins should provide proof if they are doing the work
+    if (newStatus === "IN_REVIEW") {
+      setProofModalConfig({
+        isOpen: true,
+        taskId,
+        newStatus,
+        task: currentTask || selectedProjectTasks?.find((t) => t.id === taskId),
+      });
+      return; // Wait for the modal submit
+    }
+
     try {
       await updateTaskStatus(taskId, newStatus);
       if (currentTask?.status === "IN_REVIEW" && newStatus === "COMPLETED") {
@@ -298,6 +319,29 @@ const ManagerDashboard = ({
       if (fetchTasks) await fetchTasks(); // Refresh board
     } catch (error) {
       toast.error("Failed to move task");
+    }
+  };
+
+  const handleProofSubmit = async (file) => {
+    try {
+      const { taskId, newStatus } = proofModalConfig;
+      await updateTaskStatus(taskId, newStatus, null, file);
+
+      setProofModalConfig({
+        isOpen: false,
+        taskId: null,
+        newStatus: null,
+        task: null,
+      });
+
+      toast.success(
+        "Task moved to In Review! Project status updated with proof.",
+      );
+      refreshDashboard();
+      if (fetchTasks) await fetchTasks();
+    } catch (error) {
+      logger.error("Failed to move task:", error);
+      toast.error("Failed to move task and upload proof");
     }
   };
 
@@ -359,7 +403,7 @@ const ManagerDashboard = ({
       if (fetchTasks) await fetchTasks();
     } catch (error) {
       toast.error("Failed to reject task");
-      console.error(error);
+      logger.error(error);
     } finally {
       setApprovingTaskId(null);
     }
@@ -374,7 +418,7 @@ const ManagerDashboard = ({
       setCreateProjectModal({ isOpen: false });
       toast.success("Project created successfully!");
     } catch (error) {
-      console.error("Failed to create project:", error);
+      logger.error("Failed to create project:", error);
       toast.error("Failed to create project");
     }
   };
@@ -420,7 +464,7 @@ const ManagerDashboard = ({
   const views = [
     { id: "kanban", label: "Board", icon: Grid3X3 },
     { id: "table", label: "Table", icon: List },
-    { id: "gantt", label: "Timeline", icon: BarChart3 },
+    { id: "gantt", label: "Gantt Chart", icon: BarChart3 },
     { id: "calendar", label: "Calendar", icon: Calendar },
     {
       id: "approvals",
@@ -446,29 +490,24 @@ const ManagerDashboard = ({
   }
 
   return (
-    <div className={`flex h-full ${isDark ? "bg-gray-900" : "bg-gray-50"}`}>
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div
+      className={`flex min-h-full h-auto ${isDark ? "bg-gray-900" : "bg-gray-50"}`}
+    >
+      <div className="flex-1 flex flex-col">
         {/* Project Selection / Overview */}
         {!selectedProjectId ? (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="h-full overflow-y-auto px-4 lg:px-6 py-6">
             <div className="max-w-7xl mx-auto">
               <div className="mb-8 flex justify-between items-end">
-                <div>
-                  <h1
-                    className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
-                  >
-                    Welcome Back, {currentUser.username}!
-                  </h1>
-                  <p
-                    className={`mt-2 ${isDark ? "text-gray-400" : "text-gray-600"}`}
-                  >
-                    Select a project to manage or create a new one.
-                  </p>
-                </div>
                 {/* Manager Stats Summary Small */}
                 <div className="hidden lg:flex gap-4">
                   {/* ... stats ... */}
                 </div>
+              </div>
+
+              {/* Nova Insights Widget */}
+              <div className="mb-8">
+                <InsightsWidget />
               </div>
 
               {projectsLoading ? (
@@ -659,15 +698,17 @@ const ManagerDashboard = ({
           </div>
         ) : (
           // Project View
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden space-y-1">
+          <div className="flex-1 flex flex-col min-h-0 space-y-1">
             {/* View Tabs & Actions */}
-            <div className="px-4 py-2 flex items-center justify-between">
+            <div
+              className={`sticky top-0 z-30 ${isDark ? "bg-gray-900/95" : "bg-gray-50/95"} backdrop-blur-sm px-4 lg:px-6 py-4 transition-colors duration-300 flex items-center justify-between gap-4`}
+            >
               <div
                 className={`flex gap-1.5 p-1 rounded-md max-w-fit ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
               >
                 {[
                   { id: "table", label: "Table", icon: List },
-                  { id: "gantt", label: "Timeline", icon: BarChart3 },
+                  { id: "gantt", label: "Gantt Chart", icon: BarChart3 },
                   { id: "kanban", label: "Board", icon: Grid3X3 },
                   { id: "calendar", label: "Calendar", icon: Calendar },
                   {
@@ -730,180 +771,185 @@ const ManagerDashboard = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="flex-1 overflow-hidden min-h-0 flex flex-col px-4 pb-4"
+                className="flex-1 flex flex-col min-h-0"
               >
-                {activeView === "table" && (
-                  <TableView
-                    tasks={selectedProjectTasks || []}
-                    loading={tasksLoading}
-                    user={currentUser}
-                    onTaskClick={(task) =>
-                      setTaskDetailModal({ isOpen: true, task })
-                    }
-                    onEdit={(task) => setTaskEditModal({ isOpen: true, task })}
-                    onDelete={handleTaskDelete}
-                    onStatusChange={handleTaskMove}
-                    isDark={isDark}
-                  />
-                )}
-
-                {activeView === "gantt" && (
-                  <Suspense
-                    fallback={
-                      <div
-                        className={`flex-1 rounded-lg border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
-                      >
-                        <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                          {[1, 2, 3, 4, 5].map((i) => (
-                            <div
-                              key={i}
-                              className="grid border-b border-gray-200 dark:border-gray-700"
-                              style={{ gridTemplateColumns: `150px 1fr` }}
-                            >
-                              <div className="p-2 border-r border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                                <Skeleton className="w-1.5 h-1.5 rounded-full" />
-                                <div className="flex-1">
-                                  <Skeleton className="h-3 w-3/4 mb-1 rounded" />
-                                  <Skeleton className="h-2 w-1/2 rounded" />
-                                </div>
-                              </div>
-                              <div className="relative h-12 flex items-center px-4">
-                                <Skeleton className="h-6 w-1/3 rounded" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    }
-                  >
-                    <div
-                      className={`flex-1 rounded-lg border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
-                    >
-                      <ModernGanttChart
-                        tasks={selectedProjectTasks || []}
-                        loading={tasksLoading}
-                        onTaskClick={(task) =>
-                          setTaskDetailModal({ isOpen: true, task })
-                        }
-                      />
-                    </div>
-                  </Suspense>
-                )}
-
-                {activeView === "kanban" && (
-                  <Suspense
-                    fallback={
-                      <div className="flex-1 h-full overflow-hidden">
-                        <div className="grid grid-cols-4 gap-2.5 xl:gap-3 h-full">
-                          {[1, 2, 3, 4].map((i) => (
-                            <div
-                              key={i}
-                              className={`h-full rounded-xl flex flex-col ${isDark ? "bg-gray-800/50" : "bg-gray-100"}`}
-                            >
-                              <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                                <Skeleton className="h-6 w-1/2 rounded" />
-                              </div>
-                              <div className="p-3 space-y-3 flex-1">
-                                <Skeleton className="h-24 w-full rounded-lg" />
-                                <Skeleton className="h-24 w-full rounded-lg" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    }
-                  >
-                    <KanbanBoard
+                <div className="px-4 lg:px-6 pb-6 pt-4">
+                  {activeView === "table" && (
+                    <TableView
                       tasks={selectedProjectTasks || []}
-                      userRole="MANAGER"
-                      currentUserId={currentUser.id}
-                      onTaskMove={handleTaskMove}
-                      onTaskEdit={(task) =>
-                        setTaskEditModal({ isOpen: true, task })
-                      }
-                      onTaskDelete={handleTaskDelete}
+                      loading={tasksLoading}
+                      user={currentUser}
                       onTaskClick={(task) =>
                         setTaskDetailModal({ isOpen: true, task })
                       }
-                      onAddTask={() =>
-                        setAddTaskModal({
-                          isOpen: true,
-                          projectId: selectedProjectId,
-                        })
+                      onEdit={(task) =>
+                        setTaskEditModal({ isOpen: true, task })
                       }
-                      loading={tasksLoading}
-                      projectId={selectedProjectId}
-                      hideHeader={true}
+                      onDelete={handleTaskDelete}
+                      onStatusChange={handleTaskMove}
+                      isDark={isDark}
                     />
-                  </Suspense>
-                )}
+                  )}
 
-                {activeView === "calendar" && (
-                  <Suspense
-                    fallback={
-                      <div
-                        className={`flex-1 rounded-lg border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
-                      >
-                        <div className="grid grid-cols-7 gap-[3px] p-2">
-                          {[...Array(35)].map((_, i) => (
-                            <div
-                              key={i}
-                              className={`min-h-[60px] p-1.5 rounded border ${isDark ? "bg-gray-800/50 border-gray-700" : "bg-gray-50 border-gray-200"}`}
-                            >
-                              <div className="flex justify-between mb-1">
-                                <Skeleton className="h-3 w-4 rounded" />
+                  {activeView === "gantt" && (
+                    <Suspense
+                      fallback={
+                        <div
+                          className={`flex-1 rounded-lg border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
+                        >
+                          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                              <div
+                                key={i}
+                                className="grid border-b border-gray-200 dark:border-gray-700"
+                                style={{ gridTemplateColumns: `150px 1fr` }}
+                              >
+                                <div className="p-2 border-r border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                                  <Skeleton className="w-1.5 h-1.5 rounded-full" />
+                                  <div className="flex-1">
+                                    <Skeleton className="h-3 w-3/4 mb-1 rounded" />
+                                    <Skeleton className="h-2 w-1/2 rounded" />
+                                  </div>
+                                </div>
+                                <div className="relative h-12 flex items-center px-4">
+                                  <Skeleton className="h-6 w-1/3 rounded" />
+                                </div>
                               </div>
-                              <div className="space-y-1">
-                                <Skeleton className="h-2 w-full rounded" />
-                                <Skeleton className="h-2 w-3/4 rounded" />
-                              </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    }
-                  >
-                    <div
-                      className={`flex-1 rounded-lg border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
+                      }
                     >
-                      <CalendarView
+                      <div
+                        className={`flex-1 min-h-0 flex flex-col rounded-lg border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
+                      >
+                        <ModernGanttChart
+                          tasks={selectedProjectTasks || []}
+                          loading={tasksLoading}
+                          onTaskClick={(task) =>
+                            setTaskDetailModal({ isOpen: true, task })
+                          }
+                        />
+                      </div>
+                    </Suspense>
+                  )}
+
+                  {activeView === "kanban" && (
+                    <Suspense
+                      fallback={
+                        <div className="flex-1 h-full overflow-hidden mt-4">
+                          <div className="grid grid-cols-4 gap-2.5 xl:gap-3 h-full">
+                            {[1, 2, 3, 4].map((i) => (
+                              <div
+                                key={i}
+                                className={`h-full rounded-xl flex flex-col ${isDark ? "bg-gray-800/50" : "bg-gray-100"}`}
+                              >
+                                <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                                  <Skeleton className="h-6 w-1/2 rounded" />
+                                </div>
+                                <div className="p-3 space-y-3 flex-1">
+                                  <Skeleton className="h-24 w-full rounded-lg" />
+                                  <Skeleton className="h-24 w-full rounded-lg" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      }
+                    >
+                      <KanbanBoard
                         tasks={selectedProjectTasks || []}
-                        loading={tasksLoading}
+                        userRole="MANAGER"
+                        currentUserId={currentUser.id}
+                        onTaskMove={handleTaskMove}
+                        onTaskEdit={(task) =>
+                          setTaskEditModal({ isOpen: true, task })
+                        }
+                        onTaskDelete={handleTaskDelete}
                         onTaskClick={(task) =>
                           setTaskDetailModal({ isOpen: true, task })
                         }
+                        onAddTask={() =>
+                          setAddTaskModal({
+                            isOpen: true,
+                            projectId: selectedProjectId,
+                          })
+                        }
+                        loading={tasksLoading}
+                        projectId={selectedProjectId}
+                        hideHeader={true}
+                        className="mt-4"
                       />
-                    </div>
-                  </Suspense>
-                )}
+                    </Suspense>
+                  )}
 
-                {activeView === "approvals" && (
-                  <div className="flex-1 overflow-y-auto">
-                    <Card title="Tasks Awaiting Approval">
-                      {projectApprovals.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <CheckCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                          <p>No tasks waiting for approval in this project.</p>
+                  {activeView === "calendar" && (
+                    <Suspense
+                      fallback={
+                        <div
+                          className={`flex-1 rounded-lg border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
+                        >
+                          <div className="grid grid-cols-7 gap-[3px] p-2">
+                            {[...Array(35)].map((_, i) => (
+                              <div
+                                key={i}
+                                className={`min-h-[60px] p-1.5 rounded border ${isDark ? "bg-gray-800/50 border-gray-700" : "bg-gray-50 border-gray-200"}`}
+                              >
+                                <div className="flex justify-between mb-1">
+                                  <Skeleton className="h-3 w-4 rounded" />
+                                </div>
+                                <div className="space-y-1">
+                                  <Skeleton className="h-2 w-full rounded" />
+                                  <Skeleton className="h-2 w-3/4 rounded" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ) : (
-                        <ApprovalTableView
-                          tasks={projectApprovals}
-                          onApprove={handleApproveTask}
-                          onReject={handleRejectTask}
-                          onView={(task) =>
+                      }
+                    >
+                      <div
+                        className={`flex-1 rounded-lg border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
+                      >
+                        <CalendarView
+                          tasks={selectedProjectTasks || []}
+                          loading={tasksLoading}
+                          onTaskClick={(task) =>
                             setTaskDetailModal({ isOpen: true, task })
                           }
-                          loading={approvingTaskId !== null}
-                          approvingTaskId={approvingTaskId}
-                          isDark={isDark}
                         />
-                      )}
-                    </Card>
-                  </div>
-                )}
+                      </div>
+                    </Suspense>
+                  )}
 
-                {activeView === "project-analytics" && (
-                  <div className="flex-1 overflow-y-auto">
+                  {activeView === "approvals" && (
+                    <div className="flex-1 overflow-y-auto">
+                      <Card title="Tasks Awaiting Approval">
+                        {projectApprovals.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            <CheckCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                            <p>
+                              No tasks waiting for approval in this project.
+                            </p>
+                          </div>
+                        ) : (
+                          <ApprovalTableView
+                            tasks={projectApprovals}
+                            onApprove={handleApproveTask}
+                            onReject={handleRejectTask}
+                            onView={(task) =>
+                              setTaskDetailModal({ isOpen: true, task })
+                            }
+                            loading={approvingTaskId !== null}
+                            approvingTaskId={approvingTaskId}
+                            isDark={isDark}
+                          />
+                        )}
+                      </Card>
+                    </div>
+                  )}
+
+                  {activeView === "project-analytics" && (
                     <ManagerAnalytics
                       tasks={selectedProjectTasks}
                       projects={[currentProject]} // Scope to this project
@@ -911,16 +957,14 @@ const ManagerDashboard = ({
                       tasksAwaitingApproval={projectApprovals}
                       // For exchange log we naturally don't filter in analytics props unless it handles it
                     />
-                  </div>
-                )}
+                  )}
 
-                {activeView === "budget" && (
-                  <Suspense fallback={<ViewLoadingSpinner />}>
-                    <div className="flex-1 overflow-y-auto">
+                  {activeView === "budget" && (
+                    <Suspense fallback={<ViewLoadingSpinner />}>
                       <BudgetAllocation projectId={selectedProjectId} />
-                    </div>
-                  </Suspense>
-                )}
+                    </Suspense>
+                  )}
+                </div>
               </motion.div>
             </AnimatePresence>
           </div>
@@ -958,6 +1002,20 @@ const ManagerDashboard = ({
         selectedProject={currentProject} // Preselect
         projects={safeProjects}
         users={projectMembers}
+      />
+
+      <TaskProofModal
+        isOpen={proofModalConfig.isOpen}
+        task={proofModalConfig.task}
+        onClose={() =>
+          setProofModalConfig({
+            isOpen: false,
+            taskId: null,
+            newStatus: null,
+            task: null,
+          })
+        }
+        onConfirm={handleProofSubmit}
       />
 
       <CreateProjectModal
@@ -1035,11 +1093,11 @@ const TableView = React.memo(
 
     return (
       <div
-        className={`rounded-lg overflow-hidden border ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
+        className={`flex-1 min-h-0 flex flex-col rounded-lg overflow-hidden border ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
       >
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
           <table className="w-full">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr
                 className={`${isDark ? "bg-gray-700" : "bg-gray-50"} border-b ${isDark ? "border-gray-700" : "border-gray-200"}`}
               >
@@ -1205,6 +1263,8 @@ const ApprovalTableView = React.memo(
     approvingTaskId,
     isDark,
   }) => {
+    const [galleryImages, setGalleryImages] = useState(null);
+
     const getPriorityColor = (priority) => {
       switch (priority) {
         case "HIGH":
@@ -1219,6 +1279,7 @@ const ApprovalTableView = React.memo(
     };
 
     return (
+      <>
       <div
         className={`rounded-lg overflow-hidden border ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
       >
@@ -1247,6 +1308,11 @@ const ApprovalTableView = React.memo(
                   className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
                 >
                   Due Date
+                </th>
+                <th
+                  className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                >
+                  Proof
                 </th>
                 <th
                   className={`px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
@@ -1304,6 +1370,74 @@ const ApprovalTableView = React.memo(
                       ? new Date(task.dueDate).toLocaleDateString()
                       : "-"}
                   </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2 flex-wrap">
+                      {task.proofAttachments &&
+                      task.proofAttachments.length > 0 ? (
+                        task.proofAttachments.slice(0, 3).map((proof, idx) => {
+                          const proofUrl = proof.startsWith("/")
+                            ? proof
+                            : `/${proof}`;
+                          return (
+                            <a
+                              key={idx}
+                              href={proofUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group relative"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <img
+                                src={proofUrl}
+                                alt={`Proof ${idx + 1}`}
+                                className={`w-12 h-12 object-cover rounded border ${isDark ? "border-gray-600" : "border-gray-300"} hover:scale-105 transition-transform`}
+                              />
+                            </a>
+                          );
+                        })
+                      ) : task.proofAttachment ? (
+                        (() => {
+                          const proofUrl = task.proofAttachment.startsWith("/")
+                            ? task.proofAttachment
+                            : `/${task.proofAttachment}`;
+                          return (
+                            <a
+                              href={proofUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group relative"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <img
+                                src={proofUrl}
+                                alt="Proof"
+                                className={`w-12 h-12 object-cover rounded border ${isDark ? "border-gray-600" : "border-gray-300"} hover:scale-105 transition-transform`}
+                              />
+                            </a>
+                          );
+                        })()
+                      ) : (
+                        <span
+                          className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                        >
+                          No proof
+                        </span>
+                      )}
+                      {task.proofAttachments &&
+                        task.proofAttachments.length > 3 && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setGalleryImages(task.proofAttachments.map(p => p.startsWith("/") ? p : `/${p}`));
+                            }}
+                            className={`w-12 h-12 rounded border flex items-center justify-center text-xs font-semibold cursor-pointer hover:opacity-80 transition-opacity ${isDark ? "bg-gray-700 border-gray-600 text-gray-300" : "bg-gray-100 border-gray-300 text-gray-600"}`}
+                          >
+                            +{task.proofAttachments.length - 3}
+                          </button>
+                        )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
                       <Button
@@ -1340,6 +1474,58 @@ const ApprovalTableView = React.memo(
           </table>
         </div>
       </div>
+
+      {/* Proof Gallery Lightbox */}
+      <AnimatePresence>
+        {galleryImages && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8"
+            onClick={() => setGalleryImages(null)}
+          >
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className={`relative z-10 w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl p-6 ${isDark ? "bg-gray-900 border border-gray-700" : "bg-white"}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                  Proof Photos ({galleryImages.length})
+                </h3>
+                <button
+                  onClick={() => setGalleryImages(null)}
+                  className={`p-2 rounded-full transition-colors ${isDark ? "hover:bg-gray-800 text-gray-400" : "hover:bg-gray-100 text-gray-500"}`}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {galleryImages.map((img, idx) => (
+                  <a
+                    key={idx}
+                    href={img}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block overflow-hidden rounded-lg border hover:opacity-90 transition-opacity"
+                  >
+                    <img
+                      src={img}
+                      alt={`Proof ${idx + 1}`}
+                      className={`w-full h-40 object-cover ${isDark ? "border-gray-700" : "border-gray-200"}`}
+                    />
+                  </a>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
     );
   },
 );

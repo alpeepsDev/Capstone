@@ -9,7 +9,11 @@ import {
   resetPasswordSchema,
 } from "../../validations/user.validation.js";
 import { validateRequest } from "../../middleware/validation.middleware.js";
-import { auth, requireAdmin } from "../../middleware/auth.js";
+import {
+  auth,
+  requireAdmin,
+  requireManagerOrHigher,
+} from "../../middleware/auth.js";
 
 import { upload } from "../../middleware/upload.js";
 
@@ -38,6 +42,7 @@ router.post(
 
 // Protected routes
 router.get("/profile", auth, userController.getProfile);
+router.post("/logout", auth, userController.logout);
 router.get("/", auth, requireManagerOrHigher, userController.getAllUsers);
 router.post(
   "/avatar",

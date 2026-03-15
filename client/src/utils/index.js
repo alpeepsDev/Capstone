@@ -2,3 +2,4 @@
 export * from "./roleUtils";
 export * from "./timeUtils";
 export * from "./validation";
+export * from "./taskSorting";

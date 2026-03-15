@@ -24,23 +24,27 @@
     "bullmq": "^5.70.1",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
+    "csv-writer": "^1.6.0",
     "date-fns": "^4.1.0",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
     "helmet": "^8.1.0",
     "ioredis": "^5.9.3",
     "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
     "multer": "^2.0.2",
     "nodemailer": "^8.0.1",
     "openai": "^6.25.0",
+    "pdfkit": "^0.18.0",
     "socket.io": "^4.8.3",
+    "winston": "^3.19.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@prisma/config": "^7.0.0",
     "jest": "^30.2.0",
     "nodemon": "^3.1.14",
     "prisma": "^7.0.0",
-    "@prisma/config": "^7.0.0",
     "supertest": "^7.2.2"
   }
 }

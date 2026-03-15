@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import AppError from "../utils/AppError.js";
 
 // Ensure directories exist
 const ensureDir = (dir) => {
@@ -28,8 +29,11 @@ const createStorage = (directory) => {
 
 // File filter for images
 const fileFilter = (req, file, cb) => {
-  if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-    return cb(new Error("Only image files are allowed!"), false);
+  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+    return cb(
+      new AppError("Only image files are allowed.", { status: 400 }),
+      false,
+    );
   }
   cb(null, true);
 };
@@ -54,4 +58,3 @@ export const uploadProofs = multer({
   fileFilter: fileFilter,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB per file
 });
-

@@ -7,6 +7,7 @@ import {
   updateWorklogSchema,
 } from "../../validations/worklog.validation.js";
 import { decryptUser } from "../../utils/encryption.js";
+import logger from "../../utils/logger.js";
 
 const router = express.Router();
 
@@ -65,7 +66,7 @@ router.post(
         task: result.task,
       });
     } catch (error) {
-      console.error("Error creating work log:", error);
+      logger.error("Error creating work log:", error);
       res.status(500).json({
         success: false,
         message: "Failed to create work log",
@@ -102,7 +103,7 @@ router.get("/task/:taskId", auth, async (req, res) => {
       })),
     });
   } catch (error) {
-    console.error("Error fetching work logs:", error);
+    logger.error("Error fetching work logs:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch work logs",
@@ -157,7 +158,7 @@ router.delete("/:id", auth, async (req, res) => {
       task: result,
     });
   } catch (error) {
-    console.error("Error deleting work log:", error);
+    logger.error("Error deleting work log:", error);
     res.status(500).json({
       success: false,
       message: "Failed to delete work log",
@@ -238,7 +239,7 @@ router.put(
         task: result.task,
       });
     } catch (error) {
-      console.error("Error updating work log:", error);
+      logger.error("Error updating work log:", error);
       res.status(500).json({
         success: false,
         message: "Failed to update work log",
@@ -248,3 +249,4 @@ router.put(
 );
 
 export default router;
+

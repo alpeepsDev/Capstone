@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import adminApi from "../../api/admin";
 import { useAuth } from "../../context/AuthContext";
 import webSocketService from "../../services/websocket.service";
+import logger from "../../utils/logger.js";
 
 export const useAdmin = () => {
   const { user } = useAuth();
@@ -14,9 +15,11 @@ export const useAdmin = () => {
   // API Monitoring State
   const [apiStats, setApiStats] = useState(null);
   const [userActivity, setUserActivity] = useState([]);
+  const [userActivityMeta, setUserActivityMeta] = useState({});
 
   // Rate Limit State
   const [rateLimits, setRateLimits] = useState([]);
+  const [rateLimitMeta, setRateLimitMeta] = useState({});
   const [endpointLimits, setEndpointLimits] = useState([]);
   const [userLimits, setUserLimits] = useState([]);
   const [availableEndpoints, setAvailableEndpoints] = useState([]);
@@ -44,7 +47,7 @@ export const useAdmin = () => {
     if (!isAdmin) return;
 
     const handleAdminUpdate = ({ model, operation }) => {
-      console.log(`🛡️ Admin update received: ${model} (${operation})`);
+      logger.info(`🛡️ Admin update received: ${model} (${operation})`);
 
       // Refresh dashboard stats for any mutation on core logic
       fetchDashboardStats();
@@ -106,6 +109,7 @@ export const useAdmin = () => {
       try {
         const data = await adminApi.getUserActivity(limit);
         setUserActivity(data.data);
+        setUserActivityMeta(data.meta || {});
       } catch (err) {
         setError(
           err.response?.data?.message || "Failed to fetch user activity",
@@ -124,6 +128,7 @@ export const useAdmin = () => {
     try {
       const data = await adminApi.getRateLimits();
       setRateLimits(data.data);
+      setRateLimitMeta(data.meta || {});
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch rate limits");
     } finally {
@@ -544,11 +549,13 @@ export const useAdmin = () => {
     // API Monitoring
     apiStats,
     userActivity,
+    userActivityMeta,
     fetchApiStats,
     fetchUserActivity,
 
     // Rate Limiting
     rateLimits,
+    rateLimitMeta,
     endpointLimits,
     userLimits,
     availableEndpoints,

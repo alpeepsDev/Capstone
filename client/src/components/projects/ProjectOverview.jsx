@@ -4,6 +4,7 @@ import CreateProjectModal from "./CreateProjectModal";
 import ProjectMemberManager from "./ProjectMemberManager";
 import KanbanBoard from "../kanban/KanbanBoard";
 import { useTheme } from "../../context";
+import logger from "../../utils/logger.js";
 
 const ProjectOverview = ({
   projects,
@@ -32,7 +33,7 @@ const ProjectOverview = ({
       await onCreateProject(projectData);
       setShowCreateModal(false);
     } catch (error) {
-      console.error("Project creation failed:", error);
+      logger.error("Project creation failed:", error);
     } finally {
       setLoading(false);
     }

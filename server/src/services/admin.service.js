@@ -1,6 +1,7 @@
 import prisma from "../config/database.js";
 import os from "os";
 import { decrypt, decryptUser } from "../utils/encryption.js";
+import { getCpuUsage, getMemoryUsage, getUptime } from "../utils/system.js";
 
 class AdminService {
   // ==================== API MONITORING ====================
@@ -201,25 +202,82 @@ class AdminService {
       take: limit,
     });
 
-    // Get rate limit configs
     const rateLimitConfigs = await prisma.rateLimitConfig.findMany();
     const configMap = {};
     rateLimitConfigs.forEach((config) => {
-      configMap[config.role] = config.limit;
+      configMap[config.role] = {
+        limit: config.limit,
+        window: config.window || 3600,
+      };
     });
 
-    return users.map((user) => ({
-      userId: user.id,
-      username: decrypt(user.username),
-      email: decrypt(user.email),
-      role: user.role,
-      requestCount: user._count.apiLogs,
-      rateLimit: configMap[user.role] || 200,
-      percentage: (
-        (user._count.apiLogs / (configMap[user.role] || 200)) *
-        100
-      ).toFixed(1),
-    }));
+    const uniqueWindows = Array.from(
+      new Set(
+        rateLimitConfigs.map((config) => config.window || 3600),
+      ),
+    );
+
+    const now = Date.now();
+    const counts24h = await prisma.apiLog.groupBy({
+      by: ["userId"],
+      where: {
+        timestamp: {
+          gte: new Date(now - 24 * 60 * 60 * 1000),
+        },
+        userId: { not: null },
+      },
+      _count: { id: true },
+    });
+
+    const counts24hMap = new Map(
+      counts24h.map((entry) => [entry.userId, entry._count.id]),
+    );
+
+    const windowCountsBySeconds = {};
+    for (const windowSeconds of uniqueWindows) {
+      const since = new Date(now - windowSeconds * 1000);
+      const rows = await prisma.apiLog.groupBy({
+        by: ["userId"],
+        where: {
+          timestamp: { gte: since },
+          userId: { not: null },
+        },
+        _count: { id: true },
+      });
+      windowCountsBySeconds[windowSeconds] = new Map(
+        rows.map((entry) => [entry.userId, entry._count.id]),
+      );
+    }
+
+    const rows = users.map((user) => {
+      const config = configMap[user.role] || { limit: 200, window: 3600 };
+      const requestCountWindow =
+        windowCountsBySeconds[config.window]?.get(user.id) || 0;
+      const limit = config.limit || 200;
+      return {
+        userId: user.id,
+        username: decrypt(user.username),
+        email: decrypt(user.email),
+        role: user.role,
+        requestCount24h: counts24hMap.get(user.id) || 0,
+        requestCountWindow,
+        roleLimit: limit,
+        windowSeconds: config.window,
+        percentageWindow: limit
+          ? ((requestCountWindow / limit) * 100).toFixed(1)
+          : "0.0",
+      };
+    });
+
+    return {
+      rows,
+      meta: {
+        globalPerSecond: parseInt(process.env.GLOBAL_RATE_LIMIT) || 100,
+        adminGlobalPerSecond:
+          parseInt(process.env.ADMIN_GLOBAL_RATE_LIMIT) || 100,
+        globalWindowMs: parseInt(process.env.GLOBAL_RATE_WINDOW_MS) || 1000,
+      },
+    };
   }
 
   /**
@@ -249,18 +307,16 @@ class AdminService {
       },
     });
 
-    // Get current usage for each role
-    const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-
     const usagePromises = configs.map(async (config) => {
+      const windowSeconds = config.window || 3600;
+      const windowStart = new Date(Date.now() - windowSeconds * 1000);
       const usage = await prisma.apiLog.count({
         where: {
           user: {
             role: config.role,
           },
           timestamp: {
-            gte: oneHourAgo,
+            gte: windowStart,
           },
         },
       });
@@ -268,11 +324,21 @@ class AdminService {
       return {
         ...config,
         currentUsage: usage,
+        windowSeconds,
         percentage: ((usage / config.limit) * 100).toFixed(1),
       };
     });
 
-    return await Promise.all(usagePromises);
+    const updatedConfigs = await Promise.all(usagePromises);
+    return {
+      configs: updatedConfigs,
+      meta: {
+        globalPerSecond: parseInt(process.env.GLOBAL_RATE_LIMIT) || 100,
+        adminGlobalPerSecond:
+          parseInt(process.env.ADMIN_GLOBAL_RATE_LIMIT) || 100,
+        globalWindowMs: parseInt(process.env.GLOBAL_RATE_WINDOW_MS) || 1000,
+      },
+    };
   }
 
   /**
@@ -463,11 +529,11 @@ class AdminService {
    */
   async getSystemHealth() {
     // Server metrics
-    const cpuUsage = os.loadavg()[0];
+    const cpuUsage = getCpuUsage();
+    const memoryUsage = getMemoryUsage();
+    const uptime = getUptime();
     const totalMemory = os.totalmem();
     const freeMemory = os.freemem();
-    const memoryUsage = ((totalMemory - freeMemory) / totalMemory) * 100;
-    const uptime = os.uptime();
 
     // Database metrics
     const dbMetrics = await this.getDatabaseMetrics();
@@ -489,8 +555,8 @@ class AdminService {
 
     return {
       server: {
-        cpu: parseFloat(cpuUsage.toFixed(2)),
-        memory: parseFloat(memoryUsage.toFixed(2)),
+        cpu: cpuUsage,
+        memory: memoryUsage,
         totalMemory: parseFloat(
           (totalMemory / (1024 * 1024 * 1024)).toFixed(2),
         ),
@@ -631,13 +697,10 @@ class AdminService {
    * Determine overall system status
    */
   getOverallStatus(cpu, memory, errors) {
-    // CPU load average is per core, so normalize it (values can be 0-1+ per core)
-    // Memory is a percentage (0-100)
-    const cpuPercent = cpu * 100; // Convert load average to approximate percentage
-
-    if (memory > 90 || cpuPercent > 80 || errors.critical > 10) {
+    // cpu is already a percentage (0-100) from our utility
+    if (memory > 90 || cpu > 80 || errors.critical > 10) {
       return "critical";
-    } else if (memory > 75 || cpuPercent > 60 || errors.critical > 5) {
+    } else if (memory > 75 || cpu > 60 || errors.critical > 5) {
       return "warning";
     }
     return "healthy";

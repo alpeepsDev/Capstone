@@ -128,4 +128,12 @@ export const userController = {
       message: "Password has been reset successfully. You can now log in.",
     });
   }),
+  logout: asyncHandler(async (req, res) => {
+    // In a stateful system, we would invalidate the refresh token in the DB here.
+    // Since we are currently stateless, we just return success to signal client-side cleanup.
+    res.json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  }),
 };

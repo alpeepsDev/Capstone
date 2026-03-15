@@ -1,4 +1,5 @@
 import api from "./index.js";
+import logger from "../utils/logger.js";
 
 // Get notifications for current user
 export const getNotifications = async (params = {}) => {
@@ -9,7 +10,7 @@ export const getNotifications = async (params = {}) => {
     });
     return response.data;
   } catch (error) {
-    console.error("Failed to fetch notifications:", error);
+    logger.error("Failed to fetch notifications:", error);
     throw error;
   }
 };
@@ -20,7 +21,7 @@ export const markNotificationAsRead = async (notificationId) => {
     const response = await api.patch(`/notifications/${notificationId}/read`);
     return response.data;
   } catch (error) {
-    console.error("Failed to mark notification as read:", error);
+    logger.error("Failed to mark notification as read:", error);
     throw error;
   }
 };
@@ -31,7 +32,7 @@ export const markAllNotificationsAsRead = async () => {
     const response = await api.patch("/notifications/read-all");
     return response.data;
   } catch (error) {
-    console.error("Failed to mark all notifications as read:", error);
+    logger.error("Failed to mark all notifications as read:", error);
     throw error;
   }
 };
@@ -42,7 +43,7 @@ export const deleteNotification = async (notificationId) => {
     const response = await api.delete(`/notifications/${notificationId}`);
     return response.data;
   } catch (error) {
-    console.error("Failed to delete notification:", error);
+    logger.error("Failed to delete notification:", error);
     throw error;
   }
 };

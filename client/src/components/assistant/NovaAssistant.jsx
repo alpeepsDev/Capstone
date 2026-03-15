@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { authService } from "../../api/auth.js";
 import NovaChart from "./NovaChart";
+import logger from "../../utils/logger.js";
 
 // Format message text with support for numbered lists and bullet points
 const formatMessage = (text) => {
@@ -234,14 +235,14 @@ const NovaAssistant = () => {
                   );
                 }
               } catch (e) {
-                console.warn("Could not parse SSE line:", part);
+                logger.warn("Could not parse SSE line:", part);
               }
             }
           }
         }
       }
     } catch (error) {
-      console.error("Nova Error:", error);
+      logger.error("Nova Error:", error);
       setMessages((prev) => [
         ...prev,
         {

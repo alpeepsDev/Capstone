@@ -1,14 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useTheme } from "../../context";
-import { Card, Skeleton } from "../ui";
+import { Skeleton } from "../ui";
 import { ChevronLeft, ChevronRight, Calendar, User } from "lucide-react";
+import { sortTasksByPriorityAndStatus } from "../../utils/taskSorting.js";
 
 const ModernGanttChart = ({ tasks, onTaskClick, loading }) => {
   const { isDark } = useTheme();
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // Filter tasks with dates
-  const tasksWithDates = tasks?.filter((task) => task.dueDate) || [];
+  // Sort tasks first, then filter by dates
+  const sortedTasks = useMemo(
+    () => sortTasksByPriorityAndStatus(tasks || []),
+    [tasks],
+  );
+  const tasksWithDates = sortedTasks.filter((task) => task.dueDate);
 
   // Get date range for current view
   const getDateRange = () => {
@@ -92,7 +97,7 @@ const ModernGanttChart = ({ tasks, onTaskClick, loading }) => {
   };
 
   return (
-    <Card className="overflow-hidden">
+    <div className={`overflow-hidden flex-1 min-h-0 flex flex-col rounded-lg shadow-md border transition-colors duration-200 ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
       {/* Header */}
       <div
         className={`border-b p-3 ${
@@ -144,7 +149,7 @@ const ModernGanttChart = ({ tasks, onTaskClick, loading }) => {
       </div>
 
       {/* Timeline */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
         <div className="min-w-[1000px]">
           {/* Date Headers */}
           <div
@@ -406,7 +411,7 @@ const ModernGanttChart = ({ tasks, onTaskClick, loading }) => {
           <span>Completed</span>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
 

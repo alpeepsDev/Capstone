@@ -6,6 +6,7 @@ import {
   endOfWeek,
   isWithinInterval,
 } from "date-fns";
+import logger from "../../utils/logger.js";
 
 
 /**
@@ -18,7 +19,7 @@ import {
  * Checks tasks due in 1, 3, 7 days and notifies users
  */
 export const sendDeadlineWarnings = async () => {
-  console.log("[Nova Scheduler] Checking for upcoming deadlines...");
+  logger.info("[Nova Scheduler] Checking for upcoming deadlines...");
 
   try {
     // Get all active users with their preferences
@@ -92,9 +93,9 @@ export const sendDeadlineWarnings = async () => {
       }
     }
 
-    console.log(`[Nova Scheduler] Sent ${notificationCount} deadline warnings`);
+    logger.info(`[Nova Scheduler] Sent ${notificationCount} deadline warnings`);
   } catch (error) {
-    console.error("[Nova Scheduler] Error sending deadline warnings:", error);
+    logger.error("[Nova Scheduler] Error sending deadline warnings:", error);
   }
 };
 
@@ -103,7 +104,7 @@ export const sendDeadlineWarnings = async () => {
  * Runs every configured day (e.g., Monday morning)
  */
 export const generateWeeklySummaries = async () => {
-  console.log("[Nova Scheduler] Generating weekly summaries...");
+  logger.info("[Nova Scheduler] Generating weekly summaries...");
 
   try {
     const now = new Date();
@@ -194,9 +195,9 @@ ${
       });
     }
 
-    console.log(`[Nova Scheduler] Generated ${users.length} weekly summaries`);
+    logger.info(`[Nova Scheduler] Generated ${users.length} weekly summaries`);
   } catch (error) {
-    console.error("[Nova Scheduler] Error generating summaries:", error);
+    logger.error("[Nova Scheduler] Error generating summaries:", error);
   }
 };
 
@@ -205,7 +206,7 @@ ${
  * Triggered when automation engine updates risk levels
  */
 export const sendRiskAlerts = async () => {
-  console.log("[Nova Scheduler] Checking for new risk alerts...");
+  logger.info("[Nova Scheduler] Checking for new risk alerts...");
 
   try {
     const now = new Date();
@@ -252,11 +253,11 @@ export const sendRiskAlerts = async () => {
       }
     }
 
-    console.log(
+    logger.info(
       `[Nova Scheduler] Processed ${recentRiskyTasks.length} risk alerts`,
     );
   } catch (error) {
-    console.error("[Nova Scheduler] Error sending risk alerts:", error);
+    logger.error("[Nova Scheduler] Error sending risk alerts:", error);
   }
 };
 
@@ -265,7 +266,7 @@ export const sendRiskAlerts = async () => {
  * Sets up recurring jobs for proactive notifications
  */
 export const initNotificationScheduler = () => {
-  console.log("[Nova Scheduler] Initializing proactive notification system...");
+  logger.info("[Nova Scheduler] Initializing proactive notification system...");
 
   // Run deadline warnings every hour
   sendDeadlineWarnings();
@@ -285,5 +286,6 @@ export const initNotificationScheduler = () => {
   sendRiskAlerts();
   setInterval(sendRiskAlerts, 30 * 60 * 1000);
 
-  console.log("[Nova Scheduler] Notification scheduler active ✅");
+  logger.info("[Nova Scheduler] Notification scheduler active ✅");
 };
+

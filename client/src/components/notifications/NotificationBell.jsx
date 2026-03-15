@@ -7,6 +7,7 @@ import {
   deleteNotification,
 } from "../../api/notifications";
 import { toast } from "react-hot-toast";
+import logger from "../../utils/logger.js";
 import {
   Bell,
   AlertTriangle,
@@ -54,7 +55,7 @@ const NotificationBell = () => {
       await markNotificationAsRead(notificationId);
     } catch (error) {
       // Revert or just show error (refetching would be best ideal rollback but simple error is okay for now)
-      console.error("Failed to mark as read:", error);
+      logger.error("Failed to mark as read:", error);
       toast.error("Failed to mark notification as read");
     }
   };
@@ -67,7 +68,7 @@ const NotificationBell = () => {
       await markAllNotificationsAsRead();
       toast.success("All notifications marked as read");
     } catch (error) {
-      console.error("Failed to mark all as read:", error);
+      logger.error("Failed to mark all as read:", error);
       toast.error("Failed to mark all notifications as read");
       // Optional: Refetch notifications here to revert state
     }
@@ -82,7 +83,7 @@ const NotificationBell = () => {
       await deleteNotification(notificationId);
       toast.success("Notification deleted");
     } catch (error) {
-      console.error("Failed to delete notification:", error);
+      logger.error("Failed to delete notification:", error);
       toast.error("Failed to delete notification");
       // Optional: Refetch notifications here to revert state
     }

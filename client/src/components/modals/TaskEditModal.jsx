@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "../ui";
 import { toast } from "react-hot-toast";
 import { useTheme, useAuth } from "../../context";
+import logger from "../../utils/logger.js";
 
 const TaskEditModal = ({ task, isOpen, onClose, onSave, users = [] }) => {
   const { isDark } = useTheme();
@@ -66,7 +67,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, users = [] }) => {
       toast.success("Changes requested successfully!");
       onClose();
     } catch (error) {
-      console.error("Failed to request changes:", error);
+      logger.error("Failed to request changes:", error);
       toast.error("Failed to request changes");
     } finally {
       setLoading(false);

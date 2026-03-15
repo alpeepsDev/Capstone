@@ -1,4 +1,5 @@
 import prisma from "../../config/database.js";
+import logger from "../../utils/logger.js";
 
 /**
  * Nova Automation Engine
@@ -10,7 +11,7 @@ import prisma from "../../config/database.js";
  * Increases priority and notifies project managers
  */
 export const escalateOverdueTasks = async () => {
-  console.log("[Nova Automation] Running auto-escalation...");
+  logger.info("[Nova Automation] Running auto-escalation...");
 
   try {
     // Find overdue tasks that haven't been escalated recently
@@ -29,7 +30,7 @@ export const escalateOverdueTasks = async () => {
       },
     });
 
-    console.log(`[Nova Automation] Found ${overdueTasks.length} overdue tasks`);
+    logger.info(`[Nova Automation] Found ${overdueTasks.length} overdue tasks`);
 
     for (const task of overdueTasks) {
       // Check if we already escalated this task in the last 3 days
@@ -102,12 +103,12 @@ export const escalateOverdueTasks = async () => {
         },
       });
 
-      console.log(
+      logger.info(
         `[Nova Automation] Escalated task "${task.title}" to ${task.project.manager.name}`,
       );
     }
   } catch (error) {
-    console.error("[Nova Automation] Error in auto-escalation:", error);
+    logger.error("[Nova Automation] Error in auto-escalation:", error);
 
     await prisma.automationAction.create({
       data: {
@@ -126,13 +127,14 @@ export const escalateOverdueTasks = async () => {
  * Called periodically by the scheduler
  */
 export const runAutomationActions = async () => {
-  console.log("[Nova Automation] 🤖 Running automation batch...");
+  logger.info("[Nova Automation] 🤖 Running automation batch...");
 
   try {
     await escalateOverdueTasks();
 
-    console.log("[Nova Automation] ✅ Automation batch complete");
+    logger.info("[Nova Automation] ✅ Automation batch complete");
   } catch (error) {
-    console.error("[Nova Automation] ❌ Automation batch error:", error);
+    logger.error("[Nova Automation] ❌ Automation batch error:", error);
   }
 };
+

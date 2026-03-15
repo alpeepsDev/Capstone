@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import logger from "../utils/logger.js";
 
 class WebSocketService {
   constructor() {
@@ -25,17 +26,17 @@ class WebSocketService {
   connect(token) {
     // If already connected with the same token, don't reconnect
     if (this.socket?.connected && this.currentToken === token) {
-      console.log("🔌 Already connected to WebSocket with same token");
+      logger.info("🔌 Already connected to WebSocket with same token");
       return this.socket;
     }
 
     // Disconnect existing connection if any
     if (this.socket) {
-      console.log("🔌 Disconnecting existing WebSocket connection");
+      logger.info("🔌 Disconnecting existing WebSocket connection");
       this.socket.disconnect();
     }
 
-    console.log(
+    logger.info(
       "🔌 Connecting to WebSocket with token:",
       token ? "Token provided" : "No token",
     );
@@ -52,12 +53,12 @@ class WebSocketService {
       });
 
       this.socket.on("connect", () => {
-        console.log("✅ Connected to WebSocket server");
+        logger.info("✅ Connected to WebSocket server");
         this.emitConnectionChange(true);
 
         // Rejoin project room if one was selected
         if (this.currentProjectId) {
-          console.log(`🔄 Rejoining project room: ${this.currentProjectId}`);
+          logger.info(`🔄 Rejoining project room: ${this.currentProjectId}`);
           this.socket.emit("join-project", this.currentProjectId);
         }
 
@@ -65,17 +66,17 @@ class WebSocketService {
         if (this.pendingNotificationCallback) {
           this.socket.off("notification", this.pendingNotificationCallback);
           this.socket.on("notification", this.pendingNotificationCallback);
-          console.log("🔔 Re-registered notification handler after reconnect");
+          logger.info("🔔 Re-registered notification handler after reconnect");
         }
       });
 
       this.socket.on("disconnect", (reason) => {
-        console.log("❌ Disconnected from WebSocket server:", reason);
+        logger.info("❌ Disconnected from WebSocket server:", reason);
         this.emitConnectionChange(false);
       });
 
       this.socket.on("connect_error", (error) => {
-        console.error("❌ WebSocket connection error:", error.message);
+        logger.error("❌ WebSocket connection error:", error.message);
         this.emitConnectionChange(false);
 
         // If authentication error, handle token refresh
@@ -84,7 +85,7 @@ class WebSocketService {
           error.message.includes("Invalid token") ||
           error.message.includes("jwt expired")
         ) {
-          console.log("🔄 WebSocket auth failed - tokens may be expired");
+          logger.info("🔄 WebSocket auth failed - tokens may be expired");
 
           // Clear expired tokens and redirect to login
           localStorage.removeItem("accessToken");
@@ -108,7 +109,7 @@ class WebSocketService {
 
       return this.socket;
     } catch (error) {
-      console.error("Failed to connect to WebSocket server:", error);
+      logger.error("Failed to connect to WebSocket server:", error);
       return null;
     }
   }
@@ -120,7 +121,7 @@ class WebSocketService {
       this.emitConnectionChange(false);
       this.currentToken = null;
       // Don't clear currentProjectId here, so we can rejoin if reconnected
-      console.log("🔌 WebSocket disconnected");
+      logger.info("🔌 WebSocket disconnected");
     }
   }
   joinProject(projectId) {
@@ -128,9 +129,9 @@ class WebSocketService {
 
     if (this.socket?.connected) {
       this.socket.emit("join-project", projectId);
-      console.log(`🏠 Joined project room: ${projectId}`);
+      logger.info(`🏠 Joined project room: ${projectId}`);
     } else {
-      console.log(
+      logger.info(
         `⏳ Socket not connected, queued join for project: ${projectId}`,
       );
     }
@@ -144,7 +145,7 @@ class WebSocketService {
 
     if (this.socket?.connected) {
       this.socket.emit("leave-project", projectId);
-      console.log(`🚪 Left project room: ${projectId}`);
+      logger.info(`🚪 Left project room: ${projectId}`);
     }
   }
 
@@ -159,9 +160,9 @@ class WebSocketService {
       // First remove any existing listener for this callback to prevent duplicates
       this.socket.off("notification", callback);
       this.socket.on("notification", callback);
-      console.log("🔔 Registered notification handler (duplicates prevented)");
+      logger.info("🔔 Registered notification handler (duplicates prevented)");
     } else {
-      console.log(
+      logger.info(
         "🔔 Notification handler stored, will register when socket connects",
       );
     }
@@ -183,7 +184,7 @@ class WebSocketService {
     if (this.socket) {
       this.socket.off("admin-update", callback);
       this.socket.on("admin-update", callback);
-      console.log("🛡️ Registered admin update handler");
+      logger.info("🛡️ Registered admin update handler");
     }
   }
 

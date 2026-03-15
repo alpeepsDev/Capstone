@@ -1,12 +1,13 @@
 import prisma from "../config/database.js";
 import * as rules from "./rules.js";
+import logger from "../utils/logger.js";
 
 /**
  * Runs the Nova Automation Engine.
  * Analyzes all active tasks and updates their intelligence fields.
  */
 export const runAutomation = async () => {
-  console.log("[Nova] 🚀 Starting automation analysis...");
+  logger.info("[Nova] Starting automation analysis...");
   const startTime = Date.now();
   let updatedCount = 0;
 
@@ -22,7 +23,7 @@ export const runAutomation = async () => {
       take: 1000,
     });
 
-    console.log(`[Nova] 🔍 Analyzing ${tasks.length} active tasks...`);
+    logger.info(`[Nova] Analyzing ${tasks.length} active tasks...`);
 
     // 2. Analyze each task and prepare updates
     const updates = [];
@@ -68,15 +69,15 @@ export const runAutomation = async () => {
       // processing in chunks if necessary, but transaction is good for now
       await prisma.$transaction(updates);
       updatedCount = updates.length;
-      console.log(`[Nova] ✅ Updated ${updatedCount} tasks with new insights.`);
+      logger.info(`[Nova] Updated ${updatedCount} tasks with new insights.`);
     } else {
-      console.log("[Nova] ✨ No changes detected.");
+      logger.info("[Nova] No changes detected.");
     }
   } catch (error) {
-    console.error("[Nova] ❌ Automation Error:", error);
+    logger.error("[Nova] Automation error:", error);
   } finally {
     const duration = Date.now() - startTime;
-    console.log(`[Nova] 🏁 Finished in ${duration}ms.`);
+    logger.info(`[Nova] Finished in ${duration}ms.`);
   }
 };
 

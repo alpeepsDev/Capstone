@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { projectsApi } from "../../api/projects.js";
+import logger from "../../utils/logger.js";
 
 export const useProjects = () => {
   const [projects, setProjects] = useState([]);
@@ -15,7 +16,7 @@ export const useProjects = () => {
       setProjects(Array.isArray(fetchedProjects) ? fetchedProjects : []);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
-      console.error("Failed to fetch projects:", err);
+      logger.error("Failed to fetch projects:", err);
     } finally {
       setLoading(false);
     }

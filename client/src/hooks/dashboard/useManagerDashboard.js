@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { tasksApi } from "../../api/tasks.js";
 import { projectsApi } from "../../api/projects.js";
 import webSocketService from "../../services/websocket.service.js";
+import logger from "../../utils/logger.js";
 
 export const useManagerDashboard = () => {
   const [stats, setStats] = useState({
@@ -32,7 +33,7 @@ export const useManagerDashboard = () => {
         };
       setStats(statsData);
     } catch (err) {
-      console.error("Failed to fetch manager stats:", err);
+      logger.error("Failed to fetch manager stats:", err);
       setError(err.response?.data?.message || err.message);
     }
   }, []);
@@ -45,7 +46,7 @@ export const useManagerDashboard = () => {
       const tasksData = response.data || response || [];
       setTasksAwaitingApproval(tasksData);
     } catch (err) {
-      console.error("Failed to fetch tasks awaiting approval:", err);
+      logger.error("Failed to fetch tasks awaiting approval:", err);
       setError(err.response?.data?.message || err.message);
     }
   }, []);
@@ -58,7 +59,7 @@ export const useManagerDashboard = () => {
       const tasksData = response.data || response || [];
       setAllTasks(tasksData);
     } catch (err) {
-      console.error("Failed to fetch all tasks:", err);
+      logger.error("Failed to fetch all tasks:", err);
       setError(err.response?.data?.message || err.message);
     }
   }, []);
@@ -71,7 +72,7 @@ export const useManagerDashboard = () => {
       const projectsData = response.data || response || [];
       setProjects(projectsData);
     } catch (err) {
-      console.error("Failed to fetch projects:", err);
+      logger.error("Failed to fetch projects:", err);
       setError(err.response?.data?.message || err.message);
     }
   }, []);
@@ -124,7 +125,7 @@ export const useManagerDashboard = () => {
         // fetchProjects removed to avoid redundancy with parent Dashboard
       ]);
     } catch (err) {
-      console.error("Failed to refresh dashboard:", err);
+      logger.error("Failed to refresh dashboard:", err);
       setError(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);

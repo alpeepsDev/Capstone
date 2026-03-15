@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useTheme } from "../../context";
+import logger from "../../utils/logger.js";
 
 const MentionInput = ({
   value,
@@ -113,7 +114,7 @@ const MentionInput = ({
     const afterNode = document.createTextNode(" " + afterText);
 
     // Debug logging
-    console.log("Inserting mention:", {
+    logger.info("Inserting mention:", {
       user: user.username,
       before: beforeText,
       after: afterText,

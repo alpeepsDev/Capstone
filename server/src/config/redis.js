@@ -1,4 +1,5 @@
 import IORedis from "ioredis";
+import logger from "../utils/logger.js";
 
 /**
  * Shared Redis connection for BullMQ queues and workers.
@@ -19,7 +20,7 @@ async function testRedisConnection() {
   if (connectionChecked) return isRedisAvailable;
 
   if (!REDIS_URL) {
-    console.warn("[Redis] ⚠️  REDIS_URL not set — skipping Redis");
+    logger.warn("[Redis] ⚠️  REDIS_URL not set — skipping Redis");
     connectionChecked = true;
     return false;
   }
@@ -52,7 +53,7 @@ async function testRedisConnection() {
 
     isRedisAvailable = true;
     connectionChecked = true;
-    console.log("[Redis] ✅ Connected to Redis");
+    logger.info("[Redis] ✅ Connected to Redis");
     return true;
   } catch {
     isRedisAvailable = false;
@@ -68,7 +69,7 @@ async function testRedisConnection() {
       connection = null;
     }
 
-    console.warn(
+    logger.warn(
       "[Redis] ⚠️  Redis not available — automation will use setInterval fallback",
     );
     return false;
@@ -79,3 +80,4 @@ export { testRedisConnection };
 export const getRedisAvailability = () => isRedisAvailable;
 export const getConnection = () => connection;
 export default connection;
+

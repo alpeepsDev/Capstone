@@ -139,7 +139,14 @@ export const getProjects = asyncHandler(async (req, res) => {
         orderBy: { createdAt: "desc" },
       });
       break;
-      break;
+  }
+
+  // Filter out sensitive budget data for non-managers/admins
+  if (userRole === "USER") {
+    projects = projects.map((project) => {
+      const { totalBudget, ...projectWithoutBudget } = project;
+      return projectWithoutBudget;
+    });
   }
 
   res.json({
@@ -225,6 +232,15 @@ export const getProject = asyncHandler(async (req, res) => {
     return res.status(403).json({
       success: false,
       message: "Access denied to this project",
+    });
+  }
+
+  // Filter out sensitive budget data for non-managers/admins
+  if (req.user.role === "USER") {
+    const { totalBudget, ...projectWithoutBudget } = project;
+    return res.json({
+      success: true,
+      data: projectWithoutBudget,
     });
   }
 

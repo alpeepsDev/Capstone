@@ -8,17 +8,22 @@ import viteCompression from "vite-plugin-compression";
 // https://vite.dev/config/
 export default defineConfig({
   server: {
+    allowedHosts: ["chubby-rice-join.loca.lt", ".loca.lt", ".ngrok-free.app"],
     proxy: {
       "/api": {
         target: "http://localhost:3001",
         changeOrigin: true,
         secure: false,
-        onProxyRes: function (proxyRes, req, res) {
+        onProxyRes: function (proxyRes, req, _res) {
           if (req.url.includes("/assistant/query")) {
             proxyRes.headers["Cache-Control"] = "no-cache, no-transform";
             proxyRes.headers["X-Accel-Buffering"] = "no";
           }
         },
+      },
+      "/uploads": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
       },
       "/socket.io": {
         target: "ws://localhost:3001",
