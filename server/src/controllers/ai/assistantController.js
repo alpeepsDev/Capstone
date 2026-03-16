@@ -1,5 +1,6 @@
 import prisma from "../../config/database.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import logger from "../../utils/logger.js";
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -92,7 +93,10 @@ export const askNova = async (req, res) => {
     const { query } = req.body;
     const userId = req.user?.id;
 
-    console.log(`[Nova AI] Received query: "${query}" from user ${userId}`);
+    logger.info("[Nova AI] Received query", {
+      userId,
+      queryLength: typeof query === "string" ? query.length : null,
+    });
 
     if (!query) {
       return res.status(400).json({
@@ -158,11 +162,8 @@ export const askNova = async (req, res) => {
     let prompt = "";
 
     if (isProjectQuery || isChartQuery) {
-      console.log("[Nova AI] Project intent detected. Fetching context...");
-
-      console.log(
-        "[Nova AI] Fetching all user tasks to process context in memory...",
-      );
+      logger.debug("[Nova AI] Project intent detected. Fetching context...");
+      logger.debug("[Nova AI] Fetching user tasks for in-memory context...");
       const allUserTasks = await prisma.task.findMany({
         where: { assigneeId: userId },
         select: {
@@ -331,7 +332,7 @@ RULES:
       chunkTimer = setTimeout(() => {
         if (streamEnded) return;
         streamEnded = true;
-        console.warn("[Nova AI] Stream idle timeout (15s). Ending response.");
+        logger.warn("[Nova AI] Stream idle timeout (15s). Ending response.");
         res.write(
           `data: ${JSON.stringify({ type: "error", text: "Response timed out. Please try again." })}\n\n`,
         );
@@ -355,7 +356,7 @@ RULES:
     clearTimeout(chunkTimer);
     if (streamEnded) return; // already ended by timeout
 
-    console.log("[Nova AI] Response stream finished.");
+    logger.info("[Nova AI] Response stream finished.");
 
     // --- CHART GENERATION (Targeted) ---
     let chartData = null;
@@ -398,7 +399,7 @@ RULES:
     if (typeof res.flush === "function") res.flush();
     res.end();
   } catch (error) {
-    console.error("[Nova AI] Error:", error.message);
+    logger.error("[Nova AI] Error:", error);
 
     if (!res.headersSent) {
       res.setHeader("Content-Type", "text/event-stream");
@@ -429,7 +430,7 @@ RULES:
         res.end();
         return;
       } catch (e) {
-        console.error("Fallback failed:", e);
+        logger.error("[Nova AI] Fallback failed:", e);
       }
     }
 

@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import logger from "../utils/logger.js";
 
 // Store connected users
 const connectedUsers = new Map();
@@ -15,14 +16,14 @@ export const initializeWebSocket = (io) => {
         socket.handshake.auth.token ||
         socket.handshake.headers.authorization?.replace("Bearer ", "");
 
-      console.log("🔐 WebSocket auth attempt:", {
+      logger.debug("🔐 WebSocket auth attempt:", {
         hasToken: !!token,
         authHeader: socket.handshake.headers.authorization,
         authToken: socket.handshake.auth.token,
       });
 
       if (!token) {
-        console.log("❌ WebSocket auth failed: No token provided");
+        logger.warn("❌ WebSocket auth failed: No token provided");
         return next(new Error("Authentication error: No token provided"));
       }
 
@@ -34,19 +35,19 @@ export const initializeWebSocket = (io) => {
         socket.join("admin");
       }
 
-      console.log("✅ WebSocket auth success:", {
+      logger.info("✅ WebSocket auth success:", {
         userId: decoded.userId,
         role: decoded.role,
       });
       next();
     } catch (error) {
-      console.log("❌ WebSocket auth failed:", error.message);
+      logger.error("❌ WebSocket auth failed:", error.message);
       next(new Error("Authentication error: Invalid token"));
     }
   });
 
   io.on("connection", (socket) => {
-    console.log(`👤 User ${socket.userId} connected to WebSocket`);
+    logger.info(`👤 User ${socket.userId} connected to WebSocket`);
 
     // Store user socket for notification targeting
     connectedUsers.set(socket.userId, socket);
@@ -58,24 +59,24 @@ export const initializeWebSocket = (io) => {
     socket.on("join-project", (projectId) => {
       // Ideally we should verify if user is member of project here, but for now we allow joining
       socket.join(`project:${projectId}`);
-      console.log(
+      logger.debug(
         `👤 User ${socket.userId} joined project room: project:${projectId}`,
       );
 
       // Verify room membership
       const rooms = Array.from(socket.rooms);
-      console.log(`🏠 User ${socket.userId} is now in rooms:`, rooms);
+      logger.debug(`🏠 User ${socket.userId} is now in rooms:`, rooms);
     });
 
     // Handle user leaving project rooms
     socket.on("leave-project", (projectId) => {
       socket.leave(`project:${projectId}`);
-      console.log(`👤 User ${socket.userId} left project room: ${projectId}`);
+      logger.debug(`👤 User ${socket.userId} left project room: ${projectId}`);
     });
 
     // Handle disconnection
     socket.on("disconnect", () => {
-      console.log(`👤 User ${socket.userId} disconnected from WebSocket`);
+      logger.info(`👤 User ${socket.userId} disconnected from WebSocket`);
       connectedUsers.delete(socket.userId);
     });
   });
@@ -86,20 +87,19 @@ export const initializeWebSocket = (io) => {
 // Helper functions to emit notifications
 export const emitNotificationToUser = (io, userId, notification) => {
   io.to(`user:${userId}`).emit("notification", notification);
-  console.log(`📢 Notification sent to user ${userId}:`, notification.title);
+  logger.info(`📢 Notification sent to user ${userId}: ${notification.title}`);
 };
 
 export const emitNotificationToProject = (io, projectId, notification) => {
   io.to(`project:${projectId}`).emit("notification", notification);
-  console.log(
-    `📢 Notification sent to project ${projectId}:`,
-    notification.title,
+  logger.info(
+    `📢 Notification sent to project ${projectId}: ${notification.title}`,
   );
 };
 
 export const emitNotificationToAll = (io, notification) => {
   io.emit("notification", notification);
-  console.log(`📢 Broadcast notification sent:`, notification.title);
+  logger.info(`📢 Broadcast notification sent: ${notification.title}`);
 };
 
 // Get connected users (for debugging)
@@ -110,27 +110,27 @@ export const getConnectedUsers = () => {
 // Task related events
 export const emitTaskCreated = (io, projectId, task) => {
   io.to(`project:${projectId}`).emit("task-created", task);
-  console.log(`📢 Task created event sent to project ${projectId}`);
+  logger.info(`📢 Task created event sent to project ${projectId}`);
 };
 
 export const emitTaskUpdated = (io, projectId, task) => {
   io.to(`project:${projectId}`).emit("task-updated", task);
-  console.log(`📢 Task updated event sent to project ${projectId}`);
+  logger.info(`📢 Task updated event sent to project ${projectId}`);
 };
 
 export const emitTaskMoved = (io, projectId, task) => {
   io.to(`project:${projectId}`).emit("task-moved", task);
-  console.log(`📢 Task moved event sent to project ${projectId}`);
+  logger.info(`📢 Task moved event sent to project ${projectId}`);
 };
 
 export const emitTaskDeleted = (io, projectId, taskId) => {
   io.to(`project:${projectId}`).emit("task-deleted", { taskId, projectId });
-  console.log(`📢 Task deleted event sent to project ${projectId}`);
+  logger.info(`📢 Task deleted event sent to project ${projectId}`);
 };
 
 export const emitCommentAdded = (io, projectId, comment) => {
   io.to(`project:${projectId}`).emit("comment-added", comment);
-  console.log(`📢 Comment added event sent to project ${projectId}`);
+  logger.info(`📢 Comment added event sent to project ${projectId}`);
 };
 
 export const getIO = () => ioInstance;
@@ -138,6 +138,6 @@ export const getIO = () => ioInstance;
 export const emitAdminUpdate = (model, operation, data) => {
   if (ioInstance) {
     ioInstance.to("admin").emit("admin-update", { model, operation, data });
-    console.log(`📢 Admin update emitted for model ${model} (${operation})`);
+    logger.info(`📢 Admin update emitted for model ${model} (${operation})`);
   }
 };

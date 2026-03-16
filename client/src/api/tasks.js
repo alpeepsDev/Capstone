@@ -1,4 +1,5 @@
 import api from "./index.js";
+import logger from "../utils/logger.js";
 
 export const tasksApi = {
   // Get all tasks for a project
@@ -26,23 +27,48 @@ export const tasksApi = {
   },
 
   // Move task (for Kanban board)
-  moveTask: async (taskId, { status, position }, proofFile = null) => {
+  moveTask: async (taskId, { status, position }, proofFiles = null) => {
     try {
-      console.log("Moving task:", { taskId, status, position, hasProof: !!proofFile });
-      
+      logger.info("Moving task:", {
+        taskId,
+        status,
+        position,
+        hasProof: !!proofFiles,
+      });
+
       let payload;
       let config = {};
 
-      if (proofFile) {
+      if (
+        proofFiles &&
+        (Array.isArray(proofFiles) ? proofFiles.length > 0 : proofFiles)
+      ) {
         payload = new FormData();
         payload.append("status", status);
         if (position !== null && position !== undefined) {
           payload.append("position", position);
         }
-        payload.append("proofs", proofFile);
+
+        // Handle both single file and array of files
+        if (Array.isArray(proofFiles)) {
+          proofFiles.forEach((file) => {
+            payload.append("proofs", file);
+          });
+        } else {
+          payload.append("proofs", proofFiles);
+        }
+
+        // Add token to form data for the backend
+        const token =
+          localStorage.getItem("accessToken") ||
+          sessionStorage.getItem("accessToken");
+        if (token) {
+          payload.append("token", token);
+        }
+
         config = {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": undefined,
           },
         };
       } else {
@@ -50,10 +76,10 @@ export const tasksApi = {
       }
 
       const response = await api.put(`/tasks/${taskId}/move`, payload, config);
-      console.log("Move task response:", response.data);
+      logger.info("Move task response:", response.data);
       return response.data;
     } catch (error) {
-      console.error("Move task error:", {
+      logger.error("Move task error:", {
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,

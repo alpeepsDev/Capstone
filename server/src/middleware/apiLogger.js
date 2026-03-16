@@ -1,4 +1,5 @@
 import adminService from "../services/admin.service.js";
+import logger from "../utils/logger.js";
 
 /**
  * API Logger Middleware
@@ -6,6 +7,8 @@ import adminService from "../services/admin.service.js";
  */
 const apiLogger = async (req, res, next) => {
   const startTime = Date.now();
+  const urlForSkip = req.originalUrl || req.url || "";
+  const shouldSkip = urlForSkip.startsWith("/api/v1/logs/");
 
   // Store original end function
   const originalEnd = res.end;
@@ -16,6 +19,7 @@ const apiLogger = async (req, res, next) => {
 
     // Log asynchronously (don't block the response)
     setImmediate(async () => {
+      if (shouldSkip) return;
       try {
         await adminService.logApiRequest({
           userId: req.user?.id || null,
@@ -29,9 +33,9 @@ const apiLogger = async (req, res, next) => {
         });
       } catch (error) {
         if (error.message?.includes("fetch failed")) {
-          console.error("API logging failed: Database connection unreachable");
+          logger.error("API logging failed: Database connection unreachable");
         } else {
-          console.error("API logging error:", error);
+          logger.error("API logging error:", error);
         }
       }
     });

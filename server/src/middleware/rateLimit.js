@@ -1,4 +1,5 @@
 import prisma from "../config/database.js";
+import logger from "../utils/logger.js";
 
 /**
  * In-memory store for IP-based rate limiting
@@ -7,11 +8,90 @@ import prisma from "../config/database.js";
 const ipRateLimitStore = new Map();
 
 /**
+ * In-memory store for global rate limiting
+ * Keyed by userId when authenticated, else by IP.
+ * Maps key to { count, resetTime }
+ */
+const globalRateStore = new Map();
+
+/**
  * IP-based rate limit configuration
+ * Protects unauthenticated endpoints from abuse
  */
 const IP_RATE_LIMIT = parseInt(process.env.IP_RATE_LIMIT) || 100;
 const IP_RATE_WINDOW_HOURS = parseInt(process.env.IP_RATE_WINDOW_HOURS) || 1;
 const IP_RATE_WINDOW_MS = IP_RATE_WINDOW_HOURS * 60 * 60 * 1000;
+
+/**
+ * Global rate limit configuration (1000 requests per second by default for concurrent dashboard loads)
+ * 
+ * This is a server-level safety valve to prevent system overload from:
+ * - Automated scrapers/bots
+ * - DDoS attacks
+ * - Runaway client processes
+ * - Burst traffic spikes
+ * 
+ * 1000/s allows ~5-10 concurrent dashboard API calls without throttling.
+ * 
+ * Set GLOBAL_RATE_LIMIT env var to override (e.g., 500 for stricter, 5000 for more permissive)
+ * 
+ * See docs/RATE_LIMITING.md for detailed configuration guide.
+ */
+const GLOBAL_RATE_LIMIT = parseInt(process.env.GLOBAL_RATE_LIMIT) || 1000;
+const GLOBAL_RATE_WINDOW_MS = parseInt(process.env.GLOBAL_RATE_WINDOW_MS) || 1000;
+const ADMIN_GLOBAL_RATE_LIMIT = parseInt(process.env.ADMIN_GLOBAL_RATE_LIMIT) || 1000;
+
+const getClientIp = (req) => req.ip || req.connection?.remoteAddress || "unknown";
+
+/**
+ * Check if endpoint should be exempt from global rate limit
+ */
+const isExemptFromGlobalLimit = (req) => {
+  const exemptPaths = [
+    "/api/health",
+    "/api/v1/logs/", // Log forwarding endpoint
+  ];
+
+  return exemptPaths.some((path) => req.path.startsWith(path));
+};
+
+/**
+ * Global limiter (fixed window). Returns true if request is blocked and response is sent.
+ */
+const handleGlobalRateLimit = (req, res) => {
+  // Skip global rate limit for exempt endpoints
+  if (isExemptFromGlobalLimit(req)) {
+    return false;
+  }
+
+  const now = Date.now();
+  const key = req.user?.id ? `user:${req.user.id}` : `ip:${getClientIp(req)}`;
+  const limit = req.user?.role === "ADMIN" ? ADMIN_GLOBAL_RATE_LIMIT : GLOBAL_RATE_LIMIT;
+
+  const existing = globalRateStore.get(key);
+  if (!existing || now > existing.resetTime) {
+    globalRateStore.set(key, { count: 1, resetTime: now + GLOBAL_RATE_WINDOW_MS });
+    return false;
+  }
+
+  existing.count += 1;
+
+  if (existing.count > limit) {
+    res.setHeader("X-RateLimit-Limit", limit);
+    res.setHeader("X-RateLimit-Remaining", 0);
+    res.setHeader("X-RateLimit-Reset", new Date(existing.resetTime).toISOString());
+    res.setHeader("X-RateLimit-Type", "global");
+
+    return res.status(429).json({
+      success: false,
+      message: "Rate limit exceeded. Please try again later.",
+      retryAfter: Math.max(1, Math.ceil((existing.resetTime - now) / 1000)),
+      limitType: "global",
+    });
+  }
+
+  return false;
+};
 
 /**
  * Handle IP-based rate limiting for unauthenticated requests
@@ -86,6 +166,9 @@ const handleIpBasedRateLimit = (req, res, next) => {
  */
 const rateLimit = async (req, res, next) => {
   try {
+    // Global cap first (fast, in-memory). Applies to all requests.
+    if (handleGlobalRateLimit(req, res)) return;
+
     // Apply IP-based rate limiting for unauthenticated requests
     if (!req.user) {
       return handleIpBasedRateLimit(req, res, next);
@@ -201,7 +284,7 @@ const rateLimit = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("Rate limiting error:", error);
+    logger.error("Rate limiting error:", error);
     // Don't block the request if rate limiting fails
     next();
   }
@@ -269,6 +352,13 @@ if (process.env.NODE_ENV !== "test") {
       for (const [ip, data] of ipRateLimitStore.entries()) {
         if (now > data.resetTime) {
           ipRateLimitStore.delete(ip);
+        }
+      }
+
+      // Clean up global rate limit store
+      for (const [key, data] of globalRateStore.entries()) {
+        if (now > data.resetTime) {
+          globalRateStore.delete(key);
         }
       }
     },

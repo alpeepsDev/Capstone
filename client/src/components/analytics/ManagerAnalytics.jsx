@@ -16,6 +16,7 @@ import {
   Cell,
 } from "recharts";
 import { Lightbulb, BarChart3 } from "lucide-react";
+import logger from "../../utils/logger.js";
 
 const ManagerAnalytics = ({
   tasks = [],
@@ -47,7 +48,7 @@ const ManagerAnalytics = ({
         );
         setProjectAnalytics(analyticsData);
       } catch (error) {
-        console.error("Error fetching project analytics:", error);
+        logger.error("Error fetching project analytics:", error);
       } finally {
         setLoadingAnalytics(false);
       }

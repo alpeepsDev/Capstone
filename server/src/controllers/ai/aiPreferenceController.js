@@ -1,4 +1,5 @@
 import prisma from "../../config/database.js";
+import logger from "../../utils/logger.js";
 
 // Get user's AI preferences
 export const getAIPreferences = async (req, res) => {
@@ -58,7 +59,7 @@ export const getAIPreferences = async (req, res) => {
       data: preferences,
     });
   } catch (error) {
-    console.error("[AI Preferences] Error fetching preferences:", error);
+    logger.error("[AI Preferences] Error fetching preferences:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch AI preferences",
@@ -107,7 +108,7 @@ export const updateAIPreferences = async (req, res) => {
       message: "AI preferences updated successfully",
     });
   } catch (error) {
-    console.error("[AI Preferences] Error updating preferences:", error);
+    logger.error("[AI Preferences] Error updating preferences:", error);
     res.status(500).json({
       success: false,
       message: "Failed to update AI preferences",
@@ -150,7 +151,7 @@ export const resetAIPreferences = async (req, res) => {
       message: "AI preferences reset to defaults",
     });
   } catch (error) {
-    console.error("[AI Preferences] Error resetting preferences:", error);
+    logger.error("[AI Preferences] Error resetting preferences:", error);
     res.status(500).json({
       success: false,
       message: "Failed to reset AI preferences",

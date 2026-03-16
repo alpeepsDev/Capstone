@@ -1,0 +1,150 @@
+
+> client@0.0.0 lint
+> eslint .
+
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\api\auth.js
+  23:24  error  'persistent' is assigned a value but never used  no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\analytics\ManagerAnalytics.jsx
+  156:9  error  'avgApprovalTime' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\analytics\UserAnalytics.jsx
+  217:6  warning  React Hook useMemo has an unnecessary dependency: 'doneTasks'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\assistant\NovaAssistant.jsx
+    2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+   59:45  error  Unnecessary escape character: \*                                               no-useless-escape
+  237:24  error  'e' is defined but never used                                                  no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\assistant\NovaChart.jsx
+  10:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  68:28  error  'type' is assigned a value but never used                                      no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\dashboard\AdminDashboard.jsx
+  741:30  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+  747:29  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+  757:29  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\dashboard\BudgetAllocation.jsx
+   28:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                       no-unused-vars
+   50:6   warning  React Hook useEffect has a missing dependency: 'fetchBudgetData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  115:14  error    'error' is defined but never used                                                                                   no-unused-vars
+  206:14  error    'error' is defined but never used                                                                                   no-unused-vars
+  276:9   error    'bgCard' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                              no-unused-vars
+  277:9   error    'borderCard' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                          no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\dashboard\ManagerDashboard.jsx
+    9:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                            no-unused-vars
+   91:3   error    'onRefreshProjects' is defined but never used                                                                                                                                                                                                            no-unused-vars
+  135:5   error    'stats' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                    no-unused-vars
+  137:5   error    'allTasks' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                 no-unused-vars
+  138:15  error    'dashboardProjects' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                        no-unused-vars
+  139:14  error    'dashboardLoading' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                         no-unused-vars
+  151:12  error    'tasksError' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                               no-unused-vars
+  185:6   warning  React Hook useEffect has a missing dependency: 'setSelectedProjectId'. Either include it or remove the dependency array. If 'setSelectedProjectId' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+  320:14  error    'error' is defined but never used                                                                                                                                                                                                                        no-unused-vars
+  354:14  error    'error' is defined but never used                                                                                                                                                                                                                        no-unused-vars
+  366:14  error    'error' is defined but never used                                                                                                                                                                                                                        no-unused-vars
+  445:14  error    'error' is defined but never used                                                                                                                                                                                                                        no-unused-vars
+  452:5   error    Unnecessary try/catch wrapper                                                                                                                                                                                                                            no-useless-catch
+  464:9   error    'views' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                    no-unused-vars
+  717:43  error    'Icon' is defined but never used                                                                                                                                                                                                                         no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\dashboard\UserDashboard.jsx
+   26:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                no-unused-vars
+  198:9   warning  The 'safeTasks' conditional could make the dependencies of useMemo Hook (at line 204) change on every render. To fix this, wrap the initialization of 'safeTasks' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  201:9   error    'allProjectTasks' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                              no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\insights\InsightsWidget.jsx
+  2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\kanban\KanbanBoard.jsx
+   16:3   error  'verticalListSortingStrategy' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+   35:3   error  'projectId' is defined but never used                                                               no-unused-vars
+  123:13  error  'overTask' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u            no-unused-vars
+  171:17  error  'reorderedTasks' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u      no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\kanban\KanbanColumn.jsx
+  14:3  error  'icon' is defined but never used         no-unused-vars
+  16:3  error  'accentColor' is defined but never used  no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\kanban\TaskCard.jsx
+   9:3  error  'onEdit' is defined but never used    no-unused-vars
+  10:3  error  'onDelete' is defined but never used  no-unused-vars
+  12:3  error  'userRole' is defined but never used  no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\modals\LogTimeModal.jsx
+  5:20  error  'useAuth' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\modals\RateLimitConfigModal.jsx
+  42:5  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\modals\TaskDetailModal.jsx
+  189:10  error  'showMentions' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u         no-unused-vars
+  298:9   error  'handleCommentChange' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  317:9   error  'insertMention' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u        no-unused-vars
+  329:9   error  'filteredMembers' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u      no-unused-vars
+  426:9   error  'getStatusColor' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u       no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\modals\TaskProofModal.jsx
+  21:6  warning  React Hook React.useEffect has a missing dependency: 'clearFile'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\navigation\Header.jsx
+  1:17  error  'useState' is defined but never used. Allowed unused vars must match /^[A-Z_]/u          no-unused-vars
+  1:27  error  'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u         no-unused-vars
+  4:8   error  'webSocketService' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\navigation\Sidebar.jsx
+   3:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  30:26  error  'Icon' is defined but never used                                               no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\notifications\NotificationBell.jsx
+  11:1  error  Parsing error: Unexpected keyword 'import'
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\ui\Dialog.jsx
+  1:46  error  'useCallback' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\ui\MentionInput.jsx
+   1:46  error  'useCallback' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                 no-unused-vars
+  17:10  error  'cursorPosition' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u     no-unused-vars
+  17:26  error  'setCursorPosition' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  98:11  error  'range' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u              no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\ui\RichMentionEditor.jsx
+   12:3  error    'users' is assigned a value but never used                                                                           no-unused-vars
+  107:6  warning  React Hook useCallback has a missing dependency: 'isProofreading'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\components\ui\RichTextRenderer.jsx
+  67:38  error  'isDark' is defined but never used  no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\context\AuthContext.jsx
+  112:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\context\NotificationContext.jsx
+   15:14  error    Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                            react-refresh/only-export-components
+  222:6   warning  React Hook useEffect has missing dependencies: 'fetchNotifications' and 'handleRealtimeNotification'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\hooks\admin\useAdmin.js
+   64:6  warning  React Hook useEffect has missing dependencies: 'fetchDashboardStats' and 'fetchUsers'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+   83:6  warning  React Hook useCallback has a missing dependency: 'dashboardStats'. Either include it or remove the dependency array                        react-hooks/exhaustive-deps
+  361:6  warning  React Hook useCallback has a missing dependency: 'users.length'. Either include it or remove the dependency array                          react-hooks/exhaustive-deps
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\hooks\dashboard\useDashboardState.js
+  10:35  error  'user' is defined but never used  no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\hooks\dashboard\useManagerDashboard.js
+  161:37  error  'task' is defined but never used  no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\pages\ReportPage.jsx
+  34:6  warning  React Hook useEffect has a missing dependency: 'fetchReports'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\maflo\Documents\backup\Capstone\client\src\pages\ResetPassword.jsx
+  1:27  error  'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\maflo\Documents\backup\Capstone\client\vite.config.js
+  17:46  error  'res' is defined but never used  no-unused-vars
+
+✖ 78 problems (66 errors, 12 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

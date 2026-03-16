@@ -1,0 +1,4590 @@
+{
+  "tables": [
+    {
+      "name": "users",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "projects",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "budget_categories",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "budget_expenses",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "project_members",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "tasks",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "work_logs",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "task_comments",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "notifications",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "api_logs",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "rate_limit_configs",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "user_rate_limits",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "endpoint_rate_limits",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "system_health_logs",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "audit_logs",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "task_relations",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "task_templates",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "task_history",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "nova_insights",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "user_ai_preferences",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "task_predictions",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    },
+    {
+      "name": "automation_actions",
+      "schemaName": "public",
+      "note": {
+        "value": ""
+      }
+    }
+  ],
+  "fields": {
+    "public.users": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "username",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "password",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "name",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "role",
+        "type": {
+          "type_name": "UserRole",
+          "schemaName": "public"
+        },
+        "dbdefault": {
+          "type": "string",
+          "value": "USER"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "avatar",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "email",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "usernameHash",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "emailHash",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "isActive",
+        "type": {
+          "type_name": "bool",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "boolean",
+          "value": "true"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "lastLogin",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "resetPasswordOtp",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "resetPasswordExpires",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.projects": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "name",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "description",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "managerId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "isActive",
+        "type": {
+          "type_name": "bool",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "boolean",
+          "value": "true"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "startDate",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "endDate",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "totalBudget",
+        "type": {
+          "type_name": "float8",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "number",
+          "value": "0"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.budget_categories": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "name",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "allocated",
+        "type": {
+          "type_name": "float8",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "number",
+          "value": "0"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "color",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "projectId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.budget_expenses": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "description",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "amount",
+        "type": {
+          "type_name": "float8",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "date",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "categoryId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.project_members": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "projectId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "userId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "joinedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.tasks": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "title",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "description",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "status",
+        "type": {
+          "type_name": "TaskStatus",
+          "schemaName": "public"
+        },
+        "dbdefault": {
+          "type": "string",
+          "value": "PENDING"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "priority",
+        "type": {
+          "type_name": "TaskPriority",
+          "schemaName": "public"
+        },
+        "dbdefault": {
+          "type": "string",
+          "value": "MEDIUM"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "projectId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdById",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "assigneeId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "dueDate",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "completedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "position",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "number",
+          "value": "0"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "startDate",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "timeRemaining",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "timeSpent",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "number",
+          "value": "0"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "isOverdue",
+        "type": {
+          "type_name": "bool",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "boolean",
+          "value": "false"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "lastActivity",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "priorityScore",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "number",
+          "value": "0"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "riskLevel",
+        "type": {
+          "type_name": "TaskRiskLevel",
+          "schemaName": "public"
+        },
+        "dbdefault": {
+          "type": "string",
+          "value": "LOW"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "proofAttachment",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "proofAttachments",
+        "type": {
+          "type_name": "text[]",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "ARRAY[]]"
+        },
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "additionalAssigneeIds",
+        "type": {
+          "type_name": "text[]",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "ARRAY[]]"
+        },
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.work_logs": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "timeSpent",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "startedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "description",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "taskId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "userId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.task_comments": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "content",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "taskId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "authorId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.notifications": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "type",
+        "type": {
+          "type_name": "NotificationType",
+          "schemaName": "public"
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "title",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "message",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "userId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "taskId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "projectId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "isRead",
+        "type": {
+          "type_name": "bool",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "boolean",
+          "value": "false"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.api_logs": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "userId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "username",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "endpoint",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "method",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "statusCode",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "responseTime",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "userAgent",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "ipAddress",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "timestamp",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.rate_limit_configs": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "role",
+        "type": {
+          "type_name": "UserRole",
+          "schemaName": "public"
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "limit",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "window",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "number",
+          "value": "3600"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "enabled",
+        "type": {
+          "type_name": "bool",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "boolean",
+          "value": "true"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.user_rate_limits": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "userId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "limit",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "window",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "number",
+          "value": "3600"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "enabled",
+        "type": {
+          "type_name": "bool",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "boolean",
+          "value": "true"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.endpoint_rate_limits": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "endpoint",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "method",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "limit",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "window",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "number",
+          "value": "60"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "enabled",
+        "type": {
+          "type_name": "bool",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "boolean",
+          "value": "true"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.system_health_logs": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "cpuUsage",
+        "type": {
+          "type_name": "float8",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "memoryUsage",
+        "type": {
+          "type_name": "float8",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "totalMemory",
+        "type": {
+          "type_name": "float8",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "freeMemory",
+        "type": {
+          "type_name": "float8",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "uptime",
+        "type": {
+          "type_name": "float8",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "activeConnections",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "timestamp",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.audit_logs": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "adminId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "action",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "targetId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "details",
+        "type": {
+          "type_name": "jsonb",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "timestamp",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.task_relations": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "sourceTaskId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "targetTaskId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "relationType",
+        "type": {
+          "type_name": "TaskRelationType",
+          "schemaName": "public"
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdById",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.task_templates": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "name",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "description",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "projectId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "priority",
+        "type": {
+          "type_name": "TaskPriority",
+          "schemaName": "public"
+        },
+        "dbdefault": {
+          "type": "string",
+          "value": "MEDIUM"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "template",
+        "type": {
+          "type_name": "jsonb",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdById",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "isDefault",
+        "type": {
+          "type_name": "bool",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "boolean",
+          "value": "false"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.task_history": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "taskId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "userId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "field",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "oldValue",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "newValue",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.nova_insights": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "userId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "type",
+        "type": {
+          "type_name": "InsightType",
+          "schemaName": "public"
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "title",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "description",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "taskId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "projectId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "actionTaken",
+        "type": {
+          "type_name": "bool",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "boolean",
+          "value": "false"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "dismissed",
+        "type": {
+          "type_name": "bool",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "boolean",
+          "value": "false"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "confidence",
+        "type": {
+          "type_name": "float8",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "metadata",
+        "type": {
+          "type_name": "jsonb",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.user_ai_preferences": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "userId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "enableProactiveNotifs",
+        "type": {
+          "type_name": "bool",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "boolean",
+          "value": "true"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "enableAutoEscalation",
+        "type": {
+          "type_name": "bool",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "boolean",
+          "value": "true"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "deadlineWarningDays",
+        "type": {
+          "type_name": "int4[]",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "ARRAY[1,  3,  7]"
+        },
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "preferredInsightTypes",
+        "type": {
+          "type_name": "text[]",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "ARRAY['RISK_DETECTED',  'DEADLINE_WARNING',  'PATTERN_FOUND']"
+        },
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "weeklyReportDay",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "weeklyReportTime",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "notificationQuietHours",
+        "type": {
+          "type_name": "jsonb",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.task_predictions": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "taskId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "predictedCompletionAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "actualCompletionAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "confidence",
+        "type": {
+          "type_name": "float8",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "accuracyScore",
+        "type": {
+          "type_name": "float8",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "factors",
+        "type": {
+          "type_name": "jsonb",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "basedOnSimilarTasks",
+        "type": {
+          "type_name": "int4",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "number",
+          "value": "0"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "userVelocityFactor",
+        "type": {
+          "type_name": "float8",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "updatedAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ],
+    "public.automation_actions": [
+      {
+        "name": "id",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "type",
+        "type": {
+          "type_name": "AutoActionType",
+          "schemaName": "public"
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "taskId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "userId",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "description",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "success",
+        "type": {
+          "type_name": "bool",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "metadata",
+        "type": {
+          "type_name": "jsonb",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "errorMessage",
+        "type": {
+          "type_name": "text",
+          "schemaName": null
+        },
+        "dbdefault": null,
+        "not_null": false,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      },
+      {
+        "name": "createdAt",
+        "type": {
+          "type_name": "timestamp",
+          "schemaName": null
+        },
+        "dbdefault": {
+          "type": "expression",
+          "value": "CURRENT_TIMESTAMP"
+        },
+        "not_null": true,
+        "increment": false,
+        "note": {
+          "value": ""
+        }
+      }
+    ]
+  },
+  "refs": [
+    {
+      "name": "api_logs_userId_fkey",
+      "endpoints": [
+        {
+          "tableName": "api_logs",
+          "schemaName": "public",
+          "fieldNames": [
+            "userId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "SET NULL",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "audit_logs_adminId_fkey",
+      "endpoints": [
+        {
+          "tableName": "audit_logs",
+          "schemaName": "public",
+          "fieldNames": [
+            "adminId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "automation_actions_taskId_fkey",
+      "endpoints": [
+        {
+          "tableName": "automation_actions",
+          "schemaName": "public",
+          "fieldNames": [
+            "taskId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "tasks",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "automation_actions_userId_fkey",
+      "endpoints": [
+        {
+          "tableName": "automation_actions",
+          "schemaName": "public",
+          "fieldNames": [
+            "userId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "budget_categories_projectId_fkey",
+      "endpoints": [
+        {
+          "tableName": "budget_categories",
+          "schemaName": "public",
+          "fieldNames": [
+            "projectId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "projects",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "budget_expenses_categoryId_fkey",
+      "endpoints": [
+        {
+          "tableName": "budget_expenses",
+          "schemaName": "public",
+          "fieldNames": [
+            "categoryId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "budget_categories",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "notifications_projectId_fkey",
+      "endpoints": [
+        {
+          "tableName": "notifications",
+          "schemaName": "public",
+          "fieldNames": [
+            "projectId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "projects",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "notifications_taskId_fkey",
+      "endpoints": [
+        {
+          "tableName": "notifications",
+          "schemaName": "public",
+          "fieldNames": [
+            "taskId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "tasks",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "notifications_userId_fkey",
+      "endpoints": [
+        {
+          "tableName": "notifications",
+          "schemaName": "public",
+          "fieldNames": [
+            "userId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "nova_insights_projectId_fkey",
+      "endpoints": [
+        {
+          "tableName": "nova_insights",
+          "schemaName": "public",
+          "fieldNames": [
+            "projectId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "projects",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "nova_insights_taskId_fkey",
+      "endpoints": [
+        {
+          "tableName": "nova_insights",
+          "schemaName": "public",
+          "fieldNames": [
+            "taskId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "tasks",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "nova_insights_userId_fkey",
+      "endpoints": [
+        {
+          "tableName": "nova_insights",
+          "schemaName": "public",
+          "fieldNames": [
+            "userId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "project_members_projectId_fkey",
+      "endpoints": [
+        {
+          "tableName": "project_members",
+          "schemaName": "public",
+          "fieldNames": [
+            "projectId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "projects",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "project_members_userId_fkey",
+      "endpoints": [
+        {
+          "tableName": "project_members",
+          "schemaName": "public",
+          "fieldNames": [
+            "userId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "projects_managerId_fkey",
+      "endpoints": [
+        {
+          "tableName": "projects",
+          "schemaName": "public",
+          "fieldNames": [
+            "managerId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "task_comments_authorId_fkey",
+      "endpoints": [
+        {
+          "tableName": "task_comments",
+          "schemaName": "public",
+          "fieldNames": [
+            "authorId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "task_comments_taskId_fkey",
+      "endpoints": [
+        {
+          "tableName": "task_comments",
+          "schemaName": "public",
+          "fieldNames": [
+            "taskId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "tasks",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "task_history_taskId_fkey",
+      "endpoints": [
+        {
+          "tableName": "task_history",
+          "schemaName": "public",
+          "fieldNames": [
+            "taskId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "tasks",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "task_history_userId_fkey",
+      "endpoints": [
+        {
+          "tableName": "task_history",
+          "schemaName": "public",
+          "fieldNames": [
+            "userId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "task_predictions_taskId_fkey",
+      "endpoints": [
+        {
+          "tableName": "task_predictions",
+          "schemaName": "public",
+          "fieldNames": [
+            "taskId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "tasks",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "task_relations_createdById_fkey",
+      "endpoints": [
+        {
+          "tableName": "task_relations",
+          "schemaName": "public",
+          "fieldNames": [
+            "createdById"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "task_relations_sourceTaskId_fkey",
+      "endpoints": [
+        {
+          "tableName": "task_relations",
+          "schemaName": "public",
+          "fieldNames": [
+            "sourceTaskId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "tasks",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "task_relations_targetTaskId_fkey",
+      "endpoints": [
+        {
+          "tableName": "task_relations",
+          "schemaName": "public",
+          "fieldNames": [
+            "targetTaskId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "tasks",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "task_templates_createdById_fkey",
+      "endpoints": [
+        {
+          "tableName": "task_templates",
+          "schemaName": "public",
+          "fieldNames": [
+            "createdById"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "task_templates_projectId_fkey",
+      "endpoints": [
+        {
+          "tableName": "task_templates",
+          "schemaName": "public",
+          "fieldNames": [
+            "projectId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "projects",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "tasks_assigneeId_fkey",
+      "endpoints": [
+        {
+          "tableName": "tasks",
+          "schemaName": "public",
+          "fieldNames": [
+            "assigneeId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "SET NULL",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "tasks_createdById_fkey",
+      "endpoints": [
+        {
+          "tableName": "tasks",
+          "schemaName": "public",
+          "fieldNames": [
+            "createdById"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "tasks_projectId_fkey",
+      "endpoints": [
+        {
+          "tableName": "tasks",
+          "schemaName": "public",
+          "fieldNames": [
+            "projectId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "projects",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "user_ai_preferences_userId_fkey",
+      "endpoints": [
+        {
+          "tableName": "user_ai_preferences",
+          "schemaName": "public",
+          "fieldNames": [
+            "userId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "user_rate_limits_userId_fkey",
+      "endpoints": [
+        {
+          "tableName": "user_rate_limits",
+          "schemaName": "public",
+          "fieldNames": [
+            "userId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "work_logs_taskId_fkey",
+      "endpoints": [
+        {
+          "tableName": "work_logs",
+          "schemaName": "public",
+          "fieldNames": [
+            "taskId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "tasks",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "CASCADE",
+      "onUpdate": "CASCADE"
+    },
+    {
+      "name": "work_logs_userId_fkey",
+      "endpoints": [
+        {
+          "tableName": "work_logs",
+          "schemaName": "public",
+          "fieldNames": [
+            "userId"
+          ],
+          "relation": "*"
+        },
+        {
+          "tableName": "users",
+          "schemaName": "public",
+          "fieldNames": [
+            "id"
+          ],
+          "relation": "1"
+        }
+      ],
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE"
+    }
+  ],
+  "enums": [
+    {
+      "name": "AutoActionType",
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "AUTO_ESCALATE"
+        },
+        {
+          "name": "AUTO_SUGGEST_SPLIT"
+        },
+        {
+          "name": "AUTO_PRIORITY_UPDATE"
+        },
+        {
+          "name": "AUTO_NOTIFICATION"
+        }
+      ]
+    },
+    {
+      "name": "InsightType",
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "RISK_DETECTED"
+        },
+        {
+          "name": "DEADLINE_WARNING"
+        },
+        {
+          "name": "PATTERN_FOUND"
+        },
+        {
+          "name": "WORKLOAD_IMBALANCE"
+        },
+        {
+          "name": "TASK_SUGGESTION"
+        },
+        {
+          "name": "PRODUCTIVITY_TIP"
+        },
+        {
+          "name": "COMPLETION_PREDICTION"
+        },
+        {
+          "name": "BUDGET_ALERT"
+        }
+      ]
+    },
+    {
+      "name": "NotificationType",
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "TASK_ASSIGNED"
+        },
+        {
+          "name": "TASK_UPDATED"
+        },
+        {
+          "name": "TASK_COMPLETED"
+        },
+        {
+          "name": "TASK_CHANGES_REQUESTED"
+        },
+        {
+          "name": "TASK_APPROVED"
+        },
+        {
+          "name": "PROJECT_ASSIGNED"
+        },
+        {
+          "name": "MENTION"
+        },
+        {
+          "name": "AI_INSIGHT"
+        },
+        {
+          "name": "DEADLINE_WARNING"
+        },
+        {
+          "name": "RISK_ALERT"
+        },
+        {
+          "name": "WEEKLY_SUMMARY"
+        }
+      ]
+    },
+    {
+      "name": "TaskPriority",
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "LOW"
+        },
+        {
+          "name": "MEDIUM"
+        },
+        {
+          "name": "HIGH"
+        },
+        {
+          "name": "URGENT"
+        }
+      ]
+    },
+    {
+      "name": "TaskRelationType",
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "PARENT_CHILD"
+        },
+        {
+          "name": "BLOCKS"
+        },
+        {
+          "name": "BLOCKED_BY"
+        },
+        {
+          "name": "RELATES_TO"
+        },
+        {
+          "name": "DUPLICATES"
+        },
+        {
+          "name": "DUPLICATE_OF"
+        }
+      ]
+    },
+    {
+      "name": "TaskRiskLevel",
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "LOW"
+        },
+        {
+          "name": "MEDIUM"
+        },
+        {
+          "name": "HIGH"
+        },
+        {
+          "name": "CRITICAL"
+        }
+      ]
+    },
+    {
+      "name": "TaskStatus",
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "PENDING"
+        },
+        {
+          "name": "IN_PROGRESS"
+        },
+        {
+          "name": "IN_REVIEW"
+        },
+        {
+          "name": "COMPLETED"
+        },
+        {
+          "name": "CANCELLED"
+        }
+      ]
+    },
+    {
+      "name": "UserRole",
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "ADMIN"
+        },
+        {
+          "name": "MANAGER"
+        },
+        {
+          "name": "USER"
+        }
+      ]
+    }
+  ],
+  "indexes": {
+    "public.api_logs": [
+      {
+        "name": "api_logs_endpoint_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "endpoint"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "api_logs_timestamp_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "timestamp"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "api_logs_userId_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "userId"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      }
+    ],
+    "public.audit_logs": [
+      {
+        "name": "audit_logs_adminId_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "adminId"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "audit_logs_timestamp_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "timestamp"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      }
+    ],
+    "public.automation_actions": [
+      {
+        "name": "automation_actions_createdAt_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "createdAt"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "automation_actions_success_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "success"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "automation_actions_type_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "type"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      }
+    ],
+    "public.endpoint_rate_limits": [
+      {
+        "name": "endpoint_rate_limits_endpoint_method_key",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "endpoint"
+          },
+          {
+            "type": "column",
+            "value": "method"
+          }
+        ],
+        "pk": false,
+        "unique": true
+      }
+    ],
+    "public.notifications": [
+      {
+        "name": "notifications_userId_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "userId"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "notifications_userId_isRead_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "userId"
+          },
+          {
+            "type": "column",
+            "value": "isRead"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      }
+    ],
+    "public.nova_insights": [
+      {
+        "name": "nova_insights_createdAt_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "createdAt"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "nova_insights_dismissed_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "dismissed"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "nova_insights_type_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "type"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "nova_insights_userId_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "userId"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      }
+    ],
+    "public.project_members": [
+      {
+        "name": "project_members_projectId_userId_key",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "projectId"
+          },
+          {
+            "type": "column",
+            "value": "userId"
+          }
+        ],
+        "pk": false,
+        "unique": true
+      },
+      {
+        "name": "project_members_userId_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "userId"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      }
+    ],
+    "public.projects": [
+      {
+        "name": "projects_description_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "description"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "projects_name_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "name"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      }
+    ],
+    "public.system_health_logs": [
+      {
+        "name": "system_health_logs_timestamp_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "timestamp"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      }
+    ],
+    "public.task_comments": [
+      {
+        "name": "task_comments_taskId_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "taskId"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      }
+    ],
+    "public.task_history": [
+      {
+        "name": "task_history_createdAt_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "createdAt"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "task_history_taskId_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "taskId"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      }
+    ],
+    "public.task_predictions": [
+      {
+        "name": "task_predictions_createdAt_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "createdAt"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "task_predictions_taskId_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "taskId"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      }
+    ],
+    "public.task_relations": [
+      {
+        "name": "task_relations_sourceTaskId_targetTaskId_relationType_key",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "sourceTaskId"
+          },
+          {
+            "type": "column",
+            "value": "targetTaskId"
+          },
+          {
+            "type": "column",
+            "value": "relationType"
+          }
+        ],
+        "pk": false,
+        "unique": true
+      },
+      {
+        "name": "task_relations_sourceTaskId_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "sourceTaskId"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "task_relations_targetTaskId_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "targetTaskId"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      }
+    ],
+    "public.tasks": [
+      {
+        "name": "tasks_assigneeId_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "assigneeId"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "tasks_description_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "description"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "tasks_dueDate_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "dueDate"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "tasks_priority_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "priority"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "tasks_projectId_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "projectId"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "tasks_status_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "status"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "tasks_title_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "title"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      }
+    ],
+    "public.work_logs": [
+      {
+        "name": "work_logs_taskId_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "taskId"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      },
+      {
+        "name": "work_logs_userId_idx",
+        "type": "btree",
+        "columns": [
+          {
+            "type": "column",
+            "value": "userId"
+          }
+        ],
+        "pk": false,
+        "unique": false
+      }
+    ]
+  },
+  "tableConstraints": {
+    "public.api_logs": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.audit_logs": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.automation_actions": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.budget_categories": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.budget_expenses": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.endpoint_rate_limits": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.notifications": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.nova_insights": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.project_members": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.projects": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.rate_limit_configs": {
+      "id": {
+        "checks": [],
+        "pk": true
+      },
+      "role": {
+        "checks": [],
+        "unique": true
+      }
+    },
+    "public.system_health_logs": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.task_comments": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.task_history": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.task_predictions": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.task_relations": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.task_templates": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.tasks": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    },
+    "public.user_ai_preferences": {
+      "id": {
+        "checks": [],
+        "pk": true
+      },
+      "userId": {
+        "checks": [],
+        "unique": true
+      }
+    },
+    "public.user_rate_limits": {
+      "id": {
+        "checks": [],
+        "pk": true
+      },
+      "userId": {
+        "checks": [],
+        "unique": true
+      }
+    },
+    "public.users": {
+      "id": {
+        "checks": [],
+        "pk": true
+      },
+      "emailHash": {
+        "checks": [],
+        "unique": true
+      },
+      "email": {
+        "checks": [],
+        "unique": true
+      },
+      "usernameHash": {
+        "checks": [],
+        "unique": true
+      },
+      "username": {
+        "checks": [],
+        "unique": true
+      }
+    },
+    "public.work_logs": {
+      "id": {
+        "checks": [],
+        "pk": true
+      }
+    }
+  },
+  "checks": {}
+}

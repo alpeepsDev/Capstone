@@ -11,6 +11,7 @@ import RichTextRenderer from "../ui/RichTextRenderer";
 
 import LogTimeModal from "./LogTimeModal";
 import { formatTime } from "../../utils/timeUtils";
+import logger from "../../utils/logger.js";
 const TASK_STATUSES = [
   { id: "PENDING", label: "To Do", color: "default" },
   { id: "IN_PROGRESS", label: "In Progress", color: "primary" },
@@ -172,7 +173,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
       // But loadData() pulls task details? No, it pulls comments.
       // Ideally we should reload the task to get new totals.
     } catch (error) {
-      console.error("Error deleting work log:", error);
+      logger.error("Error deleting work log:", error);
       toast.error("Failed to delete work log");
     } finally {
       setLoading(false);
@@ -242,7 +243,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
         setProjectMembers(members);
       }
     } catch (error) {
-      console.error("Error loading data:", error);
+      logger.error("Error loading data:", error);
       toast.error("Failed to load task details");
     } finally {
       setCommentsLoading(false);
@@ -256,7 +257,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
       const response = await tasksApi.getWorkLogs(task.id);
       setWorkLogs(response.data || []);
     } catch (error) {
-      console.error("Error loading work logs:", error);
+      logger.error("Error loading work logs:", error);
       // toast.error("Failed to load work logs");
     } finally {
       setWorkLogsLoading(false);
@@ -356,7 +357,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
         toast.success("Comment added successfully");
       }
     } catch (error) {
-      console.error("Error adding comment:", error);
+      logger.error("Error adding comment:", error);
       toast.error("Failed to add comment");
     } finally {
       setLoading(false);
@@ -402,7 +403,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
       // But I need to check the API client wrapper response.
       // Assuming it refetches or I should trigger a task reload?
     } catch (error) {
-      console.error("Error logging time:", error);
+      logger.error("Error logging time:", error);
       toast.error("Failed to save work log");
     } finally {
       setLoading(false);
@@ -448,7 +449,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
       <div
         className={`relative ${
           isDark ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
-        } border rounded-lg shadow-2xl max-w-5xl w-full h-[75vh] flex flex-col overflow-hidden`}
+        } border rounded-lg shadow-2xl max-w-5xl w-full h-[90vh] md:h-[75vh] flex flex-col overflow-hidden transition-all duration-300`}
       >
         <div className="p-4 sm:p-6 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
           {/* Header */}
@@ -576,67 +577,6 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
                   </span>
                 </div>
               </div>
-
-              {/* AI Prediction Section */}
-              {localTask.predictions && localTask.predictions.length > 0 && (
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <div
-                    className={`rounded-lg p-4 ${isDark ? "bg-blue-900/20 border border-blue-800/30" : "bg-blue-50 border border-blue-200"}`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`p-2 rounded-lg ${isDark ? "bg-blue-800/30" : "bg-white"}`}
-                      >
-                        <svg
-                          className={`w-5 h-5 ${isDark ? "text-blue-400" : "text-blue-600"}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                          />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4
-                            className={`flex items-center gap-1.5 text-sm font-semibold ${isDark ? "text-blue-300" : "text-blue-900"}`}
-                          >
-                            <Sparkles className="w-4 h-4" /> Nova AI Prediction
-                          </h4>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${isDark ? "bg-blue-800/50 text-blue-200" : "bg-blue-100 text-blue-800"}`}
-                          >
-                            {Math.round(
-                              localTask.predictions[0].confidence * 100,
-                            )}
-                            % confident
-                          </span>
-                        </div>
-                        <p
-                          className={`text-sm ${isDark ? "text-blue-200" : "text-blue-800"} mb-2`}
-                        >
-                          Predicted completion:{" "}
-                          <span className="font-semibold">
-                            {new Date(
-                              localTask.predictions[0].predictedCompletionAt,
-                            ).toLocaleDateString("en-US", {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* 2. Description Section (Full Width) */}

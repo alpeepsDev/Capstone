@@ -1,5 +1,5 @@
 import express from "express";
-import { auth } from "../../middleware/auth.js";
+import { auth, requireManagerOrHigher } from "../../middleware/auth.js";
 import * as budgetController from "../../controllers/budget/budget.controller.js";
 import { validateRequest } from "../../middleware/validation.middleware.js";
 import {
@@ -11,8 +11,9 @@ import {
 
 const router = express.Router();
 
-// All routes require authentication
+// All routes require authentication and manager/admin role
 router.use(auth);
+router.use(requireManagerOrHigher);
 
 // Budget routes
 router.get("/:projectId", budgetController.getBudget);

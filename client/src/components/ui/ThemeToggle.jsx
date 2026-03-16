@@ -9,20 +9,20 @@ const ThemeToggle = () => {
       {/* Single Toggle Switch */}
       <button
         onClick={toggleTheme}
-        className={`relative inline-flex h-10 w-20 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
           isDark ? "bg-blue-600" : "bg-gray-400"
         }`}
         aria-label="Toggle theme"
       >
         <span
-          className={`inline-flex h-8 w-8 items-center justify-center transform rounded-full bg-white shadow-lg transition duration-300 ${
-            isDark ? "translate-x-11" : "translate-x-1"
+          className={`inline-flex h-4 w-4 items-center justify-center transform rounded-full bg-white shadow-lg transition duration-300 ${
+            isDark ? "translate-x-6" : "translate-x-1"
           }`}
         >
           {isDark ? (
             // Moon icon for dark mode (showing current state)
             <svg
-              className="w-5 h-5 text-blue-400"
+              className="w-3 h-3 text-blue-400"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -37,7 +37,7 @@ const ThemeToggle = () => {
           ) : (
             // Sun icon for light mode (showing current state)
             <svg
-              className="w-5 h-5 text-yellow-500"
+              className="w-3 h-3 text-yellow-500"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"

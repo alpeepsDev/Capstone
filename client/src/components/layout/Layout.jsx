@@ -5,6 +5,8 @@ import { Header, Sidebar } from "../navigation";
 import { ThemeToggle } from "../ui";
 import NovaAssistant from "../assistant/NovaAssistant";
 import AIPreferencesSettings from "../dashboard/AIPreferencesSettings";
+import ReportPage from "../../pages/ReportPage";
+import logger from "../../utils/logger.js";
 
 const Layout = ({
   user,
@@ -32,7 +34,7 @@ const Layout = ({
     } else {
       setLocalActiveView(viewId);
     }
-    console.log("Navigating to:", viewId);
+    logger.info("Navigating to:", viewId);
   };
 
   // Global notification listener
@@ -244,23 +246,8 @@ const Layout = ({
         );
       case "reports":
         return (
-          <div
-            className={`${
-              isDark
-                ? "bg-gray-800 border-gray-700"
-                : "bg-white border-gray-200"
-            } rounded-lg shadow-sm border p-6`}
-          >
-            <h2
-              className={`text-2xl font-bold ${
-                isDark ? "text-gray-100" : "text-gray-900"
-              } mb-4`}
-            >
-              Reports
-            </h2>
-            <p className={`${isDark ? "text-gray-300" : "text-gray-600"}`}>
-              Reports interface coming soon...
-            </p>
+          <div className="h-full overflow-y-auto">
+            <ReportPage />
           </div>
         );
       case "users":
@@ -349,13 +336,7 @@ const Layout = ({
         );
       case "settings":
         return (
-          <div
-            className={`${
-              isDark
-                ? "bg-gray-800 border-gray-700"
-                : "bg-white border-gray-200"
-            } rounded-lg shadow-sm border p-6`}
-          >
+          <div className="max-w-4xl mx-auto">
             <h2
               className={`text-2xl font-bold ${
                 isDark ? "text-gray-100" : "text-gray-900"
@@ -365,7 +346,7 @@ const Layout = ({
             </h2>
 
             {/* Theme Settings */}
-            <div className="mb-8">
+            <div className="mb-6">
               <h3
                 className={`text-lg font-semibold ${
                   isDark ? "text-gray-200" : "text-gray-800"
@@ -378,21 +359,21 @@ const Layout = ({
                   isDark
                     ? "bg-gray-700 border-gray-600"
                     : "bg-gray-50 border-gray-200"
-                } border rounded-lg p-6`}
+                } border rounded-lg p-4`}
               >
-                <div className="space-y-4">
+                <div className="flex items-center justify-between">
                   <div>
                     <h4
                       className={`font-medium ${
                         isDark ? "text-gray-100" : "text-gray-900"
-                      } mb-2`}
+                      }`}
                     >
                       Appearance
                     </h4>
                     <p
                       className={`text-sm ${
                         isDark ? "text-gray-400" : "text-gray-600"
-                      } mb-4`}
+                      }`}
                     >
                       Choose your preferred theme for the interface
                     </p>
@@ -403,26 +384,26 @@ const Layout = ({
             </div>
 
             {/* AI Preferences */}
-            <div className="mb-8">
-              <h3
-                className={`text-lg font-semibold ${
-                  isDark ? "text-gray-200" : "text-gray-800"
-                } mb-4`}
-              >
-                AI Preferences
-              </h3>
-              <div
-                className={`${
-                  isDark
-                    ? "bg-gray-700 border-gray-600"
-                    : "bg-gray-50 border-gray-200"
-                } border rounded-lg p-6`}
-              >
-              {(user?.role === "MANAGER" || user?.role === "ADMIN") && (
-                <AIPreferencesSettings isDark={isDark} />
-              )}
+            {user?.role === "MANAGER" && (
+              <div className="mb-6">
+                <h3
+                  className={`text-lg font-semibold ${
+                    isDark ? "text-gray-200" : "text-gray-800"
+                  } mb-4`}
+                >
+                  AI Preferences
+                </h3>
+                <div
+                  className={`${
+                    isDark
+                      ? "bg-gray-700 border-gray-600"
+                      : "bg-gray-50 border-gray-200"
+                  } border rounded-lg p-4`}
+                >
+                  <AIPreferencesSettings isDark={isDark} />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         );
       default:
@@ -432,22 +413,41 @@ const Layout = ({
 
   // Views that need scrollable content instead of overflow-hidden
   const scrollableViews = [
+    "dashboard",
     "project-analytics",
     "budget",
-    "dashboard",
+    "table",
+    "gantt",
+    "kanban",
+    "calendar",
+    "approvals",
     "admin-monitoring",
     "admin-ratelimits",
     "admin-users",
     "admin-auditlogs",
     "admin-backup",
   ];
-  const needsScroll = scrollableViews.includes(currentActiveView);
+  const adminViews = [
+    "admin-monitoring",
+    "admin-ratelimits",
+    "admin-users",
+    "admin-auditlogs",
+    "admin-backup",
+  ];
+  const isAdminDashboard =
+    user?.role === "ADMIN" && currentActiveView === "dashboard";
+  const isAdminView = adminViews.includes(currentActiveView);
+  const needsScroll =
+    scrollableViews.includes(currentActiveView) &&
+    !isAdminView &&
+    !isAdminDashboard;
+  const showSidebar = true;
 
   return (
     <div
-      className={`h-screen ${
-        isDark ? "bg-gray-900" : "bg-gray-100"
-      } transition-colors duration-200 ${needsScroll ? "overflow-y-auto" : "overflow-hidden"} pt-16`}
+      className={`fixed inset-0 z-[100] transition-colors duration-300 ${
+        isDark ? "bg-[#111827]" : "bg-gray-100"
+      } overflow-hidden`}
     >
       {/* Header */}
       <Header
@@ -456,56 +456,76 @@ const Layout = ({
         onNavigateToSettings={() => handleViewChange("settings")}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
+        showSidebarToggle={showSidebar}
+        className={
+          showSidebar ? (sidebarOpen ? "lg:left-56" : "lg:left-16") : "left-0"
+        }
       />
 
-      {sidebarOpen && (
+      {/* Mobile Sidebar Overlay */}
+      {showSidebar && sidebarOpen && (
         <div
-          className="fixed inset-0 top-16 z-40 bg-black/30 lg:hidden"
+          className={`fixed inset-0 z-[105] bg-black/60 backdrop-blur-sm lg:hidden transition-opacity duration-300 ${
+            sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />
       )}
 
-      <div className="flex h-full">
+      <div className="flex h-full pt-16">
         {/* Sidebar */}
-        <Sidebar
-          user={user}
-          activeView={currentActiveView}
-          onViewChange={handleViewChange}
-          // New props
-          projects={projects}
-          selectedProjectId={selectedProjectId}
-          onProjectSelect={onProjectSelect}
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-        />
+        {showSidebar && (
+          <Sidebar
+            user={user}
+            activeView={currentActiveView}
+            onViewChange={handleViewChange}
+            // New props
+            projects={projects}
+            selectedProjectId={selectedProjectId}
+            onProjectSelect={onProjectSelect}
+            onLogout={onLogout}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+          />
+        )}
 
         {/* Main Content */}
         <main
-          className={`flex-1 ml-0 lg:ml-64 transition-all duration-200 h-full ${needsScroll ? "overflow-y-auto" : "overflow-hidden"}`}
+          className={`flex-1 ml-0 ${showSidebar ? (sidebarOpen ? "lg:ml-56" : "lg:ml-16") : ""} transition-all duration-300 h-full ${needsScroll ? "overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600" : "overflow-hidden"}`}
         >
-          {/* Page Content - Only show extra content for non-dashboard views */}
-          {currentActiveView === "dashboard" ? (
-            renderContent()
-          ) : (
-            <div className="p-4">
-              {/* Sidebar Toggle (Mobile) */}
-              <div className="lg:hidden mb-4">
-                <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="p-2 bg-white rounded-md shadow-sm border"
+          {/* Page Content - Optimized for mobile */}
+          <div className="h-full w-full max-w-[100vw] overflow-x-hidden">
+            {currentActiveView === "dashboard" ? (
+              renderContent()
+            ) : (
+              <div
+                className={`h-full flex flex-col ${needsScroll ? "overflow-visible" : "overflow-hidden"}`}
+              >
+                {/* Sidebar Toggle (Mobile) */}
+                {showSidebar && (
+                  <div className="lg:hidden p-4 pb-0">
+                    <button
+                      onClick={() => setSidebarOpen(!sidebarOpen)}
+                      className={`p-2 rounded-md shadow-sm border ${isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-200 text-gray-900"}`}
+                    >
+                      {sidebarOpen ? "←" : "→"}
+                    </button>
+                  </div>
+                )}
+                <div
+                  className={`flex-1 min-h-0 ${needsScroll ? "overflow-visible" : "overflow-hidden"}`}
                 >
-                  {sidebarOpen ? "←" : "→"}
-                </button>
+                  {renderContent()}
+                </div>
               </div>
-              {renderContent()}
-            </div>
-          )}
+            )}
+          </div>
         </main>
       </div>
 
       {/* AI Assistant */}
-      <NovaAssistant />
+      {user?.role !== "ADMIN" && <NovaAssistant />}
     </div>
   );
 };

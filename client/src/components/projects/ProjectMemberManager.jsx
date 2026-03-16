@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button, Badge, Card } from "../ui";
+import logger from "../../utils/logger.js";
 
 const ProjectMemberManager = ({
   project,
@@ -23,7 +24,7 @@ const ProjectMemberManager = ({
       setSelectedUserId("");
       setIsAddingMember(false);
     } catch (error) {
-      console.error("Failed to add member:", error);
+      logger.error("Failed to add member:", error);
     }
   };
 

@@ -48,9 +48,7 @@ const ForgotPassword = () => {
         >
           <div className="text-center">
             <div className="flex items-center justify-center gap-3 mb-2">
-              <div className="p-2 bg-blue-600 rounded-lg">
-                <BarChart3 className="w-6 h-6 text-white" />
-              </div>
+              <img src="/logo.svg" alt="TaskForge" className="w-8 h-8" />
               <h1
                 className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
               >

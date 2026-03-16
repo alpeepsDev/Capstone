@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useAdmin } from "../../hooks/admin/useAdmin";
 import { useTheme } from "../../context";
 import { useAuth } from "../../context/AuthContext";
@@ -10,8 +10,6 @@ import {
   Shield,
   ChartNoAxesCombined,
   RefreshCw,
-  Sun,
-  Moon,
   Plus,
   Edit,
   Trash2,
@@ -32,6 +30,7 @@ import {
 } from "lucide-react";
 import RateLimitConfigModal from "../modals/RateLimitConfigModal";
 import Button from "../ui/Button";
+import logger from "../../utils/logger.js";
 
 const VIEW_TO_TAB = {
   dashboard: "overview",
@@ -363,7 +362,7 @@ const BackupSkeleton = ({ isDark }) => (
 );
 
 const AdminDashboard = ({ activeView, onViewChange }) => {
-  const { isDark, toggleTheme } = useTheme();
+  const { isDark } = useTheme();
   const { user: currentUser } = useAuth();
   const {
     isAdmin,
@@ -409,15 +408,28 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
     fetchAvailableEndpoints,
     downloadBackup,
     downloadSourceCode,
+    rateLimitMeta,
+    userActivityMeta,
   } = useAdmin();
+
+  const formatWindow = (seconds) => {
+    if (!seconds || seconds <= 0) return "1s";
+    if (seconds % 3600 === 0) return `${seconds / 3600}h`;
+    if (seconds % 60 === 0) return `${seconds / 60}m`;
+    return `${seconds}s`;
+  };
 
   const [activeTab, setActiveTab] = useState("overview");
   const [refreshing, setRefreshing] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState(new Date());
+const [lastUpdate, setLastUpdate] = useState(new Date());
   const [userDetailOpen, setUserDetailOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(null);
   const [cleanupDays, setCleanupDays] = useState(90);
   const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [auditQuery, setAuditQuery] = useState("");
+  const [auditActionFilter, setAuditActionFilter] = useState("all");
+  const [auditActorFilter, setAuditActorFilter] = useState("all");
+  const [auditExpandedId, setAuditExpandedId] = useState(null);
 
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
@@ -560,7 +572,7 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
         try {
           await updateUserStatus(userId, !currentStatus);
         } catch (err) {
-          console.error("Failed to update user status:", err);
+          logger.error("Failed to update user status:", err);
         }
       },
     });
@@ -579,7 +591,7 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
           await updateUserRole(userId, newRole);
           setRoleDropdownOpen(null);
         } catch (err) {
-          console.error("Failed to update user role:", err);
+          logger.error("Failed to update user role:", err);
         }
       },
     });
@@ -597,7 +609,7 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
 
     // 2. Fetch the extra details (summary, tasks, api activity) in background
     fetchUserDetails(userObj.id, 7).catch((err) => {
-      console.error("Failed to fetch user details:", err);
+      logger.error("Failed to fetch user details:", err);
     });
   };
 
@@ -614,7 +626,7 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
           await cleanOldLogs(cleanupDays);
           await fetchAuditLogs();
         } catch (err) {
-          console.error("Failed to clean logs:", err);
+          logger.error("Failed to clean logs:", err);
         } finally {
           setCleanupLoading(false);
         }
@@ -645,7 +657,7 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
       }
       setConfigModal({ isOpen: false, type: null, data: null });
     } catch (error) {
-      console.error("Failed to save rate limit:", error);
+      logger.error("Failed to save rate limit:", error);
     }
   };
 
@@ -660,7 +672,7 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
         try {
           await deleteEndpointLimit(id);
         } catch (error) {
-          console.error("Failed to delete endpoint limit:", error);
+          logger.error("Failed to delete endpoint limit:", error);
         }
       },
     });
@@ -677,7 +689,7 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
         try {
           await removeUserLimit(userId);
         } catch (error) {
-          console.error("Failed to remove user limit:", error);
+          logger.error("Failed to remove user limit:", error);
         }
       },
     });
@@ -687,9 +699,9 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
     switch (activeTab) {
       case "overview":
         return loading && !dashboardStats;
-      case "api":
+      case "monitoring":
         return loading && (!apiStats || !systemHealth);
-      case "limits":
+      case "ratelimits":
         return (
           loading &&
           rateLimits.length === 0 &&
@@ -698,7 +710,7 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
         );
       case "users":
         return loading && users.length === 0;
-      case "audit":
+      case "auditlogs":
         return loading && auditLogs.length === 0;
       case "backup":
         return false;
@@ -735,76 +747,92 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
     { id: "backup", label: "System Backup", icon: Shield },
   ];
 
+  const auditActionOptions = useMemo(() => {
+    return Array.from(
+      new Set((auditLogs || []).map((l) => l?.action).filter(Boolean)),
+    ).sort((a, b) => a.localeCompare(b));
+  }, [auditLogs]);
+
+  const auditActorOptions = useMemo(() => {
+    return Array.from(
+      new Set(
+        (auditLogs || [])
+          .map((l) => l?.admin?.username || "System")
+          .filter(Boolean),
+      ),
+    ).sort((a, b) => a.localeCompare(b));
+  }, [auditLogs]);
+
+  const filteredAuditLogs = useMemo(() => {
+    const query = auditQuery.trim().toLowerCase();
+    const logs = [...(auditLogs || [])].sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+    );
+
+    return logs.filter((log) => {
+      const actor = log?.admin?.username || "System";
+      const action = log?.action || "";
+      const targetId = log?.targetId || "";
+      const details =
+        typeof log?.details === "string"
+          ? log.details
+          : log?.details
+            ? JSON.stringify(log.details)
+            : "";
+
+      if (auditActionFilter !== "all" && action !== auditActionFilter) {
+        return false;
+      }
+
+      if (auditActorFilter !== "all" && actor !== auditActorFilter) {
+        return false;
+      }
+
+      if (!query) return true;
+
+      return (
+        actor.toLowerCase().includes(query) ||
+        action.toLowerCase().includes(query) ||
+        targetId.toLowerCase().includes(query) ||
+        details.toLowerCase().includes(query)
+      );
+    });
+  }, [auditLogs, auditQuery, auditActionFilter, auditActorFilter]);
+
   return (
     <div
-      className={`flex h-[calc(100vh-64px)] overflow-hidden ${isDark ? "bg-[#0b0f19]" : "bg-gray-50"}`}
+      className={`flex flex-col h-[calc(100vh-64px)] min-h-0 overflow-hidden ${isDark ? "bg-gray-900" : "bg-gray-50"}`}
     >
       {/* Main Content Area */}
-      <main className="flex-1 min-w-0 flex flex-col relative z-10 w-full">
-        {/* Top Header */}
-        <header
-          className={`shrink-0 flex items-center justify-between p-4 sm:px-8 sm:py-5 border-b sticky top-0 z-10 backdrop-blur-xl ${isDark ? "bg-[#0b0f19]/80 border-gray-800/80" : "bg-white/80 border-gray-200 shadow-sm"}`}
-        >
-          <div>
-            <h2
-              className={`text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}
-            >
-              {TABS.find((t) => t.id === activeTab)?.label}
+      <main className="flex-1 min-w-0 min-h-0 flex flex-col relative z-10 w-full">
+        {/* Compact Sub-header with Refresh */}
+        <div className={`shrink-0 p-4 sm:px-8 border-b sticky top-0 z-10 backdrop-blur-xl ${isDark ? "bg-gray-900/80 border-gray-800/80" : "bg-white/80 border-gray-200 shadow-sm"} flex flex-col sm:flex-row gap-4 sm:gap-0`}>
+          <div className="flex items-center justify-between w-full">
+            <h2 className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+              {TABS.find(t => t.id === activeTab)?.label || "Dashboard"}
             </h2>
-            <div className="flex items-center gap-2 mt-1">
-              <span
-                className={`w-2 h-2 rounded-full ${refreshing ? "bg-yellow-500 animate-pulse" : "bg-emerald-500"}`}
-              ></span>
-              <p
-                className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-gray-400" : "text-gray-500"}`}
-              >
+            <div className="flex items-center gap-3">
+              <div className={`text-xs font-medium ${isDark ? "text-gray-400" : "text-gray-500"}`}>
                 Last updated {lastUpdate.toLocaleTimeString()}
-              </p>
+              </div>
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                  refreshing
+                    ? "bg-blue-600/50 text-white/80 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
+              >
+                <RefreshCw className={refreshing ? "animate-spin w-4 h-4" : "w-4 h-4"} />
+                <span className="hidden sm:inline">Refresh</span>
+              </button>
             </div>
           </div>
-
-          <div className="flex items-center gap-3">
-            {error && (
-              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium mr-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                Error Details
-              </div>
-            )}
-
-            <button
-              onClick={toggleTheme}
-              className={`p-2.5 rounded-xl transition-all duration-200 ${
-                isDark
-                  ? "bg-gray-800/50 text-yellow-400 hover:bg-gray-700 border border-gray-700/50"
-                  : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm"
-              }`}
-              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              {isDark ? (
-                <Sun className="w-5 h-5" />
-              ) : (
-                <Moon className="w-5 h-5" />
-              )}
-            </button>
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all duration-200 shadow-sm ${
-                refreshing
-                  ? "bg-blue-600/50 text-white/80 cursor-not-allowed"
-                  : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md hover:-translate-y-0.5"
-              }`}
-            >
-              <RefreshCw
-                className={refreshing ? "animate-spin w-4 h-4" : "w-4 h-4"}
-              />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
-          </div>
-        </header>
+        </div>
 
         {/* Scrollable Content Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
           {error && (
             <div
               className={`md:hidden px-4 py-3 rounded-xl mb-6 flex items-start gap-3 ${isDark ? "bg-red-900/20 border border-red-900/50 text-red-400" : "bg-red-50 border border-red-100 text-red-600"}`}
@@ -817,10 +845,16 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
           {isCurrentTabLoading() ? (
             <>
               {activeTab === "overview" && <OverviewSkeleton isDark={isDark} />}
-              {activeTab === "api" && <ApiMonitoringSkeleton isDark={isDark} />}
+              {activeTab === "monitoring" && (
+                <ApiMonitoringSkeleton isDark={isDark} />
+              )}
               {activeTab === "users" && <UsersSkeleton isDark={isDark} />}
-              {activeTab === "limits" && <RateLimitsSkeleton isDark={isDark} />}
-              {activeTab === "audit" && <AuditLogsSkeleton isDark={isDark} />}
+              {activeTab === "ratelimits" && (
+                <RateLimitsSkeleton isDark={isDark} />
+              )}
+              {activeTab === "auditlogs" && (
+                <AuditLogsSkeleton isDark={isDark} />
+              )}
               {activeTab === "backup" && <BackupSkeleton isDark={isDark} />}
             </>
           ) : (
@@ -1120,7 +1154,7 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
                 <div className="space-y-6">
                   {/* Top Endpoints */}
                   <div
-                    className={`rounded-2xl border p-6 flex flex-col ${isDark ? "bg-gray-800/40 border-gray-700/50 backdrop-blur-sm shadow-xl" : "bg-white border-gray-100 shadow-sm hover:shadow-md"}`}
+                    className={`rounded-2xl border p-6 flex flex-col gap-5 ${isDark ? "bg-gray-800/40 border-gray-700/50 backdrop-blur-sm shadow-xl" : "bg-white border-gray-100 shadow-sm hover:shadow-md"}`}
                   >
                     <h3
                       className={`text-lg font-semibold mb-4 ${isDark ? "text-white" : "text-gray-900"}`}
@@ -1241,14 +1275,21 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
                                   isDark ? "text-gray-300" : "text-gray-600"
                                 }`}
                               >
-                                Requests
+                                Requests (24h)
                               </th>
                               <th
                                 className={`px-4 py-2 text-left text-sm font-medium ${
                                   isDark ? "text-gray-300" : "text-gray-600"
                                 }`}
                               >
-                                Rate Limit
+                                Role Limit
+                              </th>
+                              <th
+                                className={`px-4 py-2 text-left text-sm font-medium ${
+                                  isDark ? "text-gray-300" : "text-gray-600"
+                                }`}
+                              >
+                                Global Limit
                               </th>
                               <th
                                 className={`px-4 py-2 text-left text-sm font-medium ${
@@ -1297,12 +1338,22 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
                                 <td
                                   className={`px-4 py-3 text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
                                 >
-                                  {user.requestCount}
+                                  {user.requestCount24h?.toLocaleString() ?? "0"}
                                 </td>
                                 <td
                                   className={`px-4 py-3 text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
                                 >
-                                  {user.rateLimit}/hr
+                                  {user.roleLimit}/{formatWindow(user.windowSeconds)}
+                                </td>
+                                <td
+                                  className={`px-4 py-3 text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                                >
+                                  {(
+                                    user.role === "ADMIN"
+                                      ? userActivityMeta.adminGlobalPerSecond
+                                      : userActivityMeta.globalPerSecond
+                                  ) || 100}
+                                  /s
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-2">
@@ -1313,15 +1364,15 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
                                     >
                                       <div
                                         className={`h-2 rounded-full ${
-                                          parseFloat(user.percentage) > 90
+                                          parseFloat(user.percentageWindow) > 90
                                             ? "bg-red-600"
-                                            : parseFloat(user.percentage) > 75
+                                            : parseFloat(user.percentageWindow) > 75
                                               ? "bg-yellow-600"
                                               : "bg-green-600"
                                         }`}
                                         style={{
                                           width: `${Math.min(
-                                            parseFloat(user.percentage),
+                                            parseFloat(user.percentageWindow),
                                             100,
                                           )}%`,
                                         }}
@@ -1330,7 +1381,7 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
                                     <span
                                       className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
                                     >
-                                      {user.percentage}%
+                                      {user.percentageWindow}%
                                     </span>
                                   </div>
                                 </td>
@@ -1819,6 +1870,44 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
 
               {activeTab === "ratelimits" && (
                 <div className="space-y-6">
+                  {/* Global Rate Limit */}
+                  <div
+                    className={`rounded-lg shadow p-6 ${isDark ? "bg-gray-800" : "bg-white"}`}
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <h3
+                        className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+                      >
+                        Global Rate Limit
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-500">Admin cap</p>
+                        <p className="text-xl font-bold">
+                          {(rateLimitMeta?.adminGlobalPerSecond || 100)}/s
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">All users cap</p>
+                        <p className="text-xl font-bold">
+                          {(rateLimitMeta?.globalPerSecond || 100)}/s
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Window</p>
+                        <p className="text-xl font-bold">
+                          {formatWindow(
+                            Math.max(
+                              1,
+                              (rateLimitMeta?.globalWindowMs || 1000) / 1000,
+                            ),
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Per-Role Limits */}
                   <div
                     className={`rounded-lg shadow p-6 ${isDark ? "bg-gray-800" : "bg-white"}`}
@@ -1863,21 +1952,21 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
                                       isDark ? "text-gray-400" : "text-gray-600"
                                     }
                                   >
-                                    requests/hour
+                                    requests/{formatWindow(config.windowSeconds)}
                                   </span>
                                 </div>
                                 <div className="mt-2">
-                                  <div
-                                    className={`flex justify-between text-sm mb-1 ${
-                                      isDark ? "text-gray-400" : "text-gray-600"
-                                    }`}
-                                  >
-                                    <span>Current Usage</span>
-                                    <span>
-                                      {config.currentUsage || 0} /{" "}
-                                      {config.limit}
-                                    </span>
-                                  </div>
+                                    <div
+                                      className={`flex justify-between text-sm mb-1 ${
+                                        isDark ? "text-gray-400" : "text-gray-600"
+                                      }`}
+                                    >
+                                      <span>Current Usage (last {formatWindow(config.windowSeconds)})</span>
+                                      <span>
+                                        {config.currentUsage || 0} /{" "}
+                                        {config.limit}
+                                      </span>
+                                    </div>
                                   <div
                                     className={`w-full rounded-full h-2 ${
                                       isDark ? "bg-gray-700" : "bg-gray-200"
@@ -2416,23 +2505,81 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
               {activeTab === "auditlogs" && (
                 <div className="space-y-6">
                   <div
-                    className={`rounded-2xl border p-6 flex flex-col ${isDark ? "bg-gray-800/40 border-gray-700/50 backdrop-blur-sm shadow-xl" : "bg-white border-gray-100 shadow-sm hover:shadow-md"}`}
+                    className={`rounded-2xl border p-6 flex flex-col gap-5 ${isDark ? "bg-gray-800/40 border-gray-700/50 backdrop-blur-sm shadow-xl" : "bg-white border-gray-100 shadow-sm hover:shadow-md"}`}
                   >
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-                      <div>
-                        <h3
-                          className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+                    <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                      <div className="flex flex-col sm:flex-row gap-3 w-full">
+                        <div className="relative flex-1">
+                          <input
+                            value={auditQuery}
+                            onChange={(e) => setAuditQuery(e.target.value)}
+                            placeholder="Search actions, actors, targets, details..."
+                            className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none transition-colors ${
+                              isDark
+                                ? "bg-gray-900/30 border-gray-700/60 text-gray-100 placeholder:text-gray-500 focus:border-blue-500/60"
+                                : "bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-blue-500/60"
+                            }`}
+                          />
+                          {auditQuery && (
+                            <button
+                              type="button"
+                              onClick={() => setAuditQuery("")}
+                              className={`absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-colors ${
+                                isDark
+                                  ? "hover:bg-gray-800 text-gray-400"
+                                  : "hover:bg-gray-100 text-gray-500"
+                              }`}
+                              title="Clear search"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+
+                        <select
+                          value={auditActionFilter}
+                          onChange={(e) => setAuditActionFilter(e.target.value)}
+                          className={`px-3.5 py-2.5 rounded-xl border text-sm outline-none transition-colors ${
+                            isDark
+                              ? "bg-gray-900/30 border-gray-700/60 text-gray-100 focus:border-blue-500/60"
+                              : "bg-white border-gray-200 text-gray-900 focus:border-blue-500/60"
+                          }`}
+                          title="Filter by action"
                         >
-                          Audit Logs
-                        </h3>
-                        <p
-                          className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                          <option value="all">All actions</option>
+                          {auditActionOptions.map((action) => (
+                            <option key={action} value={action}>
+                              {action}
+                            </option>
+                          ))}
+                        </select>
+
+                        <select
+                          value={auditActorFilter}
+                          onChange={(e) => setAuditActorFilter(e.target.value)}
+                          className={`px-3.5 py-2.5 rounded-xl border text-sm outline-none transition-colors ${
+                            isDark
+                              ? "bg-gray-900/30 border-gray-700/60 text-gray-100 focus:border-blue-500/60"
+                              : "bg-white border-gray-200 text-gray-900 focus:border-blue-500/60"
+                          }`}
+                          title="Filter by actor"
                         >
-                          Track admin actions and system changes. Total:{" "}
-                          {auditLogs?.length || 0} entries.
-                        </p>
+                          <option value="all">All actors</option>
+                          {auditActorOptions.map((actor) => (
+                            <option key={actor} value={actor}>
+                              {actor}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                      <div className="flex items-center gap-3">
+
+                      <div
+                        className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-3 rounded-xl border p-3 ${
+                          isDark
+                            ? "bg-gray-900/20 border-gray-700/60"
+                            : "bg-gray-50 border-gray-200"
+                        }`}
+                      >
                         <div className="flex items-center gap-2">
                           <label
                             className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
@@ -2446,7 +2593,11 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
                               setCleanupDays(parseInt(e.target.value) || 90)
                             }
                             min={1}
-                            className={`w-20 px-2 py-1.5 text-sm rounded-lg border ${isDark ? "bg-gray-700 border-gray-600 text-white" : "bg-white border-gray-300 text-gray-900"}`}
+                            className={`w-20 px-2 py-1.5 text-sm rounded-lg border ${
+                              isDark
+                                ? "bg-gray-800 border-gray-700 text-white"
+                                : "bg-white border-gray-300 text-gray-900"
+                            }`}
                           />
                           <span
                             className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
@@ -2467,17 +2618,48 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
                       </div>
                     </div>
 
-                    {auditLogs?.length > 0 ? (
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <p
+                        className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                      >
+                        Showing <span className="font-semibold">{filteredAuditLogs.length}</span>{" "}
+                        of <span className="font-semibold">{auditLogs?.length || 0}</span>{" "}
+                        entries
+                      </p>
+                      {(auditQuery ||
+                        auditActionFilter !== "all" ||
+                        auditActorFilter !== "all") && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAuditQuery("");
+                            setAuditActionFilter("all");
+                            setAuditActorFilter("all");
+                            setAuditExpandedId(null);
+                          }}
+                          className={`text-sm font-medium transition-colors ${
+                            isDark
+                              ? "text-gray-300 hover:text-white"
+                              : "text-gray-700 hover:text-gray-900"
+                          }`}
+                        >
+                          Clear filters
+                        </button>
+                      )}
+                    </div>
+
+                    {filteredAuditLogs.length > 0 ? (
                       <div className="overflow-x-auto">
                         <table className="min-w-full">
                           <thead
                             className={`sticky top-0 z-10 shadow-sm backdrop-blur-md ${isDark ? "bg-gray-800/90" : "bg-white/90"}`}
                           >
                             <tr>
+                              <th className="px-4 py-2 w-10"></th>
                               <th
                                 className={`px-4 py-2 text-left text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
                               >
-                                Time
+                                When
                               </th>
                               <th
                                 className={`px-4 py-2 text-left text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
@@ -2504,61 +2686,200 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
                           <tbody
                             className={`divide-y ${isDark ? "divide-gray-700" : "divide-gray-200"}`}
                           >
-                            {auditLogs.map((log) => (
-                              <tr
-                                key={log.id}
-                                className={
-                                  isDark
-                                    ? "hover:bg-gray-700"
-                                    : "hover:bg-gray-50"
+                            {filteredAuditLogs.flatMap((log) => {
+                              const actor = log?.admin?.username || "System";
+                              const isExpanded = auditExpandedId === log.id;
+
+                              const actionClass =
+                                log.action?.includes("DELETE") ||
+                                log.action?.includes("DEACTIVATE")
+                                  ? isDark
+                                    ? "bg-red-900/30 text-red-200 border-red-900/50"
+                                    : "bg-red-100 text-red-800 border-red-200"
+                                  : log.action?.includes("CREATE") ||
+                                      log.action?.includes("ACTIVATE")
+                                    ? isDark
+                                      ? "bg-emerald-900/30 text-emerald-200 border-emerald-900/50"
+                                      : "bg-green-100 text-green-800 border-green-200"
+                                    : isDark
+                                      ? "bg-blue-900/30 text-blue-200 border-blue-900/50"
+                                      : "bg-blue-100 text-blue-800 border-blue-200";
+
+                              const detailsPreview = (() => {
+                                if (!log?.details) return "—";
+                                if (typeof log.details === "string") return log.details;
+                                if (typeof log.details === "object") {
+                                  const keys = Object.keys(log.details || {});
+                                  if (keys.length === 0) return "{}";
+                                  return `{ ${keys.slice(0, 4).join(", ")}${
+                                    keys.length > 4 ? ", ..." : ""
+                                  } }`;
                                 }
-                              >
-                                <td
-                                  className={`px-4 py-3 text-sm whitespace-nowrap ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                                return String(log.details);
+                              })();
+
+                              let detailsText = "—";
+                              if (log?.details) {
+                                if (typeof log.details === "string") {
+                                  detailsText = log.details;
+                                } else {
+                                  try {
+                                    detailsText = JSON.stringify(log.details, null, 2);
+                                  } catch {
+                                    detailsText = String(log.details);
+                                  }
+                                }
+                              }
+
+                              const row = (
+                                <tr
+                                  key={log.id}
+                                  onClick={() =>
+                                    setAuditExpandedId((prev) =>
+                                      prev === log.id ? null : log.id,
+                                    )
+                                  }
+                                  className={`cursor-pointer ${
+                                    isDark ? "hover:bg-gray-700/60" : "hover:bg-gray-50"
+                                  }`}
                                 >
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {timeAgo(log.timestamp)}
-                                  </div>
-                                </td>
-                                <td
-                                  className={`px-4 py-3 text-sm font-medium ${isDark ? "text-gray-200" : "text-gray-900"}`}
-                                >
-                                  {log.admin?.username || "System"}
-                                </td>
-                                <td className="px-4 py-3">
-                                  <span
-                                    className={`px-2 py-1 text-xs rounded-full font-medium ${
-                                      log.action?.includes("DELETE") ||
-                                      log.action?.includes("DEACTIVATE")
-                                        ? "bg-red-100 text-red-800"
-                                        : log.action?.includes("CREATE") ||
-                                            log.action?.includes("ACTIVATE")
-                                          ? "bg-green-100 text-green-800"
-                                          : "bg-blue-100 text-blue-800"
+                                  <td className="px-4 py-3">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setAuditExpandedId((prev) =>
+                                          prev === log.id ? null : log.id,
+                                        );
+                                      }}
+                                      className={`p-1.5 rounded-lg transition-colors ${
+                                        isDark
+                                          ? "hover:bg-gray-800 text-gray-400"
+                                          : "hover:bg-gray-100 text-gray-500"
+                                      }`}
+                                      title={isExpanded ? "Collapse" : "Expand"}
+                                    >
+                                      <ChevronDown
+                                        className={`w-4 h-4 transition-transform ${
+                                          isExpanded ? "rotate-180" : ""
+                                        }`}
+                                      />
+                                    </button>
+                                  </td>
+                                  <td
+                                    className={`px-4 py-3 text-sm whitespace-nowrap ${
+                                      isDark ? "text-gray-300" : "text-gray-800"
+                                    }`}
+                                    title={new Date(log.timestamp).toLocaleString()}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Clock className="w-3.5 h-3.5" />
+                                      <span className="font-medium">
+                                        {timeAgo(log.timestamp)}
+                                      </span>
+                                      <span
+                                        className={`hidden md:inline text-xs ${
+                                          isDark ? "text-gray-500" : "text-gray-400"
+                                        }`}
+                                      >
+                                        {new Date(log.timestamp).toLocaleTimeString()}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td
+                                    className={`px-4 py-3 text-sm font-medium ${
+                                      isDark ? "text-gray-100" : "text-gray-900"
                                     }`}
                                   >
-                                    {log.action}
-                                  </span>
-                                </td>
-                                <td
-                                  className={`px-4 py-3 text-sm font-mono ${isDark ? "text-gray-400" : "text-gray-600"}`}
-                                >
-                                  {log.targetId
-                                    ? log.targetId.substring(0, 12) + "..."
-                                    : "—"}
-                                </td>
-                                <td
-                                  className={`px-4 py-3 text-sm max-w-[200px] truncate ${isDark ? "text-gray-400" : "text-gray-600"}`}
-                                >
-                                  {log.details
-                                    ? typeof log.details === "string"
-                                      ? log.details
-                                      : JSON.stringify(log.details)
-                                    : "—"}
-                                </td>
-                              </tr>
-                            ))}
+                                    {actor}
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <span
+                                      className={`px-2 py-1 text-xs rounded-full font-semibold border ${actionClass}`}
+                                    >
+                                      {log.action || "—"}
+                                    </span>
+                                  </td>
+                                  <td
+                                    className={`px-4 py-3 text-sm font-mono ${
+                                      isDark ? "text-gray-300" : "text-gray-700"
+                                    }`}
+                                  >
+                                    {log.targetId ? log.targetId.substring(0, 12) + "..." : "—"}
+                                  </td>
+                                  <td
+                                    className={`px-4 py-3 text-sm max-w-[240px] truncate ${
+                                      isDark ? "text-gray-400" : "text-gray-600"
+                                    }`}
+                                  >
+                                    {detailsPreview}
+                                  </td>
+                                </tr>
+                              );
+
+                              if (!isExpanded) return [row];
+
+                              return [
+                                row,
+                                <tr key={`${log.id}-expanded`}>
+                                  <td
+                                    colSpan={6}
+                                    className={`px-4 py-4 ${
+                                      isDark ? "bg-gray-900/20" : "bg-gray-50/60"
+                                    }`}
+                                  >
+                                    <div
+                                      className={`rounded-xl border p-4 ${
+                                        isDark
+                                          ? "bg-gray-900/30 border-gray-700/60"
+                                          : "bg-white border-gray-200"
+                                      }`}
+                                    >
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                          <p className="text-xs uppercase tracking-wider font-semibold text-gray-500">
+                                            Timestamp
+                                          </p>
+                                          <p
+                                            className={`mt-1 text-sm ${
+                                              isDark ? "text-gray-200" : "text-gray-900"
+                                            }`}
+                                          >
+                                            {new Date(log.timestamp).toLocaleString()}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs uppercase tracking-wider font-semibold text-gray-500">
+                                            Target ID
+                                          </p>
+                                          <p
+                                            className={`mt-1 text-sm font-mono ${
+                                              isDark ? "text-gray-200" : "text-gray-900"
+                                            }`}
+                                          >
+                                            {log.targetId || "—"}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <div className="mt-4">
+                                        <p className="text-xs uppercase tracking-wider font-semibold text-gray-500">
+                                          Details
+                                        </p>
+                                        <pre
+                                          className={`mt-2 text-xs leading-relaxed rounded-lg border p-3 overflow-x-auto ${
+                                            isDark
+                                              ? "bg-gray-950/40 border-gray-700/60 text-gray-200"
+                                              : "bg-gray-50 border-gray-200 text-gray-800"
+                                          }`}
+                                        >
+                                          {detailsText}
+                                        </pre>
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>,
+                              ];
+                            })}
                           </tbody>
                         </table>
                       </div>
@@ -2566,8 +2887,9 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
                       <p
                         className={`text-center py-8 ${isDark ? "text-gray-500" : "text-gray-500"}`}
                       >
-                        No audit logs recorded yet. Admin actions will appear
-                        here.
+                        {auditLogs?.length === 0
+                          ? "No audit logs recorded yet. Admin actions will appear here."
+                          : "No results. Try adjusting your filters or search query."}
                       </p>
                     )}
                   </div>

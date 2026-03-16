@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import logger from "./logger.js";
 
 const ALGORITHM = "aes-256-cbc";
 // Ensure the key is 32 bytes (256 bits)
@@ -21,7 +22,7 @@ export const encrypt = (text) => {
     encrypted = Buffer.concat([encrypted, cipher.final()]);
     return iv.toString("hex") + ":" + encrypted.toString("hex");
   } catch (error) {
-    console.error("Encryption error:", error);
+    logger.error("Encryption error:", error);
     // Ideally, throw or handle, but for now return original to avoid data loss (though it won't be encrypted)
     // Or throw to prevent saving unencrypted data?
     // Let's throw to be safe
@@ -49,7 +50,7 @@ export const decrypt = (text) => {
     decrypted = Buffer.concat([decrypted, decipher.final()]);
     return decrypted.toString();
   } catch (error) {
-    console.error("Decryption error:", error);
+    logger.error("Decryption error:", error);
     // Fallback: return original text if decryption fails (might be unencrypted data)
     return text;
   }

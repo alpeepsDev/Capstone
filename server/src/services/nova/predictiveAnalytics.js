@@ -1,5 +1,6 @@
 import prisma from "../../config/database.js";
 import { addDays, differenceInHours, differenceInDays } from "date-fns";
+import logger from "../../utils/logger.js";
 
 /**
  * Nova Predictive Analytics Service
@@ -136,13 +137,13 @@ export const predictCompletionDate = async (taskId) => {
       },
     });
 
-    console.log(
+    logger.info(
       `[Nova Predictions] Task "${task.title}" predicted to complete by ${predictedDate.toLocaleDateString()}`,
     );
 
     return prediction;
   } catch (error) {
-    console.error("[Nova Predictions] Error predicting completion:", error);
+    logger.error("[Nova Predictions] Error predicting completion:", error);
     return null;
   }
 };
@@ -285,7 +286,7 @@ export const analyzeUserPatterns = async (userId) => {
       totalTasksAnalyzed: user.assignedTasks.length,
     };
   } catch (error) {
-    console.error("[Nova Predictions] Error analyzing patterns:", error);
+    logger.error("[Nova Predictions] Error analyzing patterns:", error);
     return { patterns: [], confidence: 0 };
   }
 };
@@ -366,7 +367,7 @@ export const calculateProjectHealth = async (projectId) => {
       factors,
     };
   } catch (error) {
-    console.error(
+    logger.error(
       "[Nova Predictions] Error calculating project health:",
       error,
     );
@@ -450,7 +451,7 @@ export const predictFutureRisks = async (projectId) => {
 
     return { risks };
   } catch (error) {
-    console.error("[Nova Predictions] Error predicting risks:", error);
+    logger.error("[Nova Predictions] Error predicting risks:", error);
     return { risks: [] };
   }
 };
@@ -460,7 +461,7 @@ export const predictFutureRisks = async (projectId) => {
  * Called periodically by scheduler
  */
 export const refreshPredictions = async () => {
-  console.log("[Nova Predictions] Refreshing predictions for active tasks...");
+  logger.info("[Nova Predictions] Refreshing predictions for active tasks...");
 
   try {
     const activeTasks = await prisma.task.findMany({
@@ -487,10 +488,11 @@ export const refreshPredictions = async () => {
       }
     }
 
-    console.log(
+    logger.info(
       `[Nova Predictions] Refreshed predictions for ${activeTasks.length} tasks`,
     );
   } catch (error) {
-    console.error("[Nova Predictions] Error refreshing predictions:", error);
+    logger.error("[Nova Predictions] Error refreshing predictions:", error);
   }
 };
+

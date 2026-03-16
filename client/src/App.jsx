@@ -19,6 +19,7 @@ const Register = React.lazy(() => import("./pages/Register"));
 const ForgotPassword = React.lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const ReportPage = React.lazy(() => import("./pages/ReportPage"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 
 // Loading component for Suspense fallback
@@ -145,6 +146,16 @@ const AppRoutes = () => {
         }
       />
 
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute>
+            <Suspense fallback={<LoadingSpinner />}>
+              <ReportPage />
+            </Suspense>
+          </ProtectedRoute>
+        }
+      />
       {/* 404 Error page - catch all unknown routes */}
       <Route
         path="*"

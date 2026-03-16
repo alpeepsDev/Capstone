@@ -1,4 +1,5 @@
 import { testRedisConnection, getConnection } from "../config/redis.js";
+import logger from "../utils/logger.js";
 
 // Import existing automation functions
 import { runAutomation } from "./engine.js";
@@ -22,7 +23,7 @@ export const initScheduler = async () => {
   const isAutomationDisabled = process.env.DISABLE_AUTOMATION === "true";
 
   if (isAutomationDisabled) {
-    console.log(
+    logger.info(
       "[Nova Scheduler] ⚠️  Automation disabled (DISABLE_AUTOMATION=true)",
     );
     return;
@@ -40,7 +41,7 @@ export const initScheduler = async () => {
 
 // BULLMQ MODE
 async function initBullMQMode() {
-  console.log("[Nova Scheduler] 🚀 Initializing with BullMQ (Redis-backed)...");
+  logger.info("[Nova Scheduler] 🚀 Initializing with BullMQ (Redis-backed)...");
 
   try {
     // Dynamic imports — only load BullMQ modules when Redis is confirmed available
@@ -98,25 +99,25 @@ async function initBullMQMode() {
       { name: "insights", data: {} },
     );
 
-    console.log("[Nova Scheduler] ✅ BullMQ job schedulers registered");
-    console.log("[Nova Scheduler] 📊 Risk Analysis: Every 15min");
-    console.log(
+    logger.info("[Nova Scheduler] ✅ BullMQ job schedulers registered");
+    logger.info("[Nova Scheduler] 📊 Risk Analysis: Every 15min");
+    logger.info(
       "[Nova Scheduler] 🔔 Notifications: Deadlines 1hr | Risks 30min | Weekly 7days",
     );
-    console.log("[Nova Scheduler] 🤖 Automations: Every 30min");
-    console.log("[Nova Scheduler] 🔮 Predictions: Every 4hrs");
-    console.log("[Nova Scheduler] 💡 Insights: Every 24hrs");
-    console.log(`[Nova Scheduler] 👷 ${activeWorkers.length} workers active`);
+    logger.info("[Nova Scheduler] 🤖 Automations: Every 30min");
+    logger.info("[Nova Scheduler] 🔮 Predictions: Every 4hrs");
+    logger.info("[Nova Scheduler] 💡 Insights: Every 24hrs");
+    logger.info(`[Nova Scheduler] 👷 ${activeWorkers.length} workers active`);
   } catch (error) {
-    console.error("[Nova Scheduler] ❌ BullMQ init failed:", error.message);
-    console.log("[Nova Scheduler] 🔄 Falling back to setInterval mode...");
+    logger.error("[Nova Scheduler] ❌ BullMQ init failed:", error.message);
+    logger.info("[Nova Scheduler] 🔄 Falling back to setInterval mode...");
     initFallbackMode();
   }
 }
 
 // FALLBACK MODE (setInterval)
 function initFallbackMode() {
-  console.log(
+  logger.info(
     "[Nova Scheduler] 🔄 Using setInterval fallback (no Redis detected)...",
   );
 
@@ -153,10 +154,11 @@ function initFallbackMode() {
     3 * 60 * 1000,
   );
 
-  console.log("[Nova Scheduler] ✅ Fallback scheduler active");
-  console.log(
+  logger.info("[Nova Scheduler] ✅ Fallback scheduler active");
+  logger.info(
     "[Nova Scheduler] 💡 Install & start Redis for better reliability + retries",
   );
 }
 
 export { activeWorkers as allWorkers };
+

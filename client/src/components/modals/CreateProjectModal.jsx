@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Button, Input, Card } from "../ui";
 import { useTheme } from "../../context";
 import { BarChart2, X, Plus } from "lucide-react";
+import logger from "../../utils/logger.js";
 
 const projectSchema = z.object({
   name: z.string().min(1, "Project name is required").max(100, "Name too long"),
@@ -65,8 +66,8 @@ const CreateProjectModal = ({
             ? onSave
             : null;
       if (!submitHandler) {
-        console.warn(
-          "CreateProjectModal: No submit handler provided (onSubmit/onSave). Skipping."
+        logger.warn(
+          "CreateProjectModal: No submit handler provided (onSubmit/onSave). Skipping.",
         );
         return;
       }
@@ -82,7 +83,7 @@ const CreateProjectModal = ({
       setSelectedMembers([]);
       onClose();
     } catch (error) {
-      console.error("Project creation failed:", error);
+      logger.error("Project creation failed:", error);
     }
   };
 
@@ -105,51 +106,53 @@ const CreateProjectModal = ({
           isDark
             ? "bg-gray-900/90 border-gray-700/50"
             : "bg-white/90 border-gray-200/50"
-        } backdrop-blur-xl border rounded-2xl shadow-2xl max-w-lg w-full transform transition-all scale-100 p-1`}
+        } backdrop-blur-xl border rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col transform transition-all scale-100`}
       >
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div
-                className={`p-3 rounded-xl ${
-                  isDark
-                    ? "bg-blue-500/10 text-blue-400"
-                    : "bg-blue-50 text-blue-600"
-                }`}
-              >
-                <BarChart2 className="w-6 h-6" />
-              </div>
-              <div>
-                <h3
-                  className={`text-xl font-bold ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Create New Project
-                </h3>
-                <p
-                  className={`text-sm ${
-                    isDark ? "text-gray-400" : "text-gray-500"
-                  }`}
-                >
-                  Start a new workspace for your team
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className={`p-2 rounded-lg transition-colors ${
+        {/* Header */}
+        <div className="p-5 pb-3 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div
+              className={`p-2.5 rounded-xl ${
                 isDark
-                  ? "text-gray-400 hover:text-white hover:bg-gray-800"
-                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                  ? "bg-blue-500/10 text-blue-400"
+                  : "bg-blue-50 text-blue-600"
               }`}
             >
-              <X className="w-5 h-5" />
-            </button>
+              <BarChart2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3
+                className={`text-lg font-bold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Create New Project
+              </h3>
+              <p
+                className={`text-sm ${
+                  isDark ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                Start a new workspace for your team
+              </p>
+            </div>
           </div>
+          <button
+            onClick={onClose}
+            className={`p-2 rounded-lg transition-colors ${
+              isDark
+                ? "text-gray-400 hover:text-white hover:bg-gray-800"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-            <div className="space-y-2">
+        {/* Scrollable form body */}
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col min-h-0 flex-1">
+          <div className="px-5 pb-4 space-y-4 overflow-y-auto flex-1">
+            <div>
               <Input
                 {...register("name")}
                 label="Project Name"
@@ -159,7 +162,7 @@ const CreateProjectModal = ({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <label
                 className={`block text-sm font-medium ${
                   isDark ? "text-gray-300" : "text-gray-700"
@@ -169,7 +172,7 @@ const CreateProjectModal = ({
               </label>
               <textarea
                 {...register("description")}
-                rows={4}
+                rows={3}
                 className={`w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all resize-none ${
                   isDark
                     ? "bg-gray-800/50 border-gray-600 text-white placeholder-gray-500"
@@ -186,7 +189,7 @@ const CreateProjectModal = ({
 
             {/* Member Selection */}
             {users && users.length > 0 && (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label
                     className={`block text-sm font-medium ${
@@ -208,7 +211,7 @@ const CreateProjectModal = ({
                   )}
                 </div>
                 <div
-                  className={`max-h-48 overflow-y-auto border rounded-xl p-2 space-y-1 ${
+                  className={`max-h-36 overflow-y-auto border rounded-xl p-2 space-y-1 ${
                     isDark
                       ? "bg-gray-800/50 border-gray-600 custom-scrollbar-dark"
                       : "bg-gray-50 border-gray-200 custom-scrollbar"
@@ -250,17 +253,18 @@ const CreateProjectModal = ({
                 </div>
               </div>
             )}
+          </div>
 
-            <div className="flex gap-3 pt-4 border-t border-gray-200/10">
-              <Button type="submit" loading={loading} className="flex-1">
-                Create Project
-              </Button>
-              <Button type="button" variant="secondary" onClick={onClose}>
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </div>
+          {/* Fixed footer */}
+          <div className={`px-5 py-3 flex gap-3 border-t shrink-0 ${isDark ? "border-gray-700/50" : "border-gray-200/50"}`}>
+            <Button type="submit" loading={loading} className="flex-1">
+              Create Project
+            </Button>
+            <Button type="button" variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

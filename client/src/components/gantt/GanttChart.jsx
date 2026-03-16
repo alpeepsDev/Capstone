@@ -1,21 +1,27 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import Gantt from "frappe-gantt";
 import { useTheme } from "../../context";
 import { Card } from "../ui";
 
 // Import CSS from the actual file path
 import "../../styles/frappe-gantt.css";
+import logger from "../../utils/logger.js";
+import { sortTasksByPriorityAndStatus } from "../../utils/taskSorting.js";
 
 const GanttChart = ({ tasks, onTaskClick, onDateChange }) => {
   const { isDark } = useTheme();
   const ganttRef = useRef(null);
   const ganttInstance = useRef(null);
+  const sortedTasks = useMemo(
+    () => sortTasksByPriorityAndStatus(tasks),
+    [tasks],
+  );
 
   useEffect(() => {
-    if (!ganttRef.current || !tasks || tasks.length === 0) return;
+    if (!ganttRef.current || !sortedTasks || sortedTasks.length === 0) return;
 
     // Transform tasks to Frappe Gantt format
-    const ganttTasks = tasks
+    const ganttTasks = sortedTasks
       .filter((task) => task.dueDate) // Only show tasks with dates
       .map((task) => {
         // Use createdAt as start if no explicit startDate
@@ -69,7 +75,7 @@ const GanttChart = ({ tasks, onTaskClick, onDateChange }) => {
         language: "en",
         on_click: (task) => {
           if (onTaskClick) {
-            const originalTask = tasks.find((t) => t.id === task.id);
+            const originalTask = sortedTasks.find((t) => t.id === task.id);
             onTaskClick(originalTask);
           }
         },
@@ -82,11 +88,11 @@ const GanttChart = ({ tasks, onTaskClick, onDateChange }) => {
           }
         },
         on_progress_change: (task, progress) => {
-          console.log("Progress changed:", task.id, progress);
+          logger.info("Progress changed:", task.id, progress);
         },
       });
     } catch (error) {
-      console.error("Error creating Gantt chart:", error);
+      logger.error("Error creating Gantt chart:", error);
     }
 
     return () => {
@@ -94,9 +100,9 @@ const GanttChart = ({ tasks, onTaskClick, onDateChange }) => {
         ganttInstance.current = null;
       }
     };
-  }, [tasks, onTaskClick, onDateChange]);
+  }, [sortedTasks, onTaskClick, onDateChange]);
 
-  const tasksWithDates = tasks?.filter((task) => task.dueDate) || [];
+  const tasksWithDates = sortedTasks.filter((task) => task.dueDate);
 
   if (tasksWithDates.length === 0) {
     return (

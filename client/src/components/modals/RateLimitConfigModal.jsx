@@ -35,12 +35,12 @@ const RateLimitConfigModal = ({
         userId: "",
         endpoint: "",
         method: "GET",
-        limit: 200,
-        window: 3600,
+        limit: type === "role" ? 100 : 200,
+        window: type === "role" ? 1 : 3600,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, type]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -138,11 +138,25 @@ const RateLimitConfigModal = ({
                     : "bg-white border-gray-300 text-gray-900"
                 } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 required
+                disabled={type === "role"}
               >
                 <option value="USER">USER</option>
                 <option value="MANAGER">MANAGER</option>
                 <option value="ADMIN">ADMIN</option>
               </select>
+            </div>
+          )}
+
+          {type === "role" && (
+            <div className="rounded-lg p-4 bg-blue-50 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100 border border-blue-200 dark:border-blue-800 space-y-2">
+              <p className="text-sm font-medium">
+                Global rate limiting enforces a hard cap of 100 requests per second for every role.
+                Editing per-role limits is disabled while this global policy is active.
+              </p>
+              <div className="flex gap-4 text-sm">
+                <span className="font-semibold">Limit: 100/s</span>
+                <span className="font-semibold">Window: 1s</span>
+              </div>
             </div>
           )}
 
@@ -258,79 +272,83 @@ const RateLimitConfigModal = ({
             </>
           )}
 
-          {/* Limit */}
-          <div>
-            <label
-              className={`block text-sm font-medium mb-1 ${
-                isDark ? "text-gray-300" : "text-gray-700"
-              }`}
-            >
-              Request Limit
-            </label>
-            <input
-              type="number"
-              value={formData.limit === 0 ? "" : formData.limit}
-              onChange={(e) => {
-                const val = e.target.value;
-                setFormData({
-                  ...formData,
-                  limit: val === "" ? "" : parseInt(val),
-                });
-              }}
-              min="1"
-              className={`w-full px-3 py-2 border rounded-lg ${
-                isDark
-                  ? "bg-gray-700 border-gray-600 text-white"
-                  : "bg-white border-gray-300 text-gray-900"
-              } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              required
-            />
-            <p
-              className={`text-xs mt-1 ${
-                isDark ? "text-gray-400" : "text-gray-600"
-              }`}
-            >
-              Maximum number of requests allowed per time window
-            </p>
-          </div>
+          {/* Limit - Hidden for role type, shown for others */}
+          {type !== "role" && (
+            <div>
+              <label
+                className={`block text-sm font-medium mb-1 ${
+                  isDark ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                Request Limit
+              </label>
+              <input
+                type="number"
+                value={formData.limit === 0 ? "" : formData.limit}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData({
+                    ...formData,
+                    limit: val === "" ? "" : parseInt(val),
+                  });
+                }}
+                min="1"
+                className={`w-full px-3 py-2 border rounded-lg ${
+                  isDark
+                    ? "bg-gray-700 border-gray-600 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                required
+              />
+              <p
+                className={`text-xs mt-1 ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                Maximum number of requests allowed per time window
+              </p>
+            </div>
+          )}
 
-          {/* Time Window */}
-          <div>
-            <label
-              className={`block text-sm font-medium mb-1 ${
-                isDark ? "text-gray-300" : "text-gray-700"
-              }`}
-            >
-              Time Window (seconds)
-            </label>
-            <input
-              type="number"
-              value={formData.window === 0 ? "" : formData.window}
-              onChange={(e) => {
-                const val = e.target.value;
-                setFormData({
-                  ...formData,
-                  window: val === "" ? "" : parseInt(val),
-                });
-              }}
-              min="1"
-              className={`w-full px-3 py-2 border rounded-lg ${
-                isDark
-                  ? "bg-gray-700 border-gray-600 text-white"
-                  : "bg-white border-gray-300 text-gray-900"
-              } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              required
-            />
-            <p
-              className={`text-xs mt-1 ${
-                isDark ? "text-gray-400" : "text-gray-600"
-              }`}
-            >
-              {type === "endpoint"
-                ? "Common: 60 (1 min), 300 (5 min)"
-                : "Common: 3600 (1 hour), 86400 (24 hours)"}
-            </p>
-          </div>
+          {/* Time Window - Hidden for role type, shown for others */}
+          {type !== "role" && (
+            <div>
+              <label
+                className={`block text-sm font-medium mb-1 ${
+                  isDark ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                Time Window (seconds)
+              </label>
+              <input
+                type="number"
+                value={formData.window === 0 ? "" : formData.window}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData({
+                    ...formData,
+                    window: val === "" ? "" : parseInt(val),
+                  });
+                }}
+                min="1"
+                className={`w-full px-3 py-2 border rounded-lg ${
+                  isDark
+                    ? "bg-gray-700 border-gray-600 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                required
+              />
+              <p
+                className={`text-xs mt-1 ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                {type === "endpoint"
+                  ? "Common: 60 (1 min), 300 (5 min)"
+                  : "Common: 3600 (1 hour), 86400 (24 hours)"}
+              </p>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-4">

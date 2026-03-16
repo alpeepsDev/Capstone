@@ -1,5 +1,6 @@
 import { Worker } from "bullmq";
 import { getConnection } from "../config/redis.js";
+import logger from "../utils/logger.js";
 
 // Import existing automation functions (unchanged)
 import { runAutomation } from "../automation/engine.js";
@@ -25,7 +26,7 @@ const connection = getConnection();
 const riskAnalysisWorker = new Worker(
   "nova-risk-analysis",
   async (job) => {
-    console.log(`[BullMQ] 🔍 Processing risk analysis job #${job.id}`);
+    logger.info(`[BullMQ] Processing risk analysis job #${job.id}`);
     await runAutomation();
     return { success: true };
   },
@@ -33,20 +34,18 @@ const riskAnalysisWorker = new Worker(
 );
 
 riskAnalysisWorker.on("completed", (job) => {
-  console.log(`[BullMQ] ✅ Risk analysis job #${job.id} completed`);
+  logger.info(`[BullMQ] Risk analysis job #${job.id} completed`);
 });
 
 riskAnalysisWorker.on("failed", (job, err) => {
-  console.error(
-    `[BullMQ] ❌ Risk analysis job #${job?.id} failed: ${err.message}`,
-  );
+  logger.error(`[BullMQ] Risk analysis job #${job?.id} failed`, { err });
 });
 
 // ─── NOTIFICATIONS WORKER ───────────────────────────────────────────
 const notificationsWorker = new Worker(
   "nova-notifications",
   async (job) => {
-    console.log(`[BullMQ] 🔔 Processing notification job #${job.id}`);
+    logger.info(`[BullMQ] Processing notification job #${job.id}`);
     const { task } = job.data;
 
     switch (task) {
@@ -70,22 +69,20 @@ const notificationsWorker = new Worker(
 );
 
 notificationsWorker.on("completed", (job) => {
-  console.log(
-    `[BullMQ] ✅ Notifications job #${job.id} (${job.data?.task}) completed`,
+  logger.info(
+    `[BullMQ] Notifications job #${job.id} (${job.data?.task}) completed`,
   );
 });
 
 notificationsWorker.on("failed", (job, err) => {
-  console.error(
-    `[BullMQ] ❌ Notifications job #${job?.id} failed: ${err.message}`,
-  );
+  logger.error(`[BullMQ] Notifications job #${job?.id} failed`, { err });
 });
 
 // ─── AUTOMATION ACTIONS WORKER ──────────────────────────────────────
 const automationActionsWorker = new Worker(
   "nova-automation-actions",
   async (job) => {
-    console.log(`[BullMQ] 🤖 Processing automation actions job #${job.id}`);
+    logger.info(`[BullMQ] Processing automation actions job #${job.id}`);
     await runAutomationActions();
     return { success: true };
   },
@@ -93,20 +90,18 @@ const automationActionsWorker = new Worker(
 );
 
 automationActionsWorker.on("completed", (job) => {
-  console.log(`[BullMQ] ✅ Automation actions job #${job.id} completed`);
+  logger.info(`[BullMQ] Automation actions job #${job.id} completed`);
 });
 
 automationActionsWorker.on("failed", (job, err) => {
-  console.error(
-    `[BullMQ] ❌ Automation actions job #${job?.id} failed: ${err.message}`,
-  );
+  logger.error(`[BullMQ] Automation actions job #${job?.id} failed`, { err });
 });
 
 // ─── PREDICTIONS WORKER ─────────────────────────────────────────────
 const predictionsWorker = new Worker(
   "nova-predictions",
   async (job) => {
-    console.log(`[BullMQ] 🔮 Processing predictions job #${job.id}`);
+    logger.info(`[BullMQ] Processing predictions job #${job.id}`);
     await refreshPredictions();
     return { success: true };
   },
@@ -114,20 +109,18 @@ const predictionsWorker = new Worker(
 );
 
 predictionsWorker.on("completed", (job) => {
-  console.log(`[BullMQ] ✅ Predictions job #${job.id} completed`);
+  logger.info(`[BullMQ] Predictions job #${job.id} completed`);
 });
 
 predictionsWorker.on("failed", (job, err) => {
-  console.error(
-    `[BullMQ] ❌ Predictions job #${job?.id} failed: ${err.message}`,
-  );
+  logger.error(`[BullMQ] Predictions job #${job?.id} failed`, { err });
 });
 
 // ─── INSIGHTS WORKER 
 const insightsWorker = new Worker(
   "nova-insights",
   async (job) => {
-    console.log(`[BullMQ] 💡 Processing insights job #${job.id}`);
+    logger.info(`[BullMQ] Processing insights job #${job.id}`);
     await generateInsightsForAllUsers();
     return { success: true };
   },
@@ -135,11 +128,11 @@ const insightsWorker = new Worker(
 );
 
 insightsWorker.on("completed", (job) => {
-  console.log(`[BullMQ] ✅ Insights job #${job.id} completed`);
+  logger.info(`[BullMQ] Insights job #${job.id} completed`);
 });
 
 insightsWorker.on("failed", (job, err) => {
-  console.error(`[BullMQ] ❌ Insights job #${job?.id} failed: ${err.message}`);
+  logger.error(`[BullMQ] Insights job #${job?.id} failed`, { err });
 });
 
 // EXPORT ALL WORKERS

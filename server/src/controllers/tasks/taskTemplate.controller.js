@@ -1,4 +1,5 @@
 import prisma from "../../config/database.js";
+import logger from "../../utils/logger.js";
 
 // Get all templates (optionally filtered by project)
 export const getTemplates = async (req, res) => {
@@ -28,7 +29,7 @@ export const getTemplates = async (req, res) => {
 
     res.json(templates);
   } catch (error) {
-    console.error("Error fetching templates:", error);
+    logger.error("Error fetching templates:", error);
     res.status(500).json({ error: "Failed to fetch templates" });
   }
 };
@@ -99,7 +100,7 @@ export const createTemplate = async (req, res) => {
 
     res.status(201).json(taskTemplate);
   } catch (error) {
-    console.error("Error creating template:", error);
+    logger.error("Error creating template:", error);
     res.status(500).json({ error: "Failed to create template" });
   }
 };
@@ -153,7 +154,7 @@ export const updateTemplate = async (req, res) => {
 
     res.json(updated);
   } catch (error) {
-    console.error("Error updating template:", error);
+    logger.error("Error updating template:", error);
     res.status(500).json({ error: "Failed to update template" });
   }
 };
@@ -199,7 +200,7 @@ export const deleteTemplate = async (req, res) => {
 
     res.json({ message: "Template deleted successfully" });
   } catch (error) {
-    console.error("Error deleting template:", error);
+    logger.error("Error deleting template:", error);
     res.status(500).json({ error: "Failed to delete template" });
   }
 };
@@ -244,7 +245,8 @@ export const createTaskFromTemplate = async (req, res) => {
 
     res.status(201).json(task);
   } catch (error) {
-    console.error("Error creating task from template:", error);
+    logger.error("Error creating task from template:", error);
     res.status(500).json({ error: "Failed to create task from template" });
   }
 };
+

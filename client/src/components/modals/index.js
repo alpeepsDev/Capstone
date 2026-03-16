@@ -5,3 +5,5 @@ export { default as DeleteConfirmationModal } from "./DeleteConfirmationModal";
 export { default as TaskDetailModal } from "./TaskDetailModal";
 export { default as TaskEditModal } from "./TaskEditModal";
 export { default as TaskRejectModal } from "./TaskRejectModal";
+export { default as TaskProofModal } from "./TaskProofModal";
+

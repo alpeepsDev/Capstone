@@ -1,4 +1,5 @@
 import prisma from "../../config/database.js";
+import logger from "../../utils/logger.js";
 
 // Create task relationship
 export const createTaskRelation = async (req, res) => {
@@ -86,7 +87,7 @@ export const createTaskRelation = async (req, res) => {
         .status(409)
         .json({ error: "This relationship already exists" });
     }
-    console.error("Error creating task relation:", error);
+    logger.error("Error creating task relation:", error);
     res.status(500).json({ error: "Failed to create task relation" });
   }
 };
@@ -163,7 +164,7 @@ export const getTaskRelations = async (req, res) => {
 
     res.json(formattedRelations);
   } catch (error) {
-    console.error("Error fetching task relations:", error);
+    logger.error("Error fetching task relations:", error);
     res.status(500).json({ error: "Failed to fetch task relations" });
   }
 };
@@ -208,7 +209,7 @@ export const deleteTaskRelation = async (req, res) => {
 
     res.json({ message: "Relation deleted successfully" });
   } catch (error) {
-    console.error("Error deleting task relation:", error);
+    logger.error("Error deleting task relation:", error);
     res.status(500).json({ error: "Failed to delete task relation" });
   }
 };
@@ -263,7 +264,8 @@ export const getTaskDependencies = async (req, res) => {
       blockedBy: blockedBy.map((r) => r.sourceTask),
     });
   } catch (error) {
-    console.error("Error fetching task dependencies:", error);
+    logger.error("Error fetching task dependencies:", error);
     res.status(500).json({ error: "Failed to fetch task dependencies" });
   }
 };
+

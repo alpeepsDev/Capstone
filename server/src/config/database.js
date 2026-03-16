@@ -3,6 +3,7 @@ import pkg from "@prisma/client";
 const { PrismaClient } = pkg;
 import { decrypt } from "../utils/encryption.js";
 import { emitAdminUpdate } from "../services/websocket.service.js";
+import logger from "../utils/logger.js";
 
 // ---------------------------------------------------------------------------
 // Auto-decrypt User PII fields on every read via Prisma Client Extensions
@@ -146,7 +147,9 @@ const prisma = basePrisma.$extends({
         return result;
       } catch (error) {
         if (error.message?.includes("fetch failed")) {
-          console.error(`[Prisma Service] Connection failed during ${model}.${operation}: Check internet or Accelerate status.`);
+          logger.error(
+            `[Prisma Service] Connection failed during ${model}.${operation}: Check internet or Accelerate status.`,
+          );
         }
         throw error;
       }

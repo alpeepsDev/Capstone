@@ -1,6 +1,7 @@
 import prisma from "../../config/database.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { emitNotificationToUser } from "../../services/websocket.service.js";
+import logger from "../../utils/logger.js";
 
 // Get all notifications for current user
 export const getNotifications = asyncHandler(async (req, res) => {
@@ -137,9 +138,13 @@ export const createNotification = async ({
   projectId = null,
   io = null, // Socket.IO instance for real-time emission
 }) => {
-  console.log(
-    `[${new Date().toISOString()}] createNotification called for User: ${userId}, Type: ${type}, Task: ${taskId}`,
-  );
+  logger.debug("[Notification] createNotification called", {
+    userId,
+    type,
+    taskId,
+    projectId,
+    ioProvided: !!io,
+  });
   try {
     const notification = await prisma.notification.create({
       data: {
@@ -185,7 +190,7 @@ export const createNotification = async ({
 
     return notification;
   } catch (error) {
-    console.error("Failed to create notification:", error);
+    logger.error("Failed to create notification:", error);
     return null;
   }
 };

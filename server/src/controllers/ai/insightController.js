@@ -5,6 +5,7 @@ import {
   dismissInsight,
   markActionTaken,
 } from "../../services/nova/insightGenerator.js";
+import logger from "../../utils/logger.js";
 
 /**
  * Nova Insights Controller
@@ -24,7 +25,7 @@ export const getInsights = async (req, res) => {
       data: insights,
     });
   } catch (error) {
-    console.error("[Insights API] Error fetching insights:", error);
+    logger.error("[Insights API] Error fetching insights:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch insights",
@@ -66,7 +67,7 @@ export const getInsightHistory = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("[Insights API] Error", error);
+    logger.error("[Insights API] Error", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch insight history",
@@ -99,7 +100,7 @@ export const dismissInsightById = async (req, res) => {
       data: updated,
     });
   } catch (error) {
-    console.error("[Insights API] Error dismissing insight:", error);
+    logger.error("[Insights API] Error dismissing insight:", error);
     res.status(500).json({
       success: false,
       message: "Failed to dismiss insight",
@@ -132,7 +133,7 @@ export const markInsightAction = async (req, res) => {
       data: updated,
     });
   } catch (error) {
-    console.error("[Insights API] Error marking action:", error);
+    logger.error("[Insights API] Error marking action:", error);
     res.status(500).json({
       success: false,
       message: "Failed to mark action",
@@ -153,7 +154,7 @@ export const generateInsights = async (req, res) => {
       message: `Generated ${insights.length} new insights`,
     });
   } catch (error) {
-    console.error("[Insights API] Error generating insights:", error);
+    logger.error("[Insights API] Error generating insights:", error);
     res.status(500).json({
       success: false,
       message: "Failed to generate insights",
@@ -197,10 +198,11 @@ export const getInsightStats = async (req, res) => {
       data: formatted,
     });
   } catch (error) {
-    console.error("[Insights API] Error getting stats:", error);
+    logger.error("[Insights API] Error getting stats:", error);
     res.status(500).json({
       success: false,
       message: "Failed to get insight statistics",
     });
   }
 };
+

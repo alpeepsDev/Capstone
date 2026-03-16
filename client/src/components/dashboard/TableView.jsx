@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Skeleton } from "../ui";
 import { Clock, Lock } from "../ui/icons";
+import { sortTasksByPriorityAndStatus } from "../../utils/taskSorting.js";
 
 export const TableView = ({
   tasks,
@@ -10,6 +11,10 @@ export const TableView = ({
   onTaskClick,
   onStatusChange,
 }) => {
+  const sortedTasks = useMemo(
+    () => sortTasksByPriorityAndStatus(tasks),
+    [tasks],
+  );
   const getStatusColor = (status) => {
     switch (status) {
       case "PENDING":
@@ -40,11 +45,11 @@ export const TableView = ({
 
   return (
     <div
-      className={`rounded-lg overflow-hidden border ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
+      className={`flex-1 min-h-0 flex flex-col rounded-lg overflow-hidden border ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
     >
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
+      <div className="overflow-x-scroll md:overflow-x-auto overflow-y-auto flex-1 min-h-0 scrollbar-thin">
+        <table className="min-w-[600px] md:min-w-full">
+          <thead className="sticky top-0 z-10">
             <tr
               className={`${isDark ? "bg-gray-700" : "bg-gray-50"} border-b ${isDark ? "border-gray-700" : "border-gray-200"}`}
             >
@@ -102,7 +107,7 @@ export const TableView = ({
                   </td>
                 </tr>
               ))
-            ) : tasks.length === 0 ? (
+            ) : sortedTasks.length === 0 ? (
               <tr>
                 <td
                   colSpan="5"
@@ -115,7 +120,7 @@ export const TableView = ({
                 </td>
               </tr>
             ) : (
-              tasks.map((task) => (
+              sortedTasks.map((task) => (
                 <tr
                   key={task.id}
                   onClick={() => onTaskClick(task)}

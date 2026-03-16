@@ -1,5 +1,6 @@
 import prisma from "../config/database.js";
 import { decrypt } from "../utils/encryption.js";
+import logger from "../utils/logger.js";
 
 export const globalSearch = async (req, res) => {
   try {
@@ -96,7 +97,7 @@ export const globalSearch = async (req, res) => {
       tasks,
     });
   } catch (error) {
-    console.error("Global search error:", error);
+    logger.error("Global search error:", error);
     res.status(500).json({ message: "Error performing search" });
   }
 };

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "../ui";
 import { toast } from "react-hot-toast";
 import { useTheme } from "../../context";
+import logger from "../../utils/logger.js";
 
 const AddTaskModal = ({
   isOpen,
@@ -99,7 +100,7 @@ const AddTaskModal = ({
 
       onClose();
     } catch (error) {
-      console.error("Failed to create task:", error);
+      logger.error("Failed to create task:", error);
       toast.error("Failed to create task");
     } finally {
       setLoading(false);
@@ -125,8 +126,8 @@ const AddTaskModal = ({
     const project = projects.find((p) => p.id === formData.projectId);
     if (!project) return [];
 
-    console.log("🔍 Selected project:", project);
-    console.log("🔍 Project members:", project.members);
+    logger.info("🔍 Selected project:", project);
+    logger.info("🔍 Project members:", project.members);
 
     // Get project members only
     const members = project.members || [];
@@ -157,7 +158,7 @@ const AddTaskModal = ({
         }));
     }
 
-    console.log("🔍 Processed project users:", projectUsers);
+    logger.info("🔍 Processed project users:", projectUsers);
 
     // Sort by task count (least busy first), then by name
     return projectUsers.sort((a, b) => {

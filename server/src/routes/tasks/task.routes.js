@@ -30,7 +30,7 @@ router.delete("/:id", taskController.deleteTask);
 import { uploadProofs } from "../../middleware/upload.js";
 router.put(
   "/:id/move",
-  uploadProofs.array("proofs", 5),
+  uploadProofs.array("proofs", 10),
   validateRequest(moveTaskSchema),
   taskController.moveTask,
 );
