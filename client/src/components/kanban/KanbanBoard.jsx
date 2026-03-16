@@ -13,7 +13,7 @@ import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+  verticalListSortingStrategy, 
 } from "@dnd-kit/sortable";
 import { useTheme } from "../../context";
 import { Skeleton } from "../ui";
@@ -125,7 +125,7 @@ const KanbanBoard = ({
 
     // Add visual feedback classes for smooth animations
     if (isOverTask) {
-    const overTask = sortedTasks.find((t) => t.id === over.id);
+      const overTask = sortedTasks.find((t) => t.id === over.id);
     }
   };
 
