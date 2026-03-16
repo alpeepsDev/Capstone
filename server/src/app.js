@@ -77,7 +77,8 @@ app.use(express.urlencoded({ extended: true }));
 // HTTP request logging
 app.use(
   morgan(":method :url :status :res[content-length] - :response-time ms", {
-    skip: (req) => (req.originalUrl || req.url || "").startsWith("/api/v1/logs/"),
+    skip: (req) =>
+      (req.originalUrl || req.url || "").startsWith("/api/v1/logs/"),
     stream: {
       write: (message) => logger.http(message.trim()),
     },
@@ -120,9 +121,14 @@ app.use("/api/v1/insights", insightRoutes); // Maps to ai/insights/*
 app.use("/api/v1/ai-preferences", aiPreferenceRoutes); // Maps to ai/preferences/*
 
 // Initialize Nova Automation Scheduler (BullMQ)
-initScheduler().catch((err) => {
-  logger.error("[Nova Scheduler] Failed to initialize:", err);
-});
+// Skip in Vercel to avoid serverless function timeout/errors
+if (!process.env.VERCEL) {
+  initScheduler().catch((err) => {
+    logger.error("[Nova Scheduler] Failed to initialize:", err);
+  });
+} else {
+  logger.info("[Nova Scheduler] Skipped initialization (Vercel detected)");
+}
 
 // Health check endpoint
 app.get("/api/health", async (req, res) => {
