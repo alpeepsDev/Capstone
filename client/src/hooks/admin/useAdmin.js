@@ -1,8 +1,24 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import adminApi from "../../api/admin";
 import { useAuth } from "../../context/AuthContext";
 import webSocketService from "../../services/websocket.service";
 import logger from "../../utils/logger.js";
+
+const REALTIME_REFRESH_DEBOUNCE_MS = 1000;
+const DEFAULT_API_TIME_RANGE = "24h";
+const DEFAULT_HEALTH_HISTORY_HOURS = 24;
+const DEFAULT_USER_ACTIVITY_LIMIT = 10;
+const DEFAULT_AUDIT_LOG_LIMIT = 50;
+
+const LEGACY_MODEL_EVENT_MAP = {
+  User: ["dashboard:overview", "dashboard:users", "dashboard:user-activity"],
+  Project: ["dashboard:overview"],
+  Task: ["dashboard:overview"],
+  RateLimitConfig: ["dashboard:rate-limits", "dashboard:user-activity"],
+  EndpointRateLimit: ["dashboard:rate-limits"],
+  UserRateLimit: ["dashboard:rate-limits"],
+  AuditLog: ["dashboard:audit-logs"],
+};
 
 export const useAdmin = () => {
   const { user } = useAuth();
@@ -38,112 +54,149 @@ export const useAdmin = () => {
   // Advanced Analytics State
   const [databaseMetrics, setDatabaseMetrics] = useState(null);
   const [errorMetrics, setErrorMetrics] = useState(null);
+  const [lastUpdate, setLastUpdate] = useState(() => new Date());
+
+  const dashboardStatsRef = useRef(null);
+  const usersRef = useRef([]);
+  const apiTimeRangeRef = useRef(DEFAULT_API_TIME_RANGE);
+  const healthHistoryHoursRef = useRef(DEFAULT_HEALTH_HISTORY_HOURS);
+  const userActivityLimitRef = useRef(DEFAULT_USER_ACTIVITY_LIMIT);
+  const auditLogLimitRef = useRef(DEFAULT_AUDIT_LOG_LIMIT);
+  const realtimeRefreshTimestampsRef = useRef({});
 
   // Check if user is admin
   const isAdmin = user?.role === "ADMIN";
 
-  // Realtime updates
-  useEffect(() => {
-    if (!isAdmin) return;
+  const markLastUpdated = useCallback(() => {
+    setLastUpdate(new Date());
+  }, []);
 
-    const handleAdminUpdate = ({ model, operation }) => {
-      logger.info(`🛡️ Admin update received: ${model} (${operation})`);
+  const shouldRefreshDataset = useCallback((datasetKey) => {
+    const now = Date.now();
+    const lastRefresh =
+      realtimeRefreshTimestampsRef.current[datasetKey] || 0;
 
-      // Refresh dashboard stats for any mutation on core logic
-      fetchDashboardStats();
+    if (now - lastRefresh < REALTIME_REFRESH_DEBOUNCE_MS) {
+      return false;
+    }
 
-      // Selectively refresh user or project data
-      if (model === "User") {
-        fetchUsers();
-      }
-    };
+    realtimeRefreshTimestampsRef.current[datasetKey] = now;
+    return true;
+  }, []);
 
-    webSocketService.onAdminUpdate(handleAdminUpdate);
+  const getEventTypes = useCallback((payload = {}) => {
+    if (typeof payload.type === "string") {
+      return [payload.type];
+    }
 
-    return () => {
-      webSocketService.offAdminUpdate(handleAdminUpdate);
-    };
-  }, [isAdmin]);
+    if (
+      typeof payload.model === "string" &&
+      LEGACY_MODEL_EVENT_MAP[payload.model]
+    ) {
+      return LEGACY_MODEL_EVENT_MAP[payload.model];
+    }
+
+    return [];
+  }, []);
 
   // ==================== DASHBOARD OVERVIEW ====================
 
   const fetchDashboardStats = useCallback(async () => {
-    if (!isAdmin) return;
-    // Only set loading if we don't have data yet (prevents flicker on realtime updates)
-    if (!dashboardStats) setLoading(true);
+    if (!isAdmin) return null;
+    const shouldShowLoading = !dashboardStatsRef.current;
+    if (shouldShowLoading) setLoading(true);
     setError(null);
     try {
       const data = await adminApi.getDashboardStats();
+      dashboardStatsRef.current = data.data;
       setDashboardStats(data.data);
+      markLastUpdated();
+      return data.data;
     } catch (err) {
       setError(
         err.response?.data?.message || "Failed to fetch dashboard stats",
       );
+      return null;
     } finally {
-      setLoading(false);
+      if (shouldShowLoading) setLoading(false);
     }
-  }, [isAdmin]);
+  }, [isAdmin, markLastUpdated]);
 
   // ==================== API MONITORING ====================
 
   const fetchApiStats = useCallback(
-    async (timeRange = "24h") => {
-      if (!isAdmin) return;
-      setLoading(true);
+    async (timeRange = apiTimeRangeRef.current) => {
+      if (!isAdmin) return null;
+      apiTimeRangeRef.current = timeRange;
+      const shouldShowLoading = !apiStats;
+      if (shouldShowLoading) setLoading(true);
       setError(null);
       try {
         const data = await adminApi.getApiStats(timeRange);
         setApiStats(data.data);
+        markLastUpdated();
+        return data.data;
       } catch (err) {
         setError(err.response?.data?.message || "Failed to fetch API stats");
+        return null;
       } finally {
-        setLoading(false);
+        if (shouldShowLoading) setLoading(false);
       }
     },
-    [isAdmin],
+    [apiStats, isAdmin, markLastUpdated],
   );
 
   const fetchUserActivity = useCallback(
-    async (limit = 10) => {
-      if (!isAdmin) return;
+    async (limit = userActivityLimitRef.current) => {
+      if (!isAdmin) return null;
+      userActivityLimitRef.current = limit;
       try {
         const data = await adminApi.getUserActivity(limit);
         setUserActivity(data.data);
         setUserActivityMeta(data.meta || {});
+        markLastUpdated();
+        return data.data;
       } catch (err) {
         setError(
           err.response?.data?.message || "Failed to fetch user activity",
         );
+        return null;
       }
     },
-    [isAdmin],
+    [isAdmin, markLastUpdated],
   );
 
   // ==================== RATE LIMIT CONFIGURATION ====================
 
   const fetchRateLimits = useCallback(async () => {
-    if (!isAdmin) return;
-    setLoading(true);
+    if (!isAdmin) return null;
+    const shouldShowLoading =
+      rateLimits.length === 0 &&
+      endpointLimits.length === 0 &&
+      userLimits.length === 0;
+    if (shouldShowLoading) setLoading(true);
     setError(null);
     try {
       const data = await adminApi.getRateLimits();
       setRateLimits(data.data);
       setRateLimitMeta(data.meta || {});
+      markLastUpdated();
+      return data.data;
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch rate limits");
+      return null;
     } finally {
-      setLoading(false);
+      if (shouldShowLoading) setLoading(false);
     }
-  }, [isAdmin]);
+  }, [endpointLimits.length, isAdmin, markLastUpdated, rateLimits.length, userLimits.length]);
 
   const updateRateLimit = useCallback(
     async (role, limit) => {
-      if (!isAdmin) return;
+      if (!isAdmin) return null;
       setLoading(true);
       setError(null);
       try {
         const data = await adminApi.updateRateLimit(role, limit);
-        // Refresh rate limits
         await fetchRateLimits();
         return data;
       } catch (err) {
@@ -157,30 +210,36 @@ export const useAdmin = () => {
   );
 
   const fetchEndpointLimits = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!isAdmin) return null;
     try {
       const data = await adminApi.getEndpointRateLimits();
       setEndpointLimits(data.data);
+      markLastUpdated();
+      return data.data;
     } catch (err) {
       setError(
         err.response?.data?.message || "Failed to fetch endpoint limits",
       );
+      return null;
     }
-  }, [isAdmin]);
+  }, [isAdmin, markLastUpdated]);
 
   const fetchAvailableEndpoints = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!isAdmin) return null;
     try {
       const data = await adminApi.getAvailableEndpoints();
       setAvailableEndpoints(data.data);
+      markLastUpdated();
+      return data.data;
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch endpoints");
+      return null;
     }
-  }, [isAdmin]);
+  }, [isAdmin, markLastUpdated]);
 
   const createEndpointLimit = useCallback(
     async (endpoint, method, limit, window) => {
-      if (!isAdmin) return;
+      if (!isAdmin) return null;
       setLoading(true);
       setError(null);
       try {
@@ -206,7 +265,7 @@ export const useAdmin = () => {
 
   const updateEndpointLimit = useCallback(
     async (id, updateData) => {
-      if (!isAdmin) return;
+      if (!isAdmin) return null;
       setLoading(true);
       setError(null);
       try {
@@ -227,7 +286,7 @@ export const useAdmin = () => {
 
   const deleteEndpointLimit = useCallback(
     async (id) => {
-      if (!isAdmin) return;
+      if (!isAdmin) return null;
       setLoading(true);
       setError(null);
       try {
@@ -247,18 +306,21 @@ export const useAdmin = () => {
   );
 
   const fetchUserLimits = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!isAdmin) return null;
     try {
       const data = await adminApi.getUserRateLimits();
       setUserLimits(data.data);
+      markLastUpdated();
+      return data.data;
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch user limits");
+      return null;
     }
-  }, [isAdmin]);
+  }, [isAdmin, markLastUpdated]);
 
   const setUserLimit = useCallback(
     async (userId, limit, window) => {
-      if (!isAdmin) return;
+      if (!isAdmin) return null;
       setLoading(true);
       setError(null);
       try {
@@ -277,7 +339,7 @@ export const useAdmin = () => {
 
   const removeUserLimit = useCallback(
     async (userId) => {
-      if (!isAdmin) return;
+      if (!isAdmin) return null;
       setLoading(true);
       setError(null);
       try {
@@ -297,81 +359,100 @@ export const useAdmin = () => {
   // ==================== SYSTEM HEALTH ====================
 
   const fetchSystemHealth = useCallback(async () => {
-    if (!isAdmin) return;
-    setLoading(true);
+    if (!isAdmin) return null;
+    const shouldShowLoading = !systemHealth;
+    if (shouldShowLoading) setLoading(true);
     setError(null);
     try {
       const data = await adminApi.getSystemHealth();
       setSystemHealth(data.data);
+      markLastUpdated();
+      return data.data;
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch system health");
+      return null;
     } finally {
-      setLoading(false);
+      if (shouldShowLoading) setLoading(false);
     }
-  }, [isAdmin]);
+  }, [isAdmin, markLastUpdated, systemHealth]);
 
   const fetchHealthHistory = useCallback(
-    async (hours = 24) => {
-      if (!isAdmin) return;
+    async (hours = healthHistoryHoursRef.current) => {
+      if (!isAdmin) return null;
+      healthHistoryHoursRef.current = hours;
       try {
         const data = await adminApi.getHealthHistory(hours);
         setHealthHistory(data.data);
+        markLastUpdated();
+        return data.data;
       } catch (err) {
         setError(
           err.response?.data?.message || "Failed to fetch health history",
         );
+        return null;
       }
     },
-    [isAdmin],
+    [isAdmin, markLastUpdated],
   );
 
   const fetchDatabaseMetrics = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!isAdmin) return null;
     try {
       const data = await adminApi.getDatabaseMetrics();
       setDatabaseMetrics(data.data);
+      markLastUpdated();
+      return data.data;
     } catch (err) {
       setError(
         err.response?.data?.message || "Failed to fetch database metrics",
       );
+      return null;
     }
-  }, [isAdmin]);
+  }, [isAdmin, markLastUpdated]);
 
   const fetchErrorMetrics = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!isAdmin) return null;
     try {
       const data = await adminApi.getErrorMetrics();
       setErrorMetrics(data.data);
+      markLastUpdated();
+      return data.data;
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch error metrics");
+      return null;
     }
-  }, [isAdmin]);
+  }, [isAdmin, markLastUpdated]);
 
   // ==================== USER MANAGEMENT ====================
 
   const fetchUsers = useCallback(async () => {
-    if (!isAdmin) return;
-    // Only set loading if we don't have data yet
-    if (users.length === 0) setLoading(true);
+    if (!isAdmin) return null;
+    const shouldShowLoading = usersRef.current.length === 0;
+    if (shouldShowLoading) setLoading(true);
     setError(null);
     try {
       const data = await adminApi.getUsers();
+      usersRef.current = data.data;
       setUsers(data.data);
+      markLastUpdated();
+      return data.data;
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch users");
+      return null;
     } finally {
-      setLoading(false);
+      if (shouldShowLoading) setLoading(false);
     }
-  }, [isAdmin]);
+  }, [isAdmin, markLastUpdated]);
 
   const fetchUserDetails = useCallback(
     async (userId, days = 7) => {
-      if (!isAdmin) return;
+      if (!isAdmin) return null;
       setLoading(true);
       setError(null);
       try {
         const data = await adminApi.getUserDetails(userId, days);
         setSelectedUser(data.data);
+        markLastUpdated();
         return data.data;
       } catch (err) {
         setError(err.response?.data?.message || "Failed to fetch user details");
@@ -380,17 +461,16 @@ export const useAdmin = () => {
         setLoading(false);
       }
     },
-    [isAdmin],
+    [isAdmin, markLastUpdated],
   );
 
   const updateUserStatus = useCallback(
     async (userId, isActive) => {
-      if (!isAdmin) return;
+      if (!isAdmin) return null;
       setLoading(true);
       setError(null);
       try {
         const data = await adminApi.updateUserStatus(userId, isActive);
-        // Refresh users list
         await fetchUsers();
         return data;
       } catch (err) {
@@ -405,12 +485,11 @@ export const useAdmin = () => {
 
   const updateUserRole = useCallback(
     async (userId, role) => {
-      if (!isAdmin) return;
+      if (!isAdmin) return null;
       setLoading(true);
       setError(null);
       try {
         const data = await adminApi.updateUserRole(userId, role);
-        // Refresh users list
         await fetchUsers();
         return data;
       } catch (err) {
@@ -426,27 +505,32 @@ export const useAdmin = () => {
   // ==================== AUDIT LOGS ====================
 
   const fetchAuditLogs = useCallback(
-    async (limit = 50) => {
-      if (!isAdmin) return;
-      setLoading(true);
+    async (limit = auditLogLimitRef.current) => {
+      if (!isAdmin) return null;
+      auditLogLimitRef.current = limit;
+      const shouldShowLoading = auditLogs.length === 0;
+      if (shouldShowLoading) setLoading(true);
       setError(null);
       try {
         const data = await adminApi.getAuditLogs(limit);
         setAuditLogs(data.data);
+        markLastUpdated();
+        return data.data;
       } catch (err) {
         setError(err.response?.data?.message || "Failed to fetch audit logs");
+        return null;
       } finally {
-        setLoading(false);
+        if (shouldShowLoading) setLoading(false);
       }
     },
-    [isAdmin],
+    [auditLogs.length, isAdmin, markLastUpdated],
   );
 
   // ==================== MAINTENANCE ====================
 
   const cleanOldLogs = useCallback(
     async (daysToKeep = 90) => {
-      if (!isAdmin) return;
+      if (!isAdmin) return null;
       setLoading(true);
       setError(null);
       try {
@@ -465,20 +549,18 @@ export const useAdmin = () => {
   // ==================== BACKUP ====================
 
   const downloadBackup = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!isAdmin) return false;
     setLoading(true);
     setError(null);
     try {
       const response = await adminApi.getBackup();
 
-      // Create blob link to download
       const url = window.URL.createObjectURL(
         new Blob([JSON.stringify(response.data, null, 2)]),
       );
       const link = document.createElement("a");
       link.href = url;
 
-      // Extract filename from header or generate default
       const contentDisposition = response.headers["content-disposition"];
       let filename = `backup-${new Date().toISOString()}.json`;
       if (contentDisposition) {
@@ -502,18 +584,16 @@ export const useAdmin = () => {
   }, [isAdmin]);
 
   const downloadSourceCode = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!isAdmin) return false;
     setLoading(true);
     setError(null);
     try {
       const response = await adminApi.getSourceCodeBackup();
 
-      // Create blob link to download
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
 
-      // Extract filename from header or generate default
       const contentDisposition = response.headers["content-disposition"];
       let filename = `source-code-backup-${new Date().toISOString()}.zip`;
       if (contentDisposition) {
@@ -536,11 +616,102 @@ export const useAdmin = () => {
     }
   }, [isAdmin]);
 
+  const refreshRealtimeDataset = useCallback(
+    (eventType) => {
+      switch (eventType) {
+        case "dashboard:overview":
+          if (!shouldRefreshDataset("overview")) return;
+          void fetchDashboardStats();
+          return;
+        case "dashboard:api-stats":
+          if (!shouldRefreshDataset("api-stats")) return;
+          void fetchApiStats(apiTimeRangeRef.current);
+          return;
+        case "dashboard:user-activity":
+          if (!shouldRefreshDataset("user-activity")) return;
+          void fetchUserActivity(userActivityLimitRef.current);
+          return;
+        case "dashboard:rate-limits":
+          if (!shouldRefreshDataset("rate-limits")) return;
+          void Promise.all([
+            fetchRateLimits(),
+            fetchEndpointLimits(),
+            fetchUserLimits(),
+          ]);
+          return;
+        case "dashboard:health":
+          if (!shouldRefreshDataset("health")) return;
+          void Promise.all([
+            fetchSystemHealth(),
+            fetchHealthHistory(healthHistoryHoursRef.current),
+            fetchDatabaseMetrics(),
+            fetchErrorMetrics(),
+          ]);
+          return;
+        case "dashboard:audit-logs":
+          if (!shouldRefreshDataset("audit-logs")) return;
+          void fetchAuditLogs(auditLogLimitRef.current);
+          return;
+        case "dashboard:users":
+          if (!shouldRefreshDataset("users")) return;
+          void fetchUsers();
+          return;
+        default:
+          return;
+      }
+    },
+    [
+      fetchApiStats,
+      fetchAuditLogs,
+      fetchDashboardStats,
+      fetchDatabaseMetrics,
+      fetchEndpointLimits,
+      fetchErrorMetrics,
+      fetchHealthHistory,
+      fetchRateLimits,
+      fetchSystemHealth,
+      fetchUserActivity,
+      fetchUserLimits,
+      fetchUsers,
+      shouldRefreshDataset,
+    ],
+  );
+
+  // Realtime updates
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+
+    const handleAdminUpdate = (payload = {}) => {
+      const eventTypes = getEventTypes(payload);
+
+      if (eventTypes.length === 0) {
+        return;
+      }
+
+      logger.info(
+        `🛡️ Admin update received: ${
+          payload.type || `${payload.model} (${payload.operation})`
+        }`,
+      );
+
+      eventTypes.forEach((eventType) => {
+        refreshRealtimeDataset(eventType);
+      });
+    };
+
+    webSocketService.onAdminUpdate(handleAdminUpdate);
+
+    return () => {
+      webSocketService.offAdminUpdate(handleAdminUpdate);
+    };
+  }, [getEventTypes, isAdmin, refreshRealtimeDataset]);
+
   return {
     // State
     loading,
     error,
     isAdmin,
+    lastUpdate,
 
     // Dashboard Overview
     dashboardStats,

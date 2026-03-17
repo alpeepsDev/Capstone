@@ -9,6 +9,7 @@ class WebSocketService {
     this.currentProjectId = null;
     this.listeners = new Set();
     this.pendingNotificationCallback = null;
+    this.adminUpdateCallbacks = new Set();
   }
 
   addConnectionListener(callback) {
@@ -49,7 +50,11 @@ class WebSocketService {
           token: token,
         },
         autoConnect: true,
-        reconnectionAttempts: 5,
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
       });
 
       this.socket.on("connect", () => {
@@ -67,6 +72,14 @@ class WebSocketService {
           this.socket.off("notification", this.pendingNotificationCallback);
           this.socket.on("notification", this.pendingNotificationCallback);
           logger.info("🔔 Re-registered notification handler after reconnect");
+        }
+
+        this.adminUpdateCallbacks.forEach((callback) => {
+          this.socket.off("admin-update", callback);
+          this.socket.on("admin-update", callback);
+        });
+        if (this.adminUpdateCallbacks.size > 0) {
+          logger.info("🛡️ Re-registered admin update handlers after reconnect");
         }
       });
 
@@ -181,14 +194,22 @@ class WebSocketService {
 
   // Admin events
   onAdminUpdate(callback) {
+    this.adminUpdateCallbacks.add(callback);
+
     if (this.socket) {
       this.socket.off("admin-update", callback);
       this.socket.on("admin-update", callback);
       logger.info("🛡️ Registered admin update handler");
+    } else {
+      logger.info(
+        "🛡️ Admin update handler stored, will register when socket connects",
+      );
     }
   }
 
   offAdminUpdate(callback) {
+    this.adminUpdateCallbacks.delete(callback);
+
     if (this.socket) {
       this.socket.off("admin-update", callback);
     }
