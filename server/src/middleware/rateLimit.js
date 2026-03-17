@@ -1,5 +1,6 @@
 import prisma from "../config/database.js";
 import logger from "../utils/logger.js";
+import { getRedisAvailability, getConnection } from "../config/redis.js";
 
 /**
  * In-memory store for IP-based rate limiting
@@ -40,6 +41,49 @@ const IP_RATE_WINDOW_MS = IP_RATE_WINDOW_HOURS * 60 * 60 * 1000;
 const GLOBAL_RATE_LIMIT = parseInt(process.env.GLOBAL_RATE_LIMIT) || 1000;
 const GLOBAL_RATE_WINDOW_MS = parseInt(process.env.GLOBAL_RATE_WINDOW_MS) || 1000;
 const ADMIN_GLOBAL_RATE_LIMIT = parseInt(process.env.ADMIN_GLOBAL_RATE_LIMIT) || 1000;
+
+/**
+ * Get request count for a given key and window.
+ * Uses Redis atomic increments for O(1) performance,
+ * falls back to Prisma database scans if Redis is down.
+ * 
+ * @param {string} key Unique key for the rate limit (e.g., 'user:1:endpoint:/api/v1/projects')
+ * @param {number} windowMs Time window in milliseconds
+ * @param {object} prismaParams Params for Prisma fallback (userId, endpoint, method)
+ * @returns {Promise<number>} Current request count including this one
+ */
+const getRateLimitCount = async (key, windowMs, { userId, endpoint, method } = {}) => {
+  if (getRedisAvailability()) {
+    try {
+      const redis = getConnection();
+      const redisKey = `ratelimit:${key}`;
+      
+      // Increment and set expiry if it's a new key
+      const count = await redis.incr(redisKey);
+      if (count === 1) {
+        await redis.pexpire(redisKey, windowMs);
+      }
+      
+      return count;
+    } catch (error) {
+      logger.error("[RateLimit] Redis count failed, falling back to DB:", error);
+    }
+  }
+
+  // Fallback to Prisma (Historical Rolling Window)
+  // Note: This accounts for the current request NOT being in the log yet
+  const windowStart = new Date(Date.now() - windowMs);
+  const whereClause = {
+    userId,
+    timestamp: { gte: windowStart },
+  };
+
+  if (endpoint) whereClause.endpoint = endpoint;
+  if (method && method !== "*") whereClause.method = method;
+
+  const count = await prisma.apiLog.count({ where: whereClause });
+  return count + 1; // +1 to include the current (pending) request
+};
 
 const getClientIp = (req) => req.ip || req.connection?.remoteAddress || "unknown";
 
@@ -197,19 +241,13 @@ const rateLimit = async (req, res, next) => {
       limit = endpointLimit.limit;
       windowMs = endpointLimit.window * 1000;
 
-      // Count requests for this endpoint
-      const windowStart = new Date(Date.now() - windowMs);
-      const whereClause = {
+      // Get request count (Redis-first)
+      const redisKey = `user:${userId}:endpoint:${endpoint}:${method}`;
+      const requestCount = await getRateLimitCount(redisKey, windowMs, {
         userId,
         endpoint,
-        timestamp: { gte: windowStart },
-      };
-
-      if (endpointLimit.method !== "*") {
-        whereClause.method = method;
-      }
-
-      const requestCount = await prisma.apiLog.count({ where: whereClause });
+        method: endpointLimit.method,
+      });
 
       // Set rate limit headers
       res.setHeader("X-RateLimit-Limit", limit);
@@ -221,7 +259,7 @@ const rateLimit = async (req, res, next) => {
       res.setHeader("X-RateLimit-Type", "endpoint");
 
       // Check if limit exceeded
-      if (requestCount >= limit) {
+      if (requestCount > limit) {
         return res.status(429).json({
           success: false,
           message: `Endpoint rate limit exceeded. Please try again later.`,
@@ -252,16 +290,9 @@ const rateLimit = async (req, res, next) => {
       windowMs = roleConfig ? roleConfig.window * 1000 : 3600000; // 1 hour default
     }
 
-    // Get user's request count in the current window
-    const windowStart = new Date(Date.now() - windowMs);
-    const requestCount = await prisma.apiLog.count({
-      where: {
-        userId,
-        timestamp: {
-          gte: windowStart,
-        },
-      },
-    });
+    // Get user's request count in the current window (Redis-first)
+    const redisKey = `user:${userId}:total`;
+    const requestCount = await getRateLimitCount(redisKey, windowMs, { userId });
 
     // Set rate limit headers
     res.setHeader("X-RateLimit-Limit", limit);
@@ -273,7 +304,7 @@ const rateLimit = async (req, res, next) => {
     res.setHeader("X-RateLimit-Type", userLimit ? "user" : "role");
 
     // Check if limit exceeded
-    if (requestCount >= limit) {
+    if (requestCount > limit) {
       return res.status(429).json({
         success: false,
         message: "Rate limit exceeded. Please try again later.",
