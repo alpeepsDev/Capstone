@@ -15,7 +15,9 @@ const createTransporter = async () => {
   }
 
   transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false, // Must be false for port 587 (uses STARTTLS)
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS, // Use a generated App Password for Gmail!
