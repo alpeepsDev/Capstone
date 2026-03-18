@@ -139,7 +139,7 @@ const GlobalSearch = ({ className = "" }) => {
       {/* Results Dropdown */}
       {isOpen && query.trim() !== "" && (
         <div
-          className={`absolute top-full left-0 right-0 mt-2 rounded-lg shadow-lg border p-2 z-50 max-h-[80vh] overflow-y-auto ${
+          className={`absolute top-full left-0 right-0 mt-2 rounded-lg border p-2 shadow-lg z-50 max-h-[min(24rem,calc(100vh-7rem))] overflow-y-auto sm:max-h-[80vh] ${
             isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
           }`}
         >
@@ -169,13 +169,13 @@ const GlobalSearch = ({ className = "" }) => {
                       }`}
                     >
                       <Layout className="h-4 w-4 text-blue-500" />
-                      <div>
+                      <div className="min-w-0">
                         <div className="text-sm font-medium">
                           {project.name}
                         </div>
                         {project.description && (
                           <div
-                            className={`text-xs truncate max-w-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                            className={`text-xs truncate ${isDark ? "text-gray-400" : "text-gray-500"}`}
                           >
                             {project.description}
                           </div>

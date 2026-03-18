@@ -180,7 +180,7 @@ const AddTaskModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-20"
+      className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4 sm:pt-20"
       role="dialog"
       aria-modal="true"
       aria-labelledby="add-task-modal-title"
@@ -198,7 +198,7 @@ const AddTaskModal = ({
           isDark
             ? "bg-gray-900/95 border-gray-700/50"
             : "bg-white/95 border-gray-200/50"
-        } backdrop-blur-xl border rounded-lg shadow-2xl w-full max-w-md max-h-[75vh] overflow-y-auto`}
+        } backdrop-blur-xl border shadow-2xl w-full max-w-md max-h-[100dvh] overflow-y-auto rounded-t-2xl sm:max-h-[75vh] sm:rounded-lg`}
       >
         <div className="p-4">
           {/* Header */}

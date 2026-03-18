@@ -145,7 +145,7 @@ const LogTimeModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-20">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4 sm:pt-20">
       {/* Glassmorphism Backdrop */}
       <div
         className="absolute inset-0 backdrop-blur-md bg-black/30"
@@ -158,7 +158,7 @@ const LogTimeModal = ({
           isDark
             ? "bg-gray-900/95 border-gray-700/50"
             : "bg-white/95 border-gray-200/50"
-        } backdrop-blur-xl border rounded-lg shadow-2xl w-full max-w-3xl overflow-hidden`}
+        } backdrop-blur-xl border shadow-2xl w-full max-w-3xl max-h-[100dvh] overflow-y-auto rounded-t-2xl sm:max-h-[85vh] sm:rounded-lg`}
       >
         <div className="p-4">
           {/* Header */}
@@ -223,7 +223,7 @@ const LogTimeModal = ({
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label
                   className={`text-sm font-medium mb-1 block ${
@@ -291,7 +291,7 @@ const LogTimeModal = ({
               </label>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label
                   className={`text-sm font-medium mb-1 block ${

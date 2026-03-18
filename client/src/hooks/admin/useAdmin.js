@@ -143,7 +143,7 @@ export const useAdmin = () => {
         if (shouldShowLoading) setLoading(false);
       }
     },
-    [apiStats, isAdmin, markLastUpdated],
+    [isAdmin, markLastUpdated],
   );
 
   const fetchUserActivity = useCallback(
@@ -188,7 +188,7 @@ export const useAdmin = () => {
     } finally {
       if (shouldShowLoading) setLoading(false);
     }
-  }, [endpointLimits.length, isAdmin, markLastUpdated, rateLimits.length, userLimits.length]);
+  }, [isAdmin, markLastUpdated]);
 
   const updateRateLimit = useCallback(
     async (role, limit) => {
@@ -374,7 +374,7 @@ export const useAdmin = () => {
     } finally {
       if (shouldShowLoading) setLoading(false);
     }
-  }, [isAdmin, markLastUpdated, systemHealth]);
+  }, [isAdmin, markLastUpdated]);
 
   const fetchHealthHistory = useCallback(
     async (hours = healthHistoryHoursRef.current) => {
@@ -523,7 +523,7 @@ export const useAdmin = () => {
         if (shouldShowLoading) setLoading(false);
       }
     },
-    [auditLogs.length, isAdmin, markLastUpdated],
+    [isAdmin, markLastUpdated],
   );
 
   // ==================== MAINTENANCE ====================

@@ -7,6 +7,8 @@ import {
   userIdSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  verifyMfaSchema,
+  toggleMfaSchema,
 } from "../../validations/user.validation.js";
 import { validateRequest } from "../../middleware/validation.middleware.js";
 import {
@@ -26,6 +28,11 @@ router.post(
   userController.register,
 );
 router.post("/login", validateRequest(loginSchema), userController.login);
+router.post(
+  "/verify-mfa",
+  validateRequest(verifyMfaSchema),
+  userController.verifyMfa,
+);
 router.post("/refresh", userController.refreshToken);
 
 router.post(
@@ -43,6 +50,12 @@ router.post(
 // Protected routes
 router.get("/profile", auth, userController.getProfile);
 router.post("/logout", auth, userController.logout);
+router.post(
+  "/mfa/toggle",
+  auth,
+  validateRequest(toggleMfaSchema),
+  userController.toggleMfa,
+);
 router.get("/", auth, requireManagerOrHigher, userController.getAllUsers);
 router.post(
   "/avatar",

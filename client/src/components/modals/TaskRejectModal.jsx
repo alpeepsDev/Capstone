@@ -22,7 +22,7 @@ const TaskRejectModal = ({ task, isOpen, onClose, onReject }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 backdrop-blur-md bg-black/30"
@@ -31,7 +31,7 @@ const TaskRejectModal = ({ task, isOpen, onClose, onReject }) => {
 
       {/* Modal */}
       <div
-        className={`relative ${isDark ? "bg-gray-900/95 border-gray-700/50" : "bg-white/95 border-gray-200/50"} backdrop-blur-xl border rounded-lg shadow-2xl w-full max-w-md`}
+        className={`relative ${isDark ? "bg-gray-900/95 border-gray-700/50" : "bg-white/95 border-gray-200/50"} backdrop-blur-xl border shadow-2xl w-full max-w-md rounded-t-2xl sm:rounded-lg`}
       >
         <div className="p-5">
           <div className="flex items-center justify-between mb-4">

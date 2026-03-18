@@ -355,36 +355,33 @@ export const updateTask = asyncHandler(async (req, res) => {
   }
 
   // Validate HIGH priority requires at least 2 assignees total
-  const newPriority = taskUpdates.priority || task.priority;
-  if (newPriority === "HIGH" || newPriority === "URGENT") {
-    const finalAssigneeId =
-      taskUpdates.assigneeId !== undefined
-        ? taskUpdates.assigneeId
-        : task.assigneeId;
-    const finalAdditionalAssignees =
-      taskUpdates.additionalAssigneeIds !== undefined
-        ? taskUpdates.additionalAssigneeIds
-        : task.additionalAssigneeIds;
+  // ONLY if priority, assigneeId, or additionalAssigneeIds are being updated
+  if (
+    taskUpdates.priority !== undefined ||
+    taskUpdates.assigneeId !== undefined ||
+    taskUpdates.additionalAssigneeIds !== undefined
+  ) {
+    const newPriority = taskUpdates.priority || task.priority;
+    if (newPriority === "HIGH" || newPriority === "URGENT") {
+      const finalAssigneeId =
+        taskUpdates.assigneeId !== undefined
+          ? taskUpdates.assigneeId
+          : task.assigneeId;
+      const finalAdditionalAssignees =
+        taskUpdates.additionalAssigneeIds !== undefined
+          ? taskUpdates.additionalAssigneeIds
+          : task.additionalAssigneeIds;
 
-    const totalAssignees =
-      (finalAssigneeId && finalAssigneeId !== null ? 1 : 0) +
-      (finalAdditionalAssignees?.length || 0);
-    if (totalAssignees < 2) {
-      return res.status(400).json({
-        success: false,
-        message: "High priority tasks require at least 2 assignees",
-      });
+      const totalAssignees =
+        (finalAssigneeId && finalAssigneeId !== null ? 1 : 0) +
+        (finalAdditionalAssignees?.length || 0);
+      if (totalAssignees < 2) {
+        return res.status(400).json({
+          success: false,
+          message: "High priority tasks require at least 2 assignees",
+        });
+      }
     }
-  }
-  task.project.managerId === req.user.id ||
-    task.assigneeId === req.user.id ||
-    req.user.role === "ADMIN";
-
-  if (!canEdit) {
-    return res.status(403).json({
-      success: false,
-      message: "Permission denied to edit this task",
-    });
   }
 
   // Log change note if provided (for future audit trail)

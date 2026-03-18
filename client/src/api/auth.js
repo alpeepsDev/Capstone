@@ -83,6 +83,10 @@ export const authService = {
         throw new Error("Invalid server response structure");
       }
 
+      if (response.data.data.mfaRequired) {
+        return response.data; // Return early for MFA
+      }
+
       const { accessToken, refreshToken, user } = response.data.data;
 
       if (!accessToken || !refreshToken || !user) {
@@ -133,6 +137,36 @@ export const authService = {
       // If refresh fails, clear all tokens
       this.logout();
       throw error;
+    }
+  },
+
+  async verifyMfa(email, otp, rememberMe = false) {
+    try {
+      const response = await api.post("/users/verify-mfa", { email, otp });
+      if (!response.data || !response.data.data) {
+        throw new Error("Invalid server response structure");
+      }
+
+      const { accessToken, refreshToken, user } = response.data.data;
+      if (!accessToken || !refreshToken || !user) {
+        throw new Error("Invalid MFA response: missing token or user data");
+      }
+
+      this.setTokens(accessToken, refreshToken, rememberMe);
+      this.setCurrentUser(user, rememberMe);
+
+      return response.data;
+    } catch (error) {
+      throw toServiceError(error, "MFA Verification failed");
+    }
+  },
+
+  async toggleMfa(enable) {
+    try {
+      const response = await api.post("/users/mfa/toggle", { enable });
+      return response.data;
+    } catch (error) {
+      throw toServiceError(error, "Failed to toggle MFA");
     }
   },
 

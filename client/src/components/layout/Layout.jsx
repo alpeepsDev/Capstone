@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { toast } from "react-hot-toast";
-import { useTheme } from "../../context";
+import { useTheme, useAuth } from "../../context";
 import { Header, Sidebar } from "../navigation";
 import { ThemeToggle } from "../ui";
 import NovaAssistant from "../assistant/NovaAssistant";
 import AIPreferencesSettings from "../dashboard/AIPreferencesSettings";
 import ReportPage from "../../pages/ReportPage";
 import logger from "../../utils/logger.js";
+import { Shield } from "lucide-react";
 
 const Layout = ({
   user,
@@ -23,6 +24,20 @@ const Layout = ({
   const [localActiveView, setLocalActiveView] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { isDark } = useTheme();
+  const { toggleMfa } = useAuth();
+  const [isTogglingMfa, setIsTogglingMfa] = useState(false);
+
+  const handleToggleMfa = async () => {
+    setIsTogglingMfa(true);
+    try {
+      await toggleMfa(!user?.mfaEnabled);
+      toast.success(`MFA has been ${!user?.mfaEnabled ? 'enabled' : 'disabled'}.`);
+    } catch (error) {
+      toast.error(error.message || "Failed to toggle MFA.");
+    } finally {
+      setIsTogglingMfa(false);
+    }
+  };
 
   // Determine which activeView to use
   const currentActiveView =
@@ -379,6 +394,39 @@ const Layout = ({
                     </p>
                   </div>
                   <ThemeToggle />
+                </div>
+              </div>
+            </div>
+
+            {/* Security Settings */}
+            <div className="mb-6">
+              <h3 className={`text-lg font-semibold ${isDark ? "text-gray-200" : "text-gray-800"} mb-4`}>
+                Security
+              </h3>
+              <div className={`${isDark ? "bg-gray-700 border-gray-600" : "bg-gray-50 border-gray-200"} border rounded-lg p-4`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className={`font-medium flex items-center gap-2 ${isDark ? "text-gray-100" : "text-gray-900"}`}>
+                      <Shield size={16} className="text-blue-500" />
+                      Multi-Factor Authentication (MFA)
+                    </h4>
+                    <p className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                      Add an extra layer of security to your account with Email OTP.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleToggleMfa}
+                    disabled={isTogglingMfa}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      user?.mfaEnabled ? 'bg-blue-600' : isDark ? 'bg-gray-600' : 'bg-gray-300'
+                    } disabled:opacity-50`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        user?.mfaEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
             </div>

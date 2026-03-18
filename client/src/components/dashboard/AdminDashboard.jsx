@@ -456,39 +456,12 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
     }
   }, [activeView, activeTab]);
 
-  // Load data on mount
+  // Load basic meta on mount
   useEffect(() => {
     if (isAdmin) {
-      fetchDashboardStats();
-      fetchApiStats();
-      fetchSystemHealth();
-      fetchHealthHistory();
-      fetchUsers();
-      fetchRateLimits();
-      fetchEndpointLimits();
-      fetchUserLimits();
-      fetchUserActivity();
       fetchAvailableEndpoints();
-      fetchAuditLogs();
-      fetchDatabaseMetrics();
-      fetchErrorMetrics();
     }
-  }, [
-    isAdmin,
-    fetchDashboardStats,
-    fetchApiStats,
-    fetchSystemHealth,
-    fetchHealthHistory,
-    fetchUsers,
-    fetchRateLimits,
-    fetchEndpointLimits,
-    fetchUserLimits,
-    fetchUserActivity,
-    fetchAvailableEndpoints,
-    fetchAuditLogs,
-    fetchDatabaseMetrics,
-    fetchErrorMetrics,
-  ]);
+  }, [isAdmin, fetchAvailableEndpoints]);
 
   const refreshVisibleTabData = useCallback(async () => {
     switch (activeTab) {
@@ -575,21 +548,9 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await Promise.all([
-        fetchDashboardStats(),
-        fetchApiStats(),
-        fetchSystemHealth(),
-        fetchHealthHistory(),
-        fetchUsers(),
-        fetchRateLimits(),
-        fetchEndpointLimits(),
-        fetchUserLimits(),
-        fetchUserActivity(),
-        fetchAvailableEndpoints(),
-        fetchAuditLogs(),
-        fetchDatabaseMetrics(),
-        fetchErrorMetrics(),
-      ]);
+      await refreshVisibleTabData();
+      // Also refresh common meta
+      await fetchAvailableEndpoints();
     } finally {
       setRefreshing(false);
     }

@@ -74,3 +74,44 @@ export const sendPasswordResetEmail = async (to, otp) => {
     return false;
   }
 };
+
+/**
+ * Send an email with the OTP for MFA
+ * @param {string} to - The recipient's email address
+ * @param {string} otp - The 6-digit One Time Password
+ */
+export const sendMfaEmail = async (to, otp) => {
+  try {
+    if (!transporter) {
+      await createTransporter();
+    }
+
+    const mailOptions = {
+      from: '"TaskForge Security" <noreply@taskforge.com>',
+      to: to,
+      subject: "Your Login Verification Code - TaskForge",
+      text: `Your login verification code is: ${otp}\n\nThis code will expire in 10 minutes. If you did not attempt to log in, please secure your account.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <h2 style="color: #2563eb; text-align: center;">Login Verification</h2>
+          <p style="color: #475569; font-size: 16px;">Hello,</p>
+          <p style="color: #475569; font-size: 16px;">Please use the verification code below to complete your login.</p>
+          
+          <div style="background-color: #f1f5f9; padding: 16px; border-radius: 6px; text-align: center; margin: 24px 0;">
+            <span style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #1e293b;">${otp}</span>
+          </div>
+          
+          <p style="color: #475569; font-size: 14px;">This code will expire in 10 minutes.</p>
+          <p style="color: #94a3b8; font-size: 12px; margin-top: 32px; border-top: 1px solid #e2e8f0; padding-top: 16px;">If you did not attempt to log in, please reset your password immediately.</p>
+        </div>
+      `,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    logger.info(`MFA email sent to ${to}`);
+    return true;
+  } catch (error) {
+    logger.error("❌ Error sending MFA email:", error);
+    return false;
+  }
+};

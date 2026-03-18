@@ -146,31 +146,23 @@ class AdminService {
   }
 
   /**
-   * Get requests grouped by hour
+   * Get requests grouped by hour using efficient SQL aggregation
    */
   async getRequestsPerHour(startTime) {
-    const logs = await prisma.apiLog.findMany({
-      where: {
-        timestamp: { gte: startTime },
-      },
-      select: {
-        timestamp: true,
-      },
-    });
+    const rawData = await prisma.$queryRaw`
+      SELECT 
+        DATE_TRUNC('hour', "timestamp") AS "hour",
+        COUNT(*)::integer AS "count"
+      FROM "api_logs"
+      WHERE "timestamp" >= ${startTime}
+      GROUP BY 1
+      ORDER BY 1 ASC
+    `;
 
-    // Group by hour
-    const hourlyData = {};
-    logs.forEach((log) => {
-      const hour = new Date(log.timestamp).setMinutes(0, 0, 0);
-      hourlyData[hour] = (hourlyData[hour] || 0) + 1;
-    });
-
-    return Object.entries(hourlyData)
-      .map(([timestamp, count]) => ({
-        timestamp: parseInt(timestamp),
-        count,
-      }))
-      .sort((a, b) => a.timestamp - b.timestamp);
+    return rawData.map((row) => ({
+      timestamp: new Date(row.hour).getTime(),
+      count: row.count,
+    }));
   }
 
   /**

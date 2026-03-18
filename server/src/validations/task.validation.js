@@ -53,7 +53,7 @@ export const updateTaskSchema = z.object({
   assigneeId: z.string().nullable().optional(),
   additionalAssigneeIds: z.array(z.string()).optional(),
   dueDate: z.string().nullable().optional(),
-  changeNote: z.string().max(500, "Change note is too long").optional(),
+  changeNote: z.string().max(2000, "Change note is too long").optional(),
   timeRemaining: z.number().int().min(0).optional(),
   timeSpent: z.number().int().min(0).optional(),
   storyPoints: z.number().int().min(0).optional(),

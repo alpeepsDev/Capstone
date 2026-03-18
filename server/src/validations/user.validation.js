@@ -57,3 +57,12 @@ export const resetPasswordSchema = z.object({
       "Password must contain at least one uppercase letter, one lowercase letter, and one number",
     ),
 });
+
+export const verifyMfaSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  otp: z.string().length(6, "OTP must be exactly 6 digits"),
+});
+
+export const toggleMfaSchema = z.object({
+  enable: z.boolean(),
+});

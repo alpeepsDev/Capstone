@@ -22,6 +22,9 @@ model User {
   lastLogin          DateTime?
   resetPasswordOtp   String?
   resetPasswordExpires DateTime?
+  mfaEnabled         Boolean            @default(false)
+  mfaOtp             String?
+  mfaOtpExpires      DateTime?
   apiLogs            ApiLog[]
   auditLogs          AuditLog[]
   automationActions  AutomationAction[]

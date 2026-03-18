@@ -94,6 +94,10 @@ const CalendarView = ({ tasks, onTaskClick, loading }) => {
 
   const calendarDays = getCalendarDays();
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const monthTaskDays = calendarDays.filter(
+    ({ date, isCurrentMonth }) =>
+      isCurrentMonth && (getTasksForDate(date).length > 0 || isToday(date)),
+  );
 
   return (
     <Card className="overflow-hidden h-full relative" padding="none">
@@ -104,7 +108,7 @@ const CalendarView = ({ tasks, onTaskClick, loading }) => {
             isDark ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"
           }`}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => navigateMonth(-1)}
@@ -134,7 +138,7 @@ const CalendarView = ({ tasks, onTaskClick, loading }) => {
               </button>
               <button
                 onClick={() => setCurrentMonth(new Date())}
-                className="ml-2 px-2 py-1 text-[11px] bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="ml-auto rounded-md bg-blue-600 px-2 py-1 text-[11px] text-white hover:bg-blue-700 sm:ml-2"
               >
                 Today
               </button>
@@ -144,39 +148,124 @@ const CalendarView = ({ tasks, onTaskClick, loading }) => {
 
         {/* Calendar Grid */}
         <div className="flex-1 overflow-hidden p-2">
-          {/* Week Day Headers */}
-          <div className="grid grid-cols-7 gap-1 mb-1.5">
-            {weekDays.map((day) => (
-              <div
-                key={day}
-                className={`text-center text-[11px] font-semibold py-1 ${
-                  isDark ? "text-gray-400" : "text-gray-600"
-                }`}
-              >
-                {day}
-              </div>
-            ))}
-          </div>
+          <div className="space-y-3 md:hidden">
+            {loading ? (
+              [...Array(6)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`rounded-xl border p-3 ${isDark ? "bg-gray-800/50 border-gray-700" : "bg-gray-50 border-gray-200"}`}
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <Skeleton className="h-4 w-24 rounded" />
+                    <Skeleton className="h-4 w-12 rounded" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-10 w-full rounded" />
+                    <Skeleton className="h-10 w-4/5 rounded" />
+                  </div>
+                </div>
+              ))
+            ) : monthTaskDays.length > 0 ? (
+              monthTaskDays.map(({ date }) => {
+                const dayTasks = getTasksForDate(date);
+                const today = isToday(date);
 
-          {/* Calendar Days */}
-          <div className="grid grid-cols-7 gap-[3px]">
-            {loading
-              ? // Skeleton Calendar Grid
-                [...Array(35)].map((_, i) => (
+                return (
                   <div
-                    key={i}
-                    className={`min-h-[60px] p-1.5 rounded border ${isDark ? "bg-gray-800/50 border-gray-700" : "bg-gray-50 border-gray-200"}`}
+                    key={date.toISOString()}
+                    onClick={() => setSelectedDate(date)}
+                    className={`rounded-xl border p-3 transition-all ${isDark ? "border-gray-700 bg-gray-800/50 hover:border-gray-600" : "border-gray-200 bg-gray-50 hover:border-gray-300"}`}
                   >
-                    <div className="flex justify-between mb-1">
-                      <Skeleton className="h-3 w-4 rounded" />
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div>
+                        <p
+                          className={`text-sm font-semibold ${isDark ? "text-gray-100" : "text-gray-900"}`}
+                        >
+                          {date.toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </p>
+                        <p
+                          className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                        >
+                          {dayTasks.length} task{dayTasks.length === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                      {today && (
+                        <span className="rounded-full bg-blue-100 px-2 py-1 text-[11px] font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                          Today
+                        </span>
+                      )}
                     </div>
-                    <div className="space-y-1">
-                      <Skeleton className="h-2 w-full rounded" />
-                      <Skeleton className="h-2 w-3/4 rounded" />
+
+                    <div className="space-y-2">
+                      {dayTasks.length > 0 ? (
+                        dayTasks.map((task) => (
+                          <button
+                            key={task.id}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onTaskClick && onTaskClick(task);
+                            }}
+                            className={`${getTaskColor(task)} w-full rounded-lg px-3 py-2 text-left text-xs text-white`}
+                          >
+                            {task.title}
+                          </button>
+                        ))
+                      ) : (
+                        <div
+                          className={`rounded-lg border border-dashed px-3 py-2 text-xs ${isDark ? "border-gray-700 text-gray-500" : "border-gray-200 text-gray-400"}`}
+                        >
+                          No tasks scheduled
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))
-              : calendarDays.map((dayObj, idx) => {
+                );
+              })
+            ) : (
+              <div
+                className={`flex min-h-[220px] flex-col items-center justify-center rounded-xl border border-dashed text-center ${isDark ? "border-gray-700 text-gray-500" : "border-gray-200 text-gray-400"}`}
+              >
+                <p>No tasks scheduled this month.</p>
+              </div>
+            )}
+          </div>
+
+          <div className="hidden md:block">
+            <div className="grid grid-cols-7 gap-1 mb-1.5">
+              {weekDays.map((day) => (
+                <div
+                  key={day}
+                  className={`text-center text-[11px] font-semibold py-1 ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-[3px]">
+              {loading
+                ? [...Array(35)].map((_, i) => (
+                    <div
+                      key={i}
+                      className={`min-h-[60px] p-1.5 rounded border ${isDark ? "bg-gray-800/50 border-gray-700" : "bg-gray-50 border-gray-200"}`}
+                    >
+                      <div className="flex justify-between mb-1">
+                        <Skeleton className="h-3 w-4 rounded" />
+                      </div>
+                      <div className="space-y-1">
+                        <Skeleton className="h-2 w-full rounded" />
+                        <Skeleton className="h-2 w-3/4 rounded" />
+                      </div>
+                    </div>
+                  ))
+                : calendarDays.map((dayObj, idx) => {
                   const { date, isCurrentMonth } = dayObj;
                   const dayTasks = getTasksForDate(date);
                   const today = isToday(date);
@@ -248,6 +337,7 @@ const CalendarView = ({ tasks, onTaskClick, loading }) => {
                     </div>
                   );
                 })}
+            </div>
           </div>
         </div>
 

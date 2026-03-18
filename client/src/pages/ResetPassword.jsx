@@ -94,11 +94,11 @@ const ResetPassword = () => {
 
   return (
     <div
-      className={`min-h-screen ${isDark ? "bg-gray-900" : "bg-white"} flex items-center justify-center px-4 sm:px-6 lg:px-8`}
+      className={`min-h-screen ${isDark ? "bg-gray-900" : "bg-white"} flex items-center justify-center px-4 py-6 sm:px-6 lg:px-8`}
     >
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-md w-full space-y-6 sm:space-y-8">
         <div
-          className={`${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} shadow-lg rounded-lg border p-8`}
+          className={`${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} shadow-lg rounded-lg border p-6 sm:p-8`}
         >
           <div className="text-center">
             <div className="flex items-center justify-center gap-3 mb-2">
@@ -106,7 +106,7 @@ const ResetPassword = () => {
                 <Lock className="w-6 h-6 text-white" />
               </div>
               <h1
-                className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"} sm:text-3xl`}
               >
                 Reset Password
               </h1>

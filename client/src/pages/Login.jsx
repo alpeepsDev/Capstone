@@ -18,6 +18,11 @@ const Login = () => {
     onSubmit,
     loading,
     error,
+    mfaRequired,
+    mfaEmail,
+    otp,
+    setOtp,
+    onVerifyOtp,
   } = useLogin({ rememberMe });
 
   return (
@@ -58,6 +63,38 @@ const Login = () => {
             </div>
           )}
 
+          {mfaRequired ? (
+            <form onSubmit={onVerifyOtp} className="space-y-6">
+              <div>
+                <label className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"} mb-2`}>
+                  Verification Code
+                </label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm text-center text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                    isDark
+                      ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500"
+                  }`}
+                  placeholder="------"
+                  autoFocus
+                />
+                <p className={`mt-2 text-sm ${isDark ? "text-gray-400" : "text-gray-500"} text-center`}>
+                  Enter the 6-digit code sent to {mfaEmail}
+                </p>
+              </div>
+              <button
+                type="submit"
+                disabled={loading || otp.length !== 6}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? <LoadingSpinner text="Verifying..." /> : "Verify and Sign In"}
+              </button>
+            </form>
+          ) : (
           <form
             onSubmit={handleSubmit(onSubmit)}
             onKeyDown={handleKeyPress(onSubmit)}
@@ -214,6 +251,7 @@ const Login = () => {
               {loading ? <LoadingSpinner text="Signing in..." /> : "Sign in"}
             </button>
           </form>
+          )}
 
           <div className="mt-6">
             <div className="relative">

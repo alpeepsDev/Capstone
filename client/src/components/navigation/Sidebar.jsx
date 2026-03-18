@@ -10,8 +10,6 @@ import {
   Users,
   Shield,
   FileText,
-  ChevronLeft,
-  ChevronRight,
   Settings,
   LayoutDashboard,
   PanelLeft,
@@ -86,6 +84,9 @@ const Sidebar = ({
 }) => {
   const { isDark } = useTheme();
   const isAdmin = user?.role === "ADMIN";
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth : 1440,
+  );
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -97,6 +98,15 @@ const Sidebar = ({
 
   const profileMenuRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -129,6 +139,9 @@ const Sidebar = ({
     }
     return () => document.removeEventListener("keydown", handleEsc);
   }, [isAvatarPreviewOpen]);
+
+  const isDesktop = viewportWidth >= 1024;
+  const mobileSidebarWidth = Math.max(240, Math.min(320, viewportWidth - 24));
 
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return null;
@@ -219,17 +232,8 @@ const Sidebar = ({
       <motion.div
         initial={false}
         animate={{
-          width: sidebarOpen
-            ? typeof window !== "undefined" && window.innerWidth < 1024
-              ? 280
-              : 224
-            : 64,
-          x:
-            typeof window !== "undefined" &&
-            window.innerWidth < 1024 &&
-            !sidebarOpen
-              ? -280
-              : 0,
+          width: sidebarOpen ? (isDesktop ? 224 : mobileSidebarWidth) : 64,
+          x: !isDesktop && !sidebarOpen ? -mobileSidebarWidth : 0,
         }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={`fixed inset-y-0 left-0 z-[110] ${
@@ -475,7 +479,7 @@ const Sidebar = ({
 
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={`w-full mt-4 flex items-center ${sidebarOpen ? "justify-start gap-3 px-3" : "justify-center"} py-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-500/10 transition-all`}
+            className={`hidden w-full mt-4 items-center ${sidebarOpen ? "justify-start gap-3 px-3" : "justify-center"} py-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-500/10 transition-all lg:flex`}
           >
             <PanelLeft size={20} className="flex-shrink-0" />
             {sidebarOpen && (
