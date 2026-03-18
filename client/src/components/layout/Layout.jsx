@@ -24,14 +24,18 @@ const Layout = ({
   const [localActiveView, setLocalActiveView] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { isDark } = useTheme();
-  const { toggleMfa } = useAuth();
+  const { user: authUser, toggleMfa } = useAuth();
   const [isTogglingMfa, setIsTogglingMfa] = useState(false);
+
+  // Use authUser for MFA state to ensure immediate reactivity from context
+  const mfaEnabled = authUser?.mfaEnabled ?? user?.mfaEnabled;
 
   const handleToggleMfa = async () => {
     setIsTogglingMfa(true);
+    const newState = !mfaEnabled;
     try {
-      await toggleMfa(!user?.mfaEnabled);
-      toast.success(`MFA has been ${!user?.mfaEnabled ? 'enabled' : 'disabled'}.`);
+      await toggleMfa(newState);
+      toast.success(`MFA has been ${newState ? 'enabled' : 'disabled'}.`);
     } catch (error) {
       toast.error(error.message || "Failed to toggle MFA.");
     } finally {
@@ -418,12 +422,12 @@ const Layout = ({
                     onClick={handleToggleMfa}
                     disabled={isTogglingMfa}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                      user?.mfaEnabled ? 'bg-blue-600' : isDark ? 'bg-gray-600' : 'bg-gray-300'
+                      user?.mfaEnabled || authUser?.mfaEnabled ? 'bg-blue-600' : isDark ? 'bg-gray-600' : 'bg-gray-300'
                     } disabled:opacity-50`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        user?.mfaEnabled ? 'translate-x-6' : 'translate-x-1'
+                        user?.mfaEnabled || authUser?.mfaEnabled ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
                   </button>

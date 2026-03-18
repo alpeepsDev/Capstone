@@ -63,11 +63,21 @@ const AuthProvider = ({ children }) => {
   };
 
   const toggleMfa = async (enable) => {
-    const response = await authService.toggleMfa(enable);
-    if (response?.data?.user) {
-      setUser(response.data.user);
+    try {
+      const response = await authService.toggleMfa(enable);
+      if (response?.success && response?.data) {
+        setUser((prev) => {
+          const updatedUser = { ...prev, mfaEnabled: response.data.mfaEnabled };
+          authService.setCurrentUser(updatedUser);
+          logger.info(`MFA toggled to: ${response.data.mfaEnabled}`);
+          return updatedUser;
+        });
+      }
+      return response;
+    } catch (error) {
+      logger.error("Failed to toggle MFA:", error);
+      throw error;
     }
-    return response;
   };
 
   const register = async (userData) => {

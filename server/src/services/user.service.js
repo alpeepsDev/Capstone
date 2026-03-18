@@ -128,6 +128,7 @@ export const userService = {
         name: user.name,
         role: user.role,
         avatar: user.avatar,
+        mfaEnabled: user.mfaEnabled,
       },
       accessToken,
       refreshToken,
@@ -257,6 +258,7 @@ export const userService = {
         name: user.name,
         role: user.role,
         avatar: user.avatar,
+        mfaEnabled: user.mfaEnabled,
       },
       accessToken,
       refreshToken,
@@ -363,10 +365,12 @@ export const userService = {
       select: {
         id: true,
         username: true,
+        email: true,
         name: true,
         role: true,
         avatar: true,
         createdAt: true,
+        mfaEnabled: true,
       },
     });
   },
