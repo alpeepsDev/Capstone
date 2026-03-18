@@ -48,9 +48,6 @@ export const userService = {
         avatar: true,
         createdAt: true,
       },
-      orderBy: {
-        createdAt: "desc",
-      },
     });
   },
 
@@ -77,6 +74,32 @@ export const userService = {
       where: { id: user.id },
       data: { lastLogin: new Date() },
     });
+
+    if (user.mfaEnabled) {
+      // Generate a 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpHash = await bcrypt.hash(otp, 10);
+
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          mfaOtp: otpHash,
+          mfaOtpExpires: expiresAt,
+        },
+      });
+
+      const { sendMfaEmail } = await import("../utils/email.js");
+      await sendMfaEmail(email, otp);
+
+      return {
+        mfaRequired: true,
+        email: email,
+        message: "MFA verification code sent to your email",
+      };
+    }
 
     // Generate JWT access token (short-lived)
     const accessToken = jwt.sign(
@@ -155,18 +178,105 @@ export const userService = {
         error?.name?.includes("Prisma") ||
         error?.message?.includes("fetch failed")
       ) {
-        logger.error("[Auth] Refresh token failed due to database connectivity", {
-          message: error?.message,
-          name: error?.name,
-          stack: error?.stack,
-        });
-        throw new AppError("Service temporarily unavailable. Please try again.", {
-          status: 503,
-        });
+        logger.error(
+          "[Auth] Refresh token failed due to database connectivity",
+          {
+            message: error?.message,
+            name: error?.name,
+            stack: error?.stack,
+          },
+        );
+        throw new AppError(
+          "Service temporarily unavailable. Please try again.",
+          {
+            status: 503,
+          },
+        );
       }
 
       throw new AppError("Invalid refresh token", { status: 401 });
     }
+  },
+
+  async verifyMfaOtp(email, otp) {
+    // Find user by deterministic email hash
+    const user = await prisma.user.findUnique({
+      where: { emailHash: hash(email) },
+    });
+
+    if (!user) {
+      throw new AppError("Invalid request", { status: 400 });
+    }
+
+    if (!user.mfaOtp || !user.mfaOtpExpires) {
+      throw new AppError("Invalid or expired MFA code", { status: 400 });
+    }
+
+    if (new Date() > user.mfaOtpExpires) {
+      throw new AppError("MFA code has expired", { status: 400 });
+    }
+
+    // Verify OTP matches hash
+    const isOtpValid = await bcrypt.compare(otp, user.mfaOtp);
+    if (!isOtpValid) {
+      throw new AppError("Invalid MFA code", { status: 400 });
+    }
+
+    // Clear OTP fields
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        mfaOtp: null,
+        mfaOtpExpires: null,
+      },
+    });
+
+    // Generate tokens
+    const accessToken = jwt.sign(
+      {
+        userId: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: user.id, type: "refresh" },
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    return {
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        avatar: user.avatar,
+      },
+      accessToken,
+      refreshToken,
+    };
+  },
+
+  async toggleMfa(userId, enable) {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        mfaEnabled: enable,
+        mfaOtp: null,
+        mfaOtpExpires: null,
+      },
+      select: {
+        id: true,
+        mfaEnabled: true,
+      },
+    });
+    return user;
   },
 
   async forgotPassword(email) {

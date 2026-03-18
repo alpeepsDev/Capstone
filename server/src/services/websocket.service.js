@@ -3,6 +3,8 @@ import logger from "../utils/logger.js";
 
 // Store connected users
 const connectedUsers = new Map();
+const adminDashboardEventTimestamps = new Map();
+const ADMIN_UPDATE_EVENT = "admin-update";
 
 let ioInstance = null;
 
@@ -135,9 +137,57 @@ export const emitCommentAdded = (io, projectId, comment) => {
 
 export const getIO = () => ioInstance;
 
-export const emitAdminUpdate = (model, operation, data) => {
-  if (ioInstance) {
-    ioInstance.to("admin").emit("admin-update", { model, operation, data });
-    logger.info(`📢 Admin update emitted for model ${model} (${operation})`);
+export const emitAdminDashboardEvent = (event) => {
+  if (!ioInstance || !event?.type) {
+    return false;
   }
+
+  const payload = {
+    timestamp: Date.now(),
+    ...event,
+  };
+
+  ioInstance.to("admin").emit(ADMIN_UPDATE_EVENT, payload);
+  logger.info(`📢 Admin dashboard event emitted: ${payload.type}`);
+  return true;
+};
+
+export const emitThrottledAdminDashboardEvent = (
+  event,
+  throttleMs = 5000,
+) => {
+  if (!event?.type) {
+    return false;
+  }
+
+  const now = Date.now();
+  const lastEmittedAt = adminDashboardEventTimestamps.get(event.type) || 0;
+
+  if (now - lastEmittedAt < throttleMs) {
+    return false;
+  }
+
+  adminDashboardEventTimestamps.set(event.type, now);
+  return emitAdminDashboardEvent(event);
+};
+
+export const emitAdminUpdate = (model, operation, data) => {
+  if (!ioInstance) {
+    return false;
+  }
+
+  if (typeof model === "object" && model !== null) {
+    return emitAdminDashboardEvent(model);
+  }
+
+  const payload = {
+    model,
+    operation,
+    data,
+    timestamp: Date.now(),
+  };
+
+  ioInstance.to("admin").emit(ADMIN_UPDATE_EVENT, payload);
+  logger.info(`📢 Admin update emitted for model ${model} (${operation})`);
+  return true;
 };

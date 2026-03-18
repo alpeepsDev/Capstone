@@ -21,7 +21,7 @@ const Register = () => {
           <div className="flex items-center justify-center gap-3 mb-2">
             <img src="/logo.svg" alt="TaskForge" className="w-8 h-8" />
             <h1
-              className={`text-4xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+              className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"} sm:text-4xl`}
             >
               TaskForge
             </h1>
@@ -35,7 +35,7 @@ const Register = () => {
 
         {/* Registration Form */}
         <div
-          className={`${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} shadow-lg rounded-lg border p-6`}
+          className={`${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} shadow-lg rounded-lg border p-5 sm:p-6`}
         >
           <div className="mb-4">
             <h2

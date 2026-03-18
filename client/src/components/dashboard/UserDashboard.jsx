@@ -540,10 +540,10 @@ const UserDashboard = ({
             <div className={`flex-1 flex flex-col min-h-0 space-y-1`}>
               {/* View Tabs */}
               <div
-                className={`sticky top-0 z-30 ${isDark ? "bg-gray-900/95" : "bg-gray-50/95"} backdrop-blur-sm px-4 lg:px-6 py-4 transition-colors duration-300`}
+                className={`sticky top-0 z-30 ${isDark ? "bg-gray-900/95" : "bg-gray-50/95"} backdrop-blur-sm px-4 py-4 transition-colors duration-300 sm:px-6`}
               >
                 <div
-                  className={`flex gap-1.5 p-1 rounded-md max-w-fit ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+                  className={`flex w-full gap-1.5 overflow-x-auto rounded-md p-1 scrollbar-thin ${isDark ? "bg-gray-800" : "bg-gray-100"} sm:w-fit`}
                 >
                   {[
                     { id: "table", label: "Table", icon: List },
@@ -562,7 +562,7 @@ const UserDashboard = ({
                       <button
                         key={view.id}
                         onClick={() => handleViewChange(view.id)}
-                        className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors z-10 ${
+                        className={`relative z-10 flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                           activeView === view.id
                             ? isDark
                               ? "text-white"
@@ -599,7 +599,7 @@ const UserDashboard = ({
                   transition={{ duration: 0.2 }}
                   className={`flex-1 flex flex-col min-h-0`}
                 >
-                  <div className="px-4 lg:px-6 pb-6">
+                  <div className="px-4 pb-6 sm:px-6">
                     {(activeView === "table" || activeView === "dashboard") && (
                       <TableView
                         tasks={myTasks}

@@ -47,7 +47,126 @@ export const TableView = ({
     <div
       className={`flex-1 min-h-0 flex flex-col rounded-lg overflow-hidden border ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
     >
-      <div className="overflow-x-scroll md:overflow-x-auto overflow-y-auto flex-1 min-h-0 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto p-3 md:hidden">
+        {loading ? (
+          <div className="space-y-3">
+            {[...Array(4)].map((_, index) => (
+              <div
+                key={`mobile-skeleton-${index}`}
+                className={`rounded-xl border p-4 ${isDark ? "border-gray-700 bg-gray-900/40" : "border-gray-200 bg-gray-50"}`}
+              >
+                <div className="space-y-3">
+                  <Skeleton className="h-5 w-2/3 rounded" />
+                  <Skeleton className="h-4 w-full rounded" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <Skeleton className="h-10 w-full rounded" />
+                    <Skeleton className="h-10 w-full rounded" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : sortedTasks.length === 0 ? (
+          <div
+            className={`flex h-full min-h-[240px] flex-col items-center justify-center gap-2 text-center ${isDark ? "text-gray-400" : "text-gray-500"}`}
+          >
+            <Clock className="w-8 h-8 opacity-50" />
+            <p>No tasks to display</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {sortedTasks.map((task) => (
+              <div
+                key={task.id}
+                onClick={() => onTaskClick(task)}
+                className={`w-full rounded-xl border p-4 text-left transition-all ${isDark ? "border-gray-700 bg-gray-900/40 hover:border-gray-600" : "border-gray-200 bg-gray-50 hover:border-gray-300"}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={`font-medium text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                    >
+                      {task.title}
+                    </p>
+                    <p
+                      className={`mt-1 text-xs ${isDark ? "text-gray-400" : "text-gray-600"} line-clamp-2`}
+                    >
+                      {task.description || "No description"}
+                    </p>
+                  </div>
+                  <div
+                    className={`h-8 w-8 rounded-full flex shrink-0 items-center justify-center text-xs font-bold text-white bg-blue-600`}
+                  >
+                    {task.assignee?.username?.[0]?.toUpperCase() || "?"}
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div>
+                    <p
+                      className={`mb-1 text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-500"}`}
+                    >
+                      Status
+                    </p>
+                    {task.status === "COMPLETED" ? (
+                      <span className="inline-flex w-full items-center justify-center gap-1 rounded-md bg-green-100 px-2 py-2 text-xs font-medium text-green-800">
+                        <Lock className="w-3 h-3" /> Completed
+                      </span>
+                    ) : (
+                      <select
+                        value={task.status}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          onStatusChange(task.id, e.target.value);
+                        }}
+                        className={`w-full rounded-md px-2 py-2 text-xs font-medium ${getStatusColor(task.status)} border-none`}
+                      >
+                        <option value="PENDING">To Do</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="IN_REVIEW">In Review</option>
+                        {user?.role === "MANAGER" || user?.role === "ADMIN" ? (
+                          <option value="COMPLETED">Completed</option>
+                        ) : null}
+                      </select>
+                    )}
+                  </div>
+
+                  <div>
+                    <p
+                      className={`mb-1 text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-500"}`}
+                    >
+                      Due Date
+                    </p>
+                    <div
+                      className={`rounded-md px-3 py-2 text-xs ${isDark ? "bg-gray-800 text-gray-300" : "bg-white text-gray-600"}`}
+                    >
+                      {task.dueDate
+                        ? new Date(task.dueDate).toLocaleDateString()
+                        : "No due date"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between">
+                  <span
+                    className={`text-xs font-semibold ${getPriorityColor(task.priority)}`}
+                  >
+                    {task.priority}
+                  </span>
+                  <span
+                    className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"}`}
+                  >
+                    {task.assignee?.username || "Unassigned"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="hidden min-h-0 flex-1 overflow-x-scroll overflow-y-auto scrollbar-thin md:block">
         <table className="min-w-[600px] md:min-w-full">
           <thead className="sticky top-0 z-10">
             <tr

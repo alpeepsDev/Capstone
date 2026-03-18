@@ -8,6 +8,17 @@ const mockPrisma = {
   apiLog: { count: jest.fn() },
 };
 
+// Mock Redis config
+const mockRedis = {
+  incr: jest.fn(),
+  pexpire: jest.fn(),
+};
+
+jest.unstable_mockModule("../src/config/redis.js", () => ({
+  getRedisAvailability: jest.fn(() => true),
+  getConnection: jest.fn(() => mockRedis),
+}));
+
 // Use unstable_mockModule for ESM support
 jest.unstable_mockModule("../src/config/database.js", () => ({
   default: mockPrisma,
@@ -16,12 +27,18 @@ jest.unstable_mockModule("../src/config/database.js", () => ({
 // Dynamic import required when using unstable_mockModule
 const { rateLimit, endpointRateLimit } =
   await import("../src/middleware/rateLimit.js");
+const { getRedisAvailability } = await import("../src/config/redis.js");
+
 
 describe("rateLimit middleware", () => {
   let req, res, next;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    getRedisAvailability.mockReturnValue(true);
+    mockRedis.incr.mockReset();
+    mockRedis.pexpire.mockReset();
+
     req = {
       user: { id: 1, role: "USER" },
       path: "/test",
@@ -54,10 +71,14 @@ describe("rateLimit middleware", () => {
         method: "GET",
       });
 
-      // Mock request count within limit
-      mockPrisma.apiLog.count.mockResolvedValue(5);
+      // Mock Redis count within limit
+      mockRedis.incr.mockResolvedValue(5);
 
       await rateLimit(req, res, next);
+
+      expect(mockRedis.incr).toHaveBeenCalledWith(
+        expect.stringContaining("user:1:endpoint:/test:GET")
+      );
 
       expect(mockPrisma.endpointRateLimit.findFirst).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -81,7 +102,7 @@ describe("rateLimit middleware", () => {
         method: "GET",
       });
 
-      mockPrisma.apiLog.count.mockResolvedValue(10); // Reached limit
+      mockRedis.incr.mockResolvedValue(11); // Over limit
 
       await rateLimit(req, res, next);
 
@@ -107,7 +128,7 @@ describe("rateLimit middleware", () => {
         window: 3600,
       });
 
-      mockPrisma.apiLog.count.mockResolvedValue(10);
+      mockRedis.incr.mockResolvedValue(10);
 
       await rateLimit(req, res, next);
 
@@ -133,7 +154,7 @@ describe("rateLimit middleware", () => {
         window: 3600,
       });
 
-      mockPrisma.apiLog.count.mockResolvedValue(20);
+      mockRedis.incr.mockResolvedValue(20);
 
       await rateLimit(req, res, next);
 
@@ -146,13 +167,19 @@ describe("rateLimit middleware", () => {
       expect(next).toHaveBeenCalled();
     });
 
-    test("should perform fallback if no role config", async () => {
-      mockPrisma.rateLimitConfig.findUnique.mockResolvedValue(null);
+    test("should perform fallback to Prisma when Redis is unavailable", async () => {
+      getRedisAvailability.mockReturnValue(false); // Redis Down
+      
+      mockPrisma.rateLimitConfig.findUnique.mockResolvedValue({
+        limit: 100,
+        window: 3600,
+      });
+      mockPrisma.apiLog.count.mockResolvedValue(10);
 
       await rateLimit(req, res, next);
 
-      // Defaults: 200 limit
-      expect(res.setHeader).toHaveBeenCalledWith("X-RateLimit-Limit", 200);
+      expect(mockPrisma.apiLog.count).toHaveBeenCalled();
+      expect(mockRedis.incr).not.toHaveBeenCalled();
       expect(next).toHaveBeenCalled();
     });
   });

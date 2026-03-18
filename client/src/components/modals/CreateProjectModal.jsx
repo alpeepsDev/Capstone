@@ -100,13 +100,13 @@ const CreateProjectModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 backdrop-blur-md bg-black/40 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-md animate-in fade-in duration-200 sm:items-center sm:p-4">
       <div
         className={`${
           isDark
             ? "bg-gray-900/90 border-gray-700/50"
             : "bg-white/90 border-gray-200/50"
-        } backdrop-blur-xl border rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col transform transition-all scale-100`}
+        } backdrop-blur-xl border shadow-2xl max-w-lg w-full max-h-[100dvh] flex flex-col transform transition-all scale-100 rounded-t-3xl sm:max-h-[85vh] sm:rounded-2xl`}
       >
         {/* Header */}
         <div className="p-5 pb-3 flex items-center justify-between shrink-0">

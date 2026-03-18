@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { useAdmin } from "../../hooks/admin/useAdmin";
 import { useTheme } from "../../context";
 import { useAuth } from "../../context/AuthContext";
@@ -49,6 +49,7 @@ const TAB_TO_VIEW = {
   auditlogs: "admin-auditlogs",
   backup: "admin-backup",
 };
+const LIVE_REFRESH_INTERVAL_MS = 5000;
 const ROLES = ["ADMIN", "MANAGER", "USER"];
 // Helper: format relative time
 const timeAgo = (dateStr) => {
@@ -410,6 +411,7 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
     downloadSourceCode,
     rateLimitMeta,
     userActivityMeta,
+    lastUpdate,
   } = useAdmin();
 
   const formatWindow = (seconds) => {
@@ -421,7 +423,6 @@ const AdminDashboard = ({ activeView, onViewChange }) => {
 
   const [activeTab, setActiveTab] = useState("overview");
   const [refreshing, setRefreshing] = useState(false);
-const [lastUpdate, setLastUpdate] = useState(new Date());
   const [userDetailOpen, setUserDetailOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(null);
   const [cleanupDays, setCleanupDays] = useState(90);
@@ -455,105 +456,101 @@ const [lastUpdate, setLastUpdate] = useState(new Date());
     }
   }, [activeView, activeTab]);
 
-  // Load data on mount
+  // Load basic meta on mount
   useEffect(() => {
     if (isAdmin) {
-      fetchDashboardStats();
-      fetchApiStats();
-      fetchSystemHealth();
-      fetchHealthHistory();
-      fetchUsers();
-      fetchRateLimits();
-      fetchEndpointLimits();
-      fetchUserLimits();
-      fetchUserActivity();
       fetchAvailableEndpoints();
-      fetchAuditLogs();
-      fetchDatabaseMetrics();
-      fetchErrorMetrics();
+    }
+  }, [isAdmin, fetchAvailableEndpoints]);
+
+  const refreshVisibleTabData = useCallback(async () => {
+    switch (activeTab) {
+      case "overview":
+        await Promise.all([
+          fetchDashboardStats(),
+          fetchApiStats(),
+          fetchSystemHealth(),
+        ]);
+        return;
+      case "monitoring":
+        await Promise.all([
+          fetchApiStats(),
+          fetchUserActivity(),
+          fetchHealthHistory(),
+          fetchDatabaseMetrics(),
+          fetchErrorMetrics(),
+        ]);
+        return;
+      case "ratelimits":
+        await Promise.all([
+          fetchRateLimits(),
+          fetchEndpointLimits(),
+          fetchUserLimits(),
+        ]);
+        return;
+      case "users":
+        await fetchUsers();
+        return;
+      case "auditlogs":
+        await fetchAuditLogs();
+        return;
+      default:
+        return;
     }
   }, [
-    isAdmin,
-    fetchDashboardStats,
-    fetchApiStats,
-    fetchSystemHealth,
-    fetchHealthHistory,
-    fetchUsers,
-    fetchRateLimits,
-    fetchEndpointLimits,
-    fetchUserLimits,
-    fetchUserActivity,
-    fetchAvailableEndpoints,
-    fetchAuditLogs,
-    fetchDatabaseMetrics,
-    fetchErrorMetrics,
-  ]);
-
-  // Auto-refresh overview tab every 30 seconds
-  useEffect(() => {
-    if (isAdmin && activeTab === "overview") {
-      // Note: Data is now also updated in real-time via WebSockets in useAdmin.js
-      const interval = setInterval(() => {
-        fetchApiStats();
-        fetchSystemHealth();
-        setLastUpdate(new Date());
-      }, 30000); // 30 seconds
-
-      return () => clearInterval(interval);
-    }
-  }, [isAdmin, activeTab, fetchApiStats, fetchSystemHealth]);
-
-  // Auto-refresh monitoring tab every 30 seconds
-  useEffect(() => {
-    if (isAdmin && activeTab === "monitoring") {
-      const interval = setInterval(() => {
-        fetchUserActivity();
-        fetchApiStats();
-        setLastUpdate(new Date());
-      }, 30000); // 30 seconds
-
-      return () => clearInterval(interval);
-    }
-  }, [isAdmin, activeTab, fetchUserActivity, fetchApiStats]);
-
-  // Auto-refresh rate limits tab every 30 seconds
-  useEffect(() => {
-    if (isAdmin && activeTab === "ratelimits") {
-      const interval = setInterval(() => {
-        fetchRateLimits();
-        fetchEndpointLimits();
-        fetchUserLimits();
-        setLastUpdate(new Date());
-      }, 30000); // 30 seconds
-
-      return () => clearInterval(interval);
-    }
-  }, [
-    isAdmin,
     activeTab,
-    fetchRateLimits,
+    fetchApiStats,
+    fetchAuditLogs,
+    fetchDashboardStats,
+    fetchDatabaseMetrics,
     fetchEndpointLimits,
+    fetchErrorMetrics,
+    fetchHealthHistory,
+    fetchRateLimits,
+    fetchSystemHealth,
+    fetchUserActivity,
     fetchUserLimits,
+    fetchUsers,
   ]);
+
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+
+    void refreshVisibleTabData();
+    return undefined;
+  }, [activeTab, isAdmin, refreshVisibleTabData]);
+
+  // Keep the active admin tab live even if no websocket event is emitted.
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+
+    const interval = setInterval(() => {
+      void refreshVisibleTabData();
+    }, LIVE_REFRESH_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [isAdmin, refreshVisibleTabData]);
+
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void refreshVisibleTabData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [isAdmin, refreshVisibleTabData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await Promise.all([
-        fetchDashboardStats(),
-        fetchApiStats(),
-        fetchSystemHealth(),
-        fetchHealthHistory(),
-        fetchUsers(),
-        fetchRateLimits(),
-        fetchEndpointLimits(),
-        fetchUserLimits(),
-        fetchUserActivity(),
-        fetchAuditLogs(),
-        fetchDatabaseMetrics(),
-        fetchErrorMetrics(),
-      ]);
-      setLastUpdate(new Date());
+      await refreshVisibleTabData();
+      // Also refresh common meta
+      await fetchAvailableEndpoints();
     } finally {
       setRefreshing(false);
     }

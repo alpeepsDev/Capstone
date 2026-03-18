@@ -128,6 +128,29 @@ export const userController = {
       message: "Password has been reset successfully. You can now log in.",
     });
   }),
+
+  verifyMfa: asyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+    const result = await userService.verifyMfaOtp(email, otp);
+
+    res.json({
+      success: true,
+      message: "MFA verified successfully",
+      data: result,
+    });
+  }),
+
+  toggleMfa: asyncHandler(async (req, res) => {
+    const { enable } = req.body;
+    const result = await userService.toggleMfa(req.user.id, enable);
+
+    res.json({
+      success: true,
+      message: `MFA has been ${enable ? 'enabled' : 'disabled'} successfully`,
+      data: result,
+    });
+  }),
+
   logout: asyncHandler(async (req, res) => {
     // In a stateful system, we would invalidate the refresh token in the DB here.
     // Since we are currently stateless, we just return success to signal client-side cleanup.

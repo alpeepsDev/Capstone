@@ -264,7 +264,25 @@ html,
 body {
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  min-height: 100%;
+  overflow-x: clip;
+}
+
+body,
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+body {
+  -webkit-text-size-adjust: 100%;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
 }
 
 /* Ensure header stays on top */

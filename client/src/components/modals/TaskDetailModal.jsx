@@ -441,7 +441,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
   if (!isOpen || !task || !localTask) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       {/* Glassmorphism Backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
@@ -449,18 +449,18 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
       <div
         className={`relative ${
           isDark ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
-        } border rounded-lg shadow-2xl max-w-5xl w-full h-[90vh] md:h-[75vh] flex flex-col overflow-hidden transition-all duration-300`}
+        } border shadow-2xl w-full max-w-5xl h-[100dvh] sm:h-[90vh] md:h-[75vh] flex flex-col overflow-hidden transition-all duration-300 rounded-none sm:rounded-lg`}
       >
         <div className="p-4 sm:p-6 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
           {/* Header */}
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <h2
-                className={`text-2xl font-semibold ${isDark ? "text-white" : "text-gray-900"} mb-2`}
+                className={`mb-2 text-xl font-semibold ${isDark ? "text-white" : "text-gray-900"} sm:text-2xl`}
               >
                 {localTask.title}
               </h2>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 {/* Status Dropdown */}
                 {localTask.status === "COMPLETED" ? (
                   <Badge
@@ -601,10 +601,10 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
           </div>
 
           {/* RIGHT PANEL: Activity Stream (Tabs + List) */}
-          <div className="w-full md:w-2/5 flex flex-col bg-gray-50/50 dark:bg-gray-800/20">
+          <div className="w-full md:w-2/5 flex flex-col bg-gray-50/50 dark:bg-gray-800/20 min-h-[40vh] md:min-h-0">
             {/* Tabs Bar */}
             <div className="flex-shrink-0 px-4 pt-2 border-b border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
-              <ul className="flex flex-wrap -mb-px text-sm font-medium text-center text-gray-500 dark:text-gray-400">
+              <ul className="flex -mb-px overflow-x-auto whitespace-nowrap text-sm font-medium text-center text-gray-500 scrollbar-thin dark:text-gray-400">
                 <li className="mr-2">
                   <button
                     onClick={() => setActiveTab("all")}
@@ -656,7 +656,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
                     </h4>
                   )}
                   <form onSubmit={handleAddComment} className="mb-6">
-                    <div className="flex gap-2 items-start">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
                       <div className="flex-1">
                         <MentionInput
                           value={newComment}
@@ -672,7 +672,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdate }) => {
                         variant="primary"
                         disabled={loading || !newComment.trim()}
                         size="sm"
-                        className="mt-0.5"
+                        className="sm:mt-0.5"
                       >
                         Add
                       </Button>

@@ -701,66 +701,68 @@ const ManagerDashboard = ({
           <div className="flex-1 flex flex-col min-h-0 space-y-1">
             {/* View Tabs & Actions */}
             <div
-              className={`sticky top-0 z-30 ${isDark ? "bg-gray-900/95" : "bg-gray-50/95"} backdrop-blur-sm px-4 lg:px-6 py-4 transition-colors duration-300 flex items-center justify-between gap-4`}
+              className={`sticky top-0 z-30 ${isDark ? "bg-gray-900/95" : "bg-gray-50/95"} backdrop-blur-sm px-4 py-4 transition-colors duration-300 sm:px-6`}
             >
-              <div
-                className={`flex gap-1.5 p-1 rounded-md max-w-fit ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
-              >
-                {[
-                  { id: "table", label: "Table", icon: List },
-                  { id: "gantt", label: "Gantt Chart", icon: BarChart3 },
-                  { id: "kanban", label: "Board", icon: Grid3X3 },
-                  { id: "calendar", label: "Calendar", icon: Calendar },
-                  {
-                    id: "approvals",
-                    label: `Approvals${projectApprovals.length ? ` (${projectApprovals.length})` : ""}`,
-                    icon: CheckCircle,
-                  },
-                  { id: "project-analytics", label: "Analytics", icon: Zap },
-                  { id: "budget", label: "Budget", icon: DollarSign },
-                ].map(({ id, label, icon: Icon }) => (
-                  <button
-                    key={id}
-                    onClick={() => setActiveView(id)}
-                    className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors z-10 ${
-                      activeView === id
-                        ? "text-white"
-                        : isDark
-                          ? "text-gray-400 hover:text-white"
-                          : "text-gray-600 hover:text-gray-900"
-                    }`}
-                  >
-                    {activeView === id && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute inset-0 bg-blue-600 rounded-md -z-10"
-                        transition={{
-                          type: "spring",
-                          stiffness: 500,
-                          damping: 30,
-                        }}
-                      />
-                    )}
-                    <Icon className="w-3.5 h-3.5" />
-                    {label}
-                  </button>
-                ))}
-              </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div
+                  className={`flex w-full gap-1.5 overflow-x-auto rounded-md p-1 scrollbar-thin ${isDark ? "bg-gray-800" : "bg-gray-100"} sm:w-fit`}
+                >
+                  {[
+                    { id: "table", label: "Table", icon: List },
+                    { id: "gantt", label: "Gantt Chart", icon: BarChart3 },
+                    { id: "kanban", label: "Board", icon: Grid3X3 },
+                    { id: "calendar", label: "Calendar", icon: Calendar },
+                    {
+                      id: "approvals",
+                      label: `Approvals${projectApprovals.length ? ` (${projectApprovals.length})` : ""}`,
+                      icon: CheckCircle,
+                    },
+                    { id: "project-analytics", label: "Analytics", icon: Zap },
+                    { id: "budget", label: "Budget", icon: DollarSign },
+                  ].map(({ id, label, icon: Icon }) => (
+                    <button
+                      key={id}
+                      onClick={() => setActiveView(id)}
+                      className={`relative z-10 flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                        activeView === id
+                          ? "text-white"
+                          : isDark
+                            ? "text-gray-400 hover:text-white"
+                            : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      {activeView === id && (
+                        <motion.div
+                          layoutId="activeTab"
+                          className="absolute inset-0 bg-blue-600 rounded-md -z-10"
+                          transition={{
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                      <Icon className="w-3.5 h-3.5" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
 
-              <Button
-                onClick={() =>
-                  setAddTaskModal({
-                    isOpen: true,
-                    projectId: selectedProjectId,
-                  })
-                }
-                variant="primary"
-                size="sm"
-                className="gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                New Task
-              </Button>
+                <Button
+                  onClick={() =>
+                    setAddTaskModal({
+                      isOpen: true,
+                      projectId: selectedProjectId,
+                    })
+                  }
+                  variant="primary"
+                  size="sm"
+                  className="w-full gap-2 sm:w-auto"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Task
+                </Button>
+              </div>
             </div>
 
             {/* Main Content */}
@@ -773,7 +775,7 @@ const ManagerDashboard = ({
                 transition={{ duration: 0.2 }}
                 className="flex-1 flex flex-col min-h-0"
               >
-                <div className="px-4 lg:px-6 pb-6 pt-4">
+                <div className="px-4 pb-6 pt-4 sm:px-6">
                   {activeView === "table" && (
                     <TableView
                       tasks={selectedProjectTasks || []}
@@ -1095,8 +1097,134 @@ const TableView = React.memo(
       <div
         className={`flex-1 min-h-0 flex flex-col rounded-lg overflow-hidden border ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
       >
-        <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
-          <table className="w-full">
+        <div className="flex-1 overflow-y-auto p-3 md:hidden">
+          {loading ? (
+            <div className="space-y-3">
+              {[...Array(4)].map((_, index) => (
+                <div
+                  key={`manager-mobile-skeleton-${index}`}
+                  className={`rounded-xl border p-4 ${isDark ? "border-gray-700 bg-gray-900/40" : "border-gray-200 bg-gray-50"}`}
+                >
+                  <div className="space-y-3">
+                    <Skeleton className="h-5 w-2/3 rounded" />
+                    <Skeleton className="h-4 w-full rounded" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Skeleton className="h-10 w-full rounded" />
+                      <Skeleton className="h-10 w-full rounded" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : tasks.length === 0 ? (
+            <div
+              className={`flex h-full min-h-[240px] flex-col items-center justify-center gap-2 text-center ${isDark ? "text-gray-400" : "text-gray-500"}`}
+            >
+              <Clock className="w-8 h-8 opacity-50" />
+              <p>No tasks to display</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {tasks.map((task) => (
+                <div
+                  key={task.id}
+                  onClick={() => onTaskClick(task)}
+                  className={`w-full rounded-xl border p-4 text-left transition-all ${isDark ? "border-gray-700 bg-gray-900/40 hover:border-gray-600" : "border-gray-200 bg-gray-50 hover:border-gray-300"}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`font-medium text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                      >
+                        {task.title}
+                      </p>
+                      <p
+                        className={`mt-1 text-xs ${isDark ? "text-gray-400" : "text-gray-600"} line-clamp-2`}
+                      >
+                        {task.description || "No description"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(task);
+                        }}
+                        className={`rounded-full p-2 ${isDark ? "text-gray-400 hover:bg-gray-700" : "text-gray-500 hover:bg-white"}`}
+                        aria-label="Edit task"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(task.id);
+                        }}
+                        className="rounded-full p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30"
+                        aria-label="Delete task"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div>
+                      <p
+                        className={`mb-1 text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-500"}`}
+                      >
+                        Status
+                      </p>
+                      <select
+                        value={task.status}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          onStatusChange(task.id, e.target.value);
+                        }}
+                        className={`w-full rounded-md px-2 py-2 text-xs font-medium ${getStatusColor(task.status)} border-none focus:ring-1 focus:ring-blue-500`}
+                      >
+                        <option value="PENDING">To Do</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="IN_REVIEW">In Review</option>
+                        <option value="COMPLETED">Completed</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <p
+                        className={`mb-1 text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-500"}`}
+                      >
+                        Assignee
+                      </p>
+                      <div
+                        className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs ${isDark ? "bg-gray-800 text-gray-300" : "bg-white text-gray-600"}`}
+                      >
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                          {task.assignee?.username?.[0]?.toUpperCase() || "?"}
+                        </div>
+                        <span className="truncate">
+                          {task.assignee?.username || "Unassigned"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between">
+                    <span
+                      className={`text-xs font-semibold ${getPriorityColor(task.priority)}`}
+                    >
+                      {task.priority}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="hidden flex-1 min-h-0 overflow-x-auto overflow-y-auto md:block">
+          <table className="w-full min-w-[640px]">
             <thead className="sticky top-0 z-10">
               <tr
                 className={`${isDark ? "bg-gray-700" : "bg-gray-50"} border-b ${isDark ? "border-gray-700" : "border-gray-200"}`}
@@ -1280,98 +1408,86 @@ const ApprovalTableView = React.memo(
 
     return (
       <>
-      <div
-        className={`rounded-lg overflow-hidden border ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr
-                className={`${isDark ? "bg-gray-700" : "bg-gray-50"} border-b ${isDark ? "border-gray-700" : "border-gray-200"}`}
+        <div
+          className={`rounded-lg overflow-hidden border ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
+        >
+          <div className="space-y-3 p-3 md:hidden">
+            {tasks.length === 0 ? (
+              <div
+                className={`flex min-h-[220px] flex-col items-center justify-center gap-2 text-center ${isDark ? "text-gray-400" : "text-gray-500"}`}
               >
-                <th
-                  className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                >
-                  Task
-                </th>
-                <th
-                  className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                >
-                  Submitted By
-                </th>
-                <th
-                  className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                >
-                  Priority
-                </th>
-                <th
-                  className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                >
-                  Due Date
-                </th>
-                <th
-                  className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                >
-                  Proof
-                </th>
-                <th
-                  className={`px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                >
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody
-              className={`divide-y ${isDark ? "divide-gray-700" : "divide-gray-200"}`}
-            >
-              {tasks.map((task) => (
-                <tr
+                <CheckCircle className="w-8 h-8 opacity-50" />
+                <p>No approvals pending</p>
+              </div>
+            ) : (
+              tasks.map((task) => (
+                <div
                   key={task.id}
                   onClick={() => onView(task)}
-                  className={`cursor-pointer transition-all ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-50"}`}
+                  className={`rounded-xl border p-4 transition-all ${isDark ? "border-gray-700 bg-gray-900/40 hover:border-gray-600" : "border-gray-200 bg-gray-50 hover:border-gray-300"}`}
                 >
-                  <td
-                    className={`px-4 py-3 ${isDark ? "text-white" : "text-gray-900"}`}
-                  >
-                    <div>
-                      <p className="font-medium text-sm">{task.title}</p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
                       <p
-                        className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"} line-clamp-1`}
+                        className={`font-medium text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                      >
+                        {task.title}
+                      </p>
+                      <p
+                        className={`mt-1 text-xs ${isDark ? "text-gray-400" : "text-gray-600"} line-clamp-2`}
                       >
                         {task.description || "No description"}
                       </p>
                     </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white bg-blue-600`}
-                      >
-                        {task.assignee?.username?.[0]?.toUpperCase() || "?"}
-                      </div>
-                      <span
-                        className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                      >
-                        {task.assignee?.username || "Unknown"}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
                     <span
                       className={`text-xs font-semibold ${getPriorityColor(task.priority)}`}
                     >
                       {task.priority}
                     </span>
-                  </td>
-                  <td
-                    className={`px-4 py-3 text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                  >
-                    {task.dueDate
-                      ? new Date(task.dueDate).toLocaleDateString()
-                      : "-"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2 flex-wrap">
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div>
+                      <p
+                        className={`mb-1 text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-500"}`}
+                      >
+                        Submitted By
+                      </p>
+                      <div
+                        className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs ${isDark ? "bg-gray-800 text-gray-300" : "bg-white text-gray-600"}`}
+                      >
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                          {task.assignee?.username?.[0]?.toUpperCase() || "?"}
+                        </div>
+                        <span className="truncate">
+                          {task.assignee?.username || "Unknown"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p
+                        className={`mb-1 text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-500"}`}
+                      >
+                        Due Date
+                      </p>
+                      <div
+                        className={`rounded-md px-3 py-2 text-xs ${isDark ? "bg-gray-800 text-gray-300" : "bg-white text-gray-600"}`}
+                      >
+                        {task.dueDate
+                          ? new Date(task.dueDate).toLocaleDateString()
+                          : "No due date"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <p
+                      className={`mb-2 text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-500"}`}
+                    >
+                      Proof
+                    </p>
+                    <div className="flex flex-wrap gap-2">
                       {task.proofAttachments &&
                       task.proofAttachments.length > 0 ? (
                         task.proofAttachments.slice(0, 3).map((proof, idx) => {
@@ -1384,13 +1500,12 @@ const ApprovalTableView = React.memo(
                               href={proofUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="group relative"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <img
                                 src={proofUrl}
                                 alt={`Proof ${idx + 1}`}
-                                className={`w-12 h-12 object-cover rounded border ${isDark ? "border-gray-600" : "border-gray-300"} hover:scale-105 transition-transform`}
+                                className={`h-14 w-14 rounded border object-cover ${isDark ? "border-gray-600" : "border-gray-300"}`}
                               />
                             </a>
                           );
@@ -1405,13 +1520,12 @@ const ApprovalTableView = React.memo(
                               href={proofUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="group relative"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <img
                                 src={proofUrl}
                                 alt="Proof"
-                                className={`w-12 h-12 object-cover rounded border ${isDark ? "border-gray-600" : "border-gray-300"} hover:scale-105 transition-transform`}
+                                className={`h-14 w-14 rounded border object-cover ${isDark ? "border-gray-600" : "border-gray-300"}`}
                               />
                             </a>
                           );
@@ -1429,103 +1543,299 @@ const ApprovalTableView = React.memo(
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setGalleryImages(task.proofAttachments.map(p => p.startsWith("/") ? p : `/${p}`));
+                              setGalleryImages(
+                                task.proofAttachments.map((proof) =>
+                                  proof.startsWith("/") ? proof : `/${proof}`,
+                                ),
+                              );
                             }}
-                            className={`w-12 h-12 rounded border flex items-center justify-center text-xs font-semibold cursor-pointer hover:opacity-80 transition-opacity ${isDark ? "bg-gray-700 border-gray-600 text-gray-300" : "bg-gray-100 border-gray-300 text-gray-600"}`}
+                            className={`flex h-14 w-14 items-center justify-center rounded border text-xs font-semibold ${isDark ? "bg-gray-700 border-gray-600 text-gray-300" : "bg-gray-100 border-gray-300 text-gray-600"}`}
                           >
                             +{task.proofAttachments.length - 3}
                           </button>
                         )}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="success"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onApprove(task.id);
-                        }}
-                        disabled={loading && approvingTaskId === task.id}
-                        className="h-8 text-xs gap-1"
-                      >
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onReject(task.id);
-                        }}
-                        disabled={loading && approvingTaskId === task.id}
-                        className="h-8 text-xs gap-1"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                        Reject
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  </div>
 
-      {/* Proof Gallery Lightbox */}
-      <AnimatePresence>
-        {galleryImages && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8"
-            onClick={() => setGalleryImages(null)}
-          >
-            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className={`relative z-10 w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl p-6 ${isDark ? "bg-gray-900 border border-gray-700" : "bg-white"}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
-                  Proof Photos ({galleryImages.length})
-                </h3>
-                <button
-                  onClick={() => setGalleryImages(null)}
-                  className={`p-2 rounded-full transition-colors ${isDark ? "hover:bg-gray-800 text-gray-400" : "hover:bg-gray-100 text-gray-500"}`}
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <Button
+                      size="sm"
+                      variant="success"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onApprove(task.id);
+                      }}
+                      disabled={loading && approvingTaskId === task.id}
+                      className="h-10 gap-1"
+                    >
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onReject(task.id);
+                      }}
+                      disabled={loading && approvingTaskId === task.id}
+                      className="h-10 gap-1"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[760px]">
+              <thead>
+                <tr
+                  className={`${isDark ? "bg-gray-700" : "bg-gray-50"} border-b ${isDark ? "border-gray-700" : "border-gray-200"}`}
                 >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {galleryImages.map((img, idx) => (
-                  <a
-                    key={idx}
-                    href={img}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block overflow-hidden rounded-lg border hover:opacity-90 transition-opacity"
+                  <th
+                    className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
                   >
-                    <img
-                      src={img}
-                      alt={`Proof ${idx + 1}`}
-                      className={`w-full h-40 object-cover ${isDark ? "border-gray-700" : "border-gray-200"}`}
-                    />
-                  </a>
+                    Task
+                  </th>
+                  <th
+                    className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                  >
+                    Submitted By
+                  </th>
+                  <th
+                    className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                  >
+                    Priority
+                  </th>
+                  <th
+                    className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                  >
+                    Due Date
+                  </th>
+                  <th
+                    className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                  >
+                    Proof
+                  </th>
+                  <th
+                    className={`px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody
+                className={`divide-y ${isDark ? "divide-gray-700" : "divide-gray-200"}`}
+              >
+                {tasks.map((task) => (
+                  <tr
+                    key={task.id}
+                    onClick={() => onView(task)}
+                    className={`cursor-pointer transition-all ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-50"}`}
+                  >
+                    <td
+                      className={`px-4 py-3 ${isDark ? "text-white" : "text-gray-900"}`}
+                    >
+                      <div>
+                        <p className="font-medium text-sm">{task.title}</p>
+                        <p
+                          className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"} line-clamp-1`}
+                        >
+                          {task.description || "No description"}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white bg-blue-600`}
+                        >
+                          {task.assignee?.username?.[0]?.toUpperCase() || "?"}
+                        </div>
+                        <span
+                          className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                        >
+                          {task.assignee?.username || "Unknown"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`text-xs font-semibold ${getPriorityColor(task.priority)}`}
+                      >
+                        {task.priority}
+                      </span>
+                    </td>
+                    <td
+                      className={`px-4 py-3 text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                    >
+                      {task.dueDate
+                        ? new Date(task.dueDate).toLocaleDateString()
+                        : "-"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2 flex-wrap">
+                        {task.proofAttachments &&
+                        task.proofAttachments.length > 0 ? (
+                          task.proofAttachments.slice(0, 3).map((proof, idx) => {
+                            const proofUrl = proof.startsWith("/")
+                              ? proof
+                              : `/${proof}`;
+                            return (
+                              <a
+                                key={idx}
+                                href={proofUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group relative"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <img
+                                  src={proofUrl}
+                                  alt={`Proof ${idx + 1}`}
+                                  className={`w-12 h-12 object-cover rounded border ${isDark ? "border-gray-600" : "border-gray-300"} hover:scale-105 transition-transform`}
+                                />
+                              </a>
+                            );
+                          })
+                        ) : task.proofAttachment ? (
+                          (() => {
+                            const proofUrl = task.proofAttachment.startsWith("/")
+                              ? task.proofAttachment
+                              : `/${task.proofAttachment}`;
+                            return (
+                              <a
+                                href={proofUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group relative"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <img
+                                  src={proofUrl}
+                                  alt="Proof"
+                                  className={`w-12 h-12 object-cover rounded border ${isDark ? "border-gray-600" : "border-gray-300"} hover:scale-105 transition-transform`}
+                                />
+                              </a>
+                            );
+                          })()
+                        ) : (
+                          <span
+                            className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                          >
+                            No proof
+                          </span>
+                        )}
+                        {task.proofAttachments &&
+                          task.proofAttachments.length > 3 && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setGalleryImages(
+                                  task.proofAttachments.map((proof) =>
+                                    proof.startsWith("/") ? proof : `/${proof}`,
+                                  ),
+                                );
+                              }}
+                              className={`w-12 h-12 rounded border flex items-center justify-center text-xs font-semibold cursor-pointer hover:opacity-80 transition-opacity ${isDark ? "bg-gray-700 border-gray-600 text-gray-300" : "bg-gray-100 border-gray-300 text-gray-600"}`}
+                            >
+                              +{task.proofAttachments.length - 3}
+                            </button>
+                          )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="success"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onApprove(task.id);
+                          }}
+                          disabled={loading && approvingTaskId === task.id}
+                          className="h-8 text-xs gap-1"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onReject(task.id);
+                          }}
+                          disabled={loading && approvingTaskId === task.id}
+                          className="h-8 text-xs gap-1"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          Reject
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
                 ))}
-              </div>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <AnimatePresence>
+          {galleryImages && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8"
+              onClick={() => setGalleryImages(null)}
+            >
+              <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className={`relative z-10 w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl p-6 ${isDark ? "bg-gray-900 border border-gray-700" : "bg-white"}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                    Proof Photos ({galleryImages.length})
+                  </h3>
+                  <button
+                    onClick={() => setGalleryImages(null)}
+                    className={`p-2 rounded-full transition-colors ${isDark ? "hover:bg-gray-800 text-gray-400" : "hover:bg-gray-100 text-gray-500"}`}
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {galleryImages.map((img, idx) => (
+                    <a
+                      key={idx}
+                      href={img}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block overflow-hidden rounded-lg border hover:opacity-90 transition-opacity"
+                    >
+                      <img
+                        src={img}
+                        alt={`Proof ${idx + 1}`}
+                        className={`w-full h-40 object-cover ${isDark ? "border-gray-700" : "border-gray-200"}`}
+                      />
+                    </a>
+                  ))}
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+          )}
+        </AnimatePresence>
+      </>
     );
   },
 );

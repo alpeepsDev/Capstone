@@ -104,7 +104,7 @@ const ModernGanttChart = ({ tasks, onTaskClick, loading }) => {
           isDark ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"
         }`}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <h2
               className={`text-lg font-semibold ${
@@ -140,7 +140,7 @@ const ModernGanttChart = ({ tasks, onTaskClick, loading }) => {
           </div>
           <button
             onClick={() => setCurrentMonth(new Date())}
-            className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1"
+            className="flex items-center gap-1 self-start rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 sm:self-auto"
           >
             <Calendar className="w-3 h-3" />
             Today
@@ -149,8 +149,98 @@ const ModernGanttChart = ({ tasks, onTaskClick, loading }) => {
       </div>
 
       {/* Timeline */}
-      <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
-        <div className="min-w-[1000px]">
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="space-y-3 p-3 md:hidden">
+          {loading ? (
+            [...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className={`rounded-xl border p-4 ${isDark ? "border-gray-700 bg-gray-900/40" : "border-gray-200 bg-gray-50"}`}
+              >
+                <div className="space-y-3">
+                  <Skeleton className="h-5 w-2/3 rounded" />
+                  <Skeleton className="h-4 w-full rounded" />
+                  <Skeleton className="h-10 w-full rounded" />
+                </div>
+              </div>
+            ))
+          ) : tasksWithDates.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-2xl mb-2">📊</div>
+              <p
+                className={`${
+                  isDark ? "text-gray-300" : "text-gray-600"
+                } text-sm`}
+              >
+                No tasks with due dates to display.
+              </p>
+              <p
+                className={`${
+                  isDark ? "text-gray-400" : "text-gray-500"
+                } text-xs mt-1`}
+              >
+                Add due dates to your tasks to see them here.
+              </p>
+            </div>
+          ) : (
+            tasksWithDates.map((task) => {
+              const startDate = task.startDate
+                ? new Date(task.startDate)
+                : new Date(task.createdAt);
+              const endDate = new Date(task.dueDate);
+              const taskColor = getTaskColor(task);
+
+              return (
+                <button
+                  key={task.id}
+                  type="button"
+                  onClick={() => onTaskClick && onTaskClick(task)}
+                  className={`w-full rounded-xl border p-4 text-left ${isDark ? "border-gray-700 bg-gray-900/40 hover:border-gray-600" : "border-gray-200 bg-gray-50 hover:border-gray-300"}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`font-medium text-sm ${isDark ? "text-gray-100" : "text-gray-900"}`}
+                      >
+                        {task.title}
+                      </p>
+                      {task.assignee && (
+                        <p
+                          className={`mt-1 text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                        >
+                          {task.assignee.name || task.assignee.username}
+                        </p>
+                      )}
+                    </div>
+                    <div className={`h-3 w-3 shrink-0 rounded-full ${taskColor}`} />
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <p className={`mb-1 font-semibold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                        Start
+                      </p>
+                      <p className={isDark ? "text-gray-300" : "text-gray-700"}>
+                        {formatDate(startDate)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className={`mb-1 font-semibold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                        Due
+                      </p>
+                      <p className={isDark ? "text-gray-300" : "text-gray-700"}>
+                        {formatDate(endDate)}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+
+        <div className="hidden min-h-0 overflow-x-auto overflow-y-auto md:block">
+          <div className="min-w-[1000px]">
           {/* Date Headers */}
           <div
             className={`grid border-b ${
@@ -378,6 +468,7 @@ const ModernGanttChart = ({ tasks, onTaskClick, loading }) => {
               })}
             </div>
           )}
+          </div>
         </div>
       </div>
 

@@ -50,7 +50,23 @@ const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     const response = await authService.login(credentials);
+    if (!response?.data?.mfaRequired) {
+      setUser(response?.data?.user || null);
+    }
+    return response;
+  };
+
+  const verifyMfa = async (email, otp, rememberMe) => {
+    const response = await authService.verifyMfa(email, otp, rememberMe);
     setUser(response?.data?.user || null);
+    return response;
+  };
+
+  const toggleMfa = async (enable) => {
+    const response = await authService.toggleMfa(enable);
+    if (response?.data?.user) {
+      setUser(response.data.user);
+    }
     return response;
   };
 
@@ -106,6 +122,8 @@ const AuthProvider = ({ children }) => {
   const value = {
     user,
     login,
+    verifyMfa,
+    toggleMfa,
     register,
     logout,
     loading,

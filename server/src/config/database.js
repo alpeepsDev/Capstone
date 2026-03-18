@@ -2,7 +2,7 @@ import "dotenv/config";
 import pkg from "@prisma/client";
 const { PrismaClient } = pkg;
 import { decrypt } from "../utils/encryption.js";
-import { emitAdminUpdate } from "../services/websocket.service.js";
+import { emitAdminDashboardEvent } from "../services/websocket.service.js";
 import logger from "../utils/logger.js";
 
 // ---------------------------------------------------------------------------
@@ -117,7 +117,16 @@ const MUTATION_ACTIONS = new Set([
 ]);
 
 // Models that we care about for admin dashboard realtime updates
-const ADMIN_WATCHED_MODELS = new Set(["User", "Project", "Task"]);
+const ADMIN_MODEL_EVENT_MAP = {
+  User: ["dashboard:overview", "dashboard:users", "dashboard:user-activity"],
+  Project: ["dashboard:overview"],
+  Task: ["dashboard:overview"],
+  RateLimitConfig: ["dashboard:rate-limits", "dashboard:user-activity"],
+  EndpointRateLimit: ["dashboard:rate-limits"],
+  UserRateLimit: ["dashboard:rate-limits"],
+  AuditLog: ["dashboard:audit-logs"],
+};
+const ADMIN_WATCHED_MODELS = new Set(Object.keys(ADMIN_MODEL_EVENT_MAP));
 
 const basePrisma = new PrismaClient({
   accelerateUrl: process.env.DATABASE_URL,
@@ -139,9 +148,21 @@ const prisma = basePrisma.$extends({
           MUTATION_ACTIONS.has(operation) &&
           ADMIN_WATCHED_MODELS.has(model)
         ) {
-          // Broadcast the update immediately after the DB finishes the query
-          // Fire-and-forget
-          emitAdminUpdate(model, operation);
+          const eventTypes = ADMIN_MODEL_EVENT_MAP[model] || [];
+          const resourceId =
+            result && typeof result === "object" && !Array.isArray(result)
+              ? result.id || null
+              : null;
+
+          for (const type of eventTypes) {
+            emitAdminDashboardEvent({
+              type,
+              model,
+              operation,
+              reason: `${model}.${operation}`,
+              resourceId,
+            });
+          }
         }
 
         return result;
